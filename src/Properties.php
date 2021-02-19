@@ -15,6 +15,7 @@ namespace Inpsyde\Modularity;
  * @method string version()
  * @method string requiresWp()
  * @method string requiresPhp()
+ * @method string|null baseUrl()
  */
 class Properties implements PropertiesInterface, \IteratorAggregate, \Countable
 {

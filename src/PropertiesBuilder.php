@@ -214,22 +214,30 @@ final class PropertiesBuilder
      *
      * @param string $key
      * @param mixed $value
+     *
+     * @return PropertiesBuilder
      */
-    public function set(string $key, $value): void
+    public function set(string $key, $value): PropertiesBuilder
     {
         $this->properties[$key] = $value;
+
+        return $this;
     }
 
     /**
      * Add multiple key/value values to Properties.
      *
      * @param array<string, mixed> $properties
+     *
+     * @return PropertiesBuilder
      */
-    public function add(array $properties): void
+    public function add(array $properties): PropertiesBuilder
     {
         foreach ($properties as $key => $value) {
             $this->set($key, $value);
         }
+
+        return $this;
     }
 
     /**

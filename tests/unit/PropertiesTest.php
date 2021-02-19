@@ -33,6 +33,7 @@ class PropertiesTest extends TestCase
         static::assertFalse($testee->isTheme());
         static::assertFalse($testee->isType('unknown'));
         static::assertFalse($testee->isDebug());
+        static::assertNull($testee->baseUrl());
         static::assertInstanceOf(\ArrayIterator::class, $testee->getIterator());
     }
 
