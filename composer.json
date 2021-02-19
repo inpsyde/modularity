@@ -1,0 +1,46 @@
+{
+    "name": "inpsyde/modularity",
+    "description": "Inpsyde modularity",
+    "type": "library",
+    "license": "gpl-v2-or-later",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=7.2",
+        "ext-json": "*",
+        "psr/container": "^1.0"
+    },
+    "require-dev": {
+        "inpsyde/php-coding-standards": "^1",
+        "roots/wordpress": "@stable",
+        "vimeo/psalm": "@stable",
+        "phpunit/phpunit": "^8",
+        "brain/monkey": "^2",
+        "mikey179/vfsstream": "^1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Inpsyde\\Modularity\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Inpsyde\\Modularity\\Tests\\": "tests/src/",
+            "Inpsyde\\Modularity\\Tests\\Unit\\": "tests/unit/"
+        }
+    },
+    "extra": {
+        "wordpress-install-dir": "vendor/wordpress/wordpress"
+    },
+    "scripts": {
+        "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
+        "psalm": "@php ./vendor/vimeo/psalm/psalm",
+        "tests": "@php ./vendor/phpunit/phpunit/phpunit",
+        "tests:no-cov": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
+        "qa": [
+            "@tests:no-cov",
+            "@cs",
+            "@psalm"
+        ]
+    }
+}

@@ -1,0 +1,10 @@
+### Composer template
+composer.phar
+composer.lock
+/vendor/
+
+# PHPUnit
+.phpunit.result.cache
+
+# tmp files
+tmp/
