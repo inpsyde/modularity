@@ -83,7 +83,7 @@ class Bootstrap
         self::STATE_ADDED => [],
         self::STATE_REGISTERED => [],
         self::STATE_EXTENDED => [],
-        self::STATE_EXECUTED => [],
+        self::STATE_EXECUTED_FAILED => [],
     ];
 
     /**
