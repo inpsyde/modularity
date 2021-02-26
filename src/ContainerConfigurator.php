@@ -120,7 +120,7 @@ class ContainerConfigurator
      *
      * @return ContainerInterface
      */
-    public function compile(): ContainerInterface
+    public function createReadOnlyContainer(): ContainerInterface
     {
         if (!$this->compiledContainer) {
             $this->compiledContainer = new Container(

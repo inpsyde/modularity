@@ -20,7 +20,7 @@ class ContainerConfiguratorTest extends TestCase
         static::assertInstanceOf(ContainerConfigurator::class, $testee);
         static::assertFalse($testee->hasService('something'));
         static::assertFalse($testee->hasExtension('something'));
-        static::assertInstanceOf(ContainerInterface::class, $testee->compile());
+        static::assertInstanceOf(ContainerInterface::class, $testee->createReadOnlyContainer());
     }
 
     /**
@@ -185,6 +185,6 @@ class ContainerConfiguratorTest extends TestCase
 
         static::assertTrue($testee->hasService($expectedKey));
         static::assertTrue($testee->hasExtension($expectedKey));
-        static::assertSame($expectedExtendedValue, $testee->compile()->get($expectedKey));
+        static::assertSame($expectedExtendedValue, $testee->createReadOnlyContainer()->get($expectedKey));
     }
 }

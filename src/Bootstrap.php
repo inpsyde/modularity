@@ -325,7 +325,7 @@ class Bootstrap
             throw new \Exception("Can't access Container before application has booted.");
         }
 
-        return $this->containerConfigurator->compile();
+        return $this->containerConfigurator->createReadOnlyContainer();
     }
 
     /**
