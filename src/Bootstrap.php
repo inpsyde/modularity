@@ -74,11 +74,12 @@ class Bootstrap
      * $app->boot(new SomeModule());
      * $app->moduleIs(SomeModule::class, Bootstrap::STATE_EXECUTED); // true
      */
-    public const STATE_ADDED = 'added';
-    public const STATE_REGISTERED = 'registered';
-    public const STATE_EXTENDED = 'extended';
-    public const STATE_EXECUTED = 'executed';
-    public const STATE_EXECUTED_FAILED = 'executed-failed';
+    public const MODULE_ADDED = 'added';
+    public const MODULE_REGISTERED = 'registered';
+    public const MODULE_EXTENDED = 'extended';
+    public const MODULE_EXECUTED = 'executed';
+    public const MODULE_EXECUTION_FAILED = 'executed-failed';
+    private const MODULES_ALL = '_all';
 
     /**
      * Contains the progress of all modules.
@@ -88,11 +89,11 @@ class Bootstrap
      * @var array<array<string>>
      */
     private $progress = [
-        '_all' => [],
-        self::STATE_ADDED => [],
-        self::STATE_REGISTERED => [],
-        self::STATE_EXTENDED => [],
-        self::STATE_EXECUTED_FAILED => [],
+        self::MODULES_ALL => [],
+        self::MODULE_ADDED => [],
+        self::MODULE_REGISTERED => [],
+        self::MODULE_EXTENDED => [],
+        self::MODULE_EXECUTION_FAILED => [],
     ];
 
     /**
@@ -155,7 +156,7 @@ class Bootstrap
                 $this->containerConfigurator->addFactory($serviceName, $callable);
             }
             $added = true;
-            $this->progress($module->id(), self::STATE_REGISTERED);
+            $this->progress($module->id(), self::MODULE_REGISTERED);
         }
 
         // ExecutableModules are collected and executed on Bootstrap::boot()
@@ -170,11 +171,11 @@ class Bootstrap
                 $this->containerConfigurator->addExtension($serviceName, $extender);
             }
             $added = true;
-            $this->progress($module->id(), self::STATE_EXTENDED);
+            $this->progress($module->id(), self::MODULE_EXTENDED);
         }
 
         if ($added) {
-            $this->progress($module->id(), self::STATE_ADDED);
+            $this->progress($module->id(), self::MODULE_ADDED);
         }
 
         return $this;
@@ -252,8 +253,8 @@ class Bootstrap
             $this->progress(
                 $executable->id(),
                 $success
-                    ? self::STATE_EXECUTED
-                    : self::STATE_EXECUTED_FAILED
+                    ? self::MODULE_EXECUTED
+                    : self::MODULE_EXECUTION_FAILED
             );
         }
     }
@@ -267,7 +268,7 @@ class Bootstrap
     private function progress(string $moduleId, string $type)
     {
         $this->progress[$type][] = $moduleId;
-        $this->progress['_all'][] = sprintf('%1$s %2$s.', $moduleId, $type);
+        $this->progress[self::MODULES_ALL][] = sprintf('%1$s %2$s.', $moduleId, $type);
     }
 
     /**

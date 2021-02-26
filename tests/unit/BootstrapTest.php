@@ -47,7 +47,7 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($propertiesStub);
 
         static::assertTrue($testee->boot($moduleStub));
-        static::assertFalse($testee->moduleIs($expectedModuleId, Bootstrap::STATE_ADDED));
+        static::assertFalse($testee->moduleIs($expectedModuleId, Bootstrap::MODULE_ADDED));
 
         // booting again will do nothing.
         static::assertFalse($testee->boot());
@@ -85,8 +85,8 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($propertiesStub);
 
         static::assertTrue($testee->boot($moduleStub));
-        static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::STATE_ADDED));
-        static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::STATE_REGISTERED));
+        static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::MODULE_ADDED));
+        static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::MODULE_REGISTERED));
     }
 
     /**
@@ -115,8 +115,8 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($propertiesStub);
 
         static::assertTrue($testee->boot($extendingModuleStub));
-        static::assertTrue($testee->moduleIs($extendingModuleId, Bootstrap::STATE_ADDED));
-        static::assertTrue($testee->moduleIs($extendingModuleId, Bootstrap::STATE_EXTENDED));
+        static::assertTrue($testee->moduleIs($extendingModuleId, Bootstrap::MODULE_ADDED));
+        static::assertTrue($testee->moduleIs($extendingModuleId, Bootstrap::MODULE_EXTENDED));
     }
 
     /**
@@ -242,7 +242,7 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($properties);
 
         static::assertTrue($testee->boot($executableModule));
-        static::assertTrue($testee->moduleIs($serviceId, Bootstrap::STATE_EXECUTED));
+        static::assertTrue($testee->moduleIs($serviceId, Bootstrap::MODULE_EXECUTED));
     }
 
     /**
@@ -261,6 +261,6 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($properties);
 
         static::assertTrue($testee->boot($executableModule));
-        static::assertTrue($testee->moduleIs($serviceId, Bootstrap::STATE_EXECUTED_FAILED));
+        static::assertTrue($testee->moduleIs($serviceId, Bootstrap::MODULE_EXECUTION_FAILED));
     }
 }
