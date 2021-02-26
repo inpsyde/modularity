@@ -32,11 +32,11 @@ class Bootstrap
      * $app = Bootstrap::new();
      *
      * add_action(
-     *      $app->hookName(Bootstrap::ACTION_BEFORE_BOOT),
+     *      $app->hookName(Bootstrap::ACTION_INIT),
      *      $callback
      * );
      */
-    public const ACTION_BEFORE_BOOT = 'before-boot';
+    public const ACTION_INIT = 'init';
     /**
      * Custom action which is triggered after the application
      * is booted to access container and properties.
@@ -46,11 +46,11 @@ class Bootstrap
      * $app = Bootstrap::new();
      *
      * add_action(
-     *      $app->hookName(Bootstrap::ACTION_AFTER_BOOT),
+     *      $app->hookName(Bootstrap::ACTION_READY),
      *      $callback
      * );
      */
-    public const ACTION_AFTER_BOOT = 'after-booted';
+    public const ACTION_READY = 'ready';
     /**
      * Custom action which is triggered when application failed to boot.
      *
@@ -212,12 +212,11 @@ class Bootstrap
             array_map([$this, 'addModule'], $defaultModules);
 
             do_action(
-                $this->hookName(self::ACTION_BEFORE_BOOT),
+                $this->hookName(self::ACTION_INIT),
                 $this
             );
             // we want to lock adding new Modules and Containers now
-            // after "before_boot" to process everything and
-            // be able to compile the container.
+            // to process everything and be able to compile the container.
             $this->booted = true;
 
             if (count($this->executables) > 0) {
@@ -225,7 +224,7 @@ class Bootstrap
             }
 
             do_action(
-                $this->hookName(self::ACTION_AFTER_BOOT),
+                $this->hookName(self::ACTION_READY),
                 $this
             );
         } catch (\Throwable $throwable) {
