@@ -12,7 +12,6 @@ use Psr\Container\ContainerInterface;
 
 class Bootstrap
 {
-
     private const FILTER_MODULES_PREFIX = 'inpsyde.modularity.';
     /**
      * Custom action which is triggered before application
@@ -124,14 +123,9 @@ class Bootstrap
     private function __construct(PropertiesInterface $properties)
     {
         $this->properties = $properties;
-        $containerConfigurator = new ContainerConfigurator();
 
-        $containerConfigurator->addService(
-            'properties',
-            static function () use ($properties) {
-                return $properties;
-            }
-        );
+        $containerConfigurator = new ContainerConfigurator();
+        $containerConfigurator->addService('properties', $properties);
         $this->containerConfigurator = $containerConfigurator;
     }
 
@@ -148,7 +142,7 @@ class Bootstrap
         $added = false;
         if ($module instanceof ServiceModule) {
             foreach ($module->services() as $serviceName => $callable) {
-                $this->containerConfigurator->addService($serviceName, $callable);
+                $this->containerConfigurator->addFactory($serviceName, $callable);
             }
             $added = true;
             $this->progress($module->id(), self::STATE_REGISTERED);
@@ -303,10 +297,10 @@ class Bootstrap
      */
     public function hookName(string $suffix = ''): string
     {
-        $filter = self::FILTER_MODULES_PREFIX.$this->properties->baseName();
+        $filter = self::FILTER_MODULES_PREFIX . $this->properties->baseName();
 
         if ($suffix) {
-            $filter .= '.'.$suffix;
+            $filter .= '.' . $suffix;
         }
 
         return $filter;
@@ -327,7 +321,7 @@ class Bootstrap
      */
     public function container(): ContainerInterface
     {
-        if (! $this->booted) {
+        if (!$this->booted) {
             throw new \Exception("Can't access Container before application has booted.");
         }
 

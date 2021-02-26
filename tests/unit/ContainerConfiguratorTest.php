@@ -10,7 +10,6 @@ use Psr\Container\ContainerInterface;
 
 class ContainerConfiguratorTest extends TestCase
 {
-
     /**
      * @test
      */
@@ -31,14 +30,31 @@ class ContainerConfiguratorTest extends TestCase
     {
         $expectedKey = 'key';
         $expectedValue = new class {
-
         };
 
         $testee = new ContainerConfigurator();
 
         static::assertFalse($testee->hasService($expectedKey));
 
-        $testee->addService(
+        $testee->addService($expectedKey, $expectedValue);
+
+        static::assertTrue($testee->hasService($expectedKey));
+    }
+
+    /**
+     * @test
+     */
+    public function testAddHasFactory()
+    {
+        $expectedKey = 'key';
+        $expectedValue = new class {
+        };
+
+        $testee = new ContainerConfigurator();
+
+        static::assertFalse($testee->hasService($expectedKey));
+
+        $testee->addFactory(
             $expectedKey,
             function () use ($expectedValue) {
                 return $expectedValue;
@@ -51,23 +67,22 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testAddServiceTwice()
+    public function testAddFactoryTwice()
     {
         static::expectException(\Exception::class);
 
         $expectedKey = 'key';
         $expectedValue = new class {
-
         };
 
         $testee = new ContainerConfigurator();
-        $testee->addService(
+        $testee->addFactory(
             $expectedKey,
             function () use ($expectedValue) {
                 return $expectedValue;
             }
         );
-        $testee->addService(
+        $testee->addFactory(
             $expectedKey,
             function () use ($expectedValue) {
                 return $expectedValue;
@@ -93,7 +108,6 @@ class ContainerConfiguratorTest extends TestCase
         $expectedValue = new \stdClass();
 
         $childContainer = new class($expectedKey, $expectedValue) implements ContainerInterface {
-
             private $data = [];
 
             public function __construct(string $key, object $value)
@@ -105,7 +119,7 @@ class ContainerConfiguratorTest extends TestCase
 
             public function get($id)
             {
-                if (! $this->has($id)) {
+                if (!$this->has($id)) {
                     return null;
                 }
 
@@ -134,14 +148,12 @@ class ContainerConfiguratorTest extends TestCase
         $expectedKey = 'key';
         $expected = 'expectedValue';
         $expectedOriginalValue = new class {
-
             public function __toString()
             {
                 return 'original';
             }
         };
         $expectedExtendedValue = new class($expected) {
-
             private $expected;
 
             public function __construct(string $expected)
@@ -155,7 +167,7 @@ class ContainerConfiguratorTest extends TestCase
             }
         };
 
-        $testee->addService(
+        $testee->addFactory(
             $expectedKey,
             function () use ($expectedOriginalValue) {
                 return $expectedOriginalValue;

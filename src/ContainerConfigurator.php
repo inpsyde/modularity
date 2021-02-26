@@ -8,7 +8,6 @@ use Psr\Container\ContainerInterface;
 
 class ContainerConfigurator
 {
-
     /**
      * @var array<string, callable(ContainerInterface $container):object>
      */
@@ -40,18 +39,31 @@ class ContainerConfigurator
     }
 
     /**
+     * Shortcut to add already instantiated services to the container.
+     *
+     * @param string $id
+     * @param object $service
+     */
+    public function addService(string $id, object $service): void
+    {
+        $factory = static function () use ($service) {
+            return $service;
+        };
+        $this->addFactory($id, $factory);
+    }
+
+    /**
      * @param string $id
      * @param callable(ContainerInterface $container):object $factory
      *
      * @return void
      */
-    public function addService(string $id, callable $factory): void
+    public function addFactory(string $id, callable $factory): void
     {
         if ($this->hasService($id)) {
             throw new class ("Service with ID {$id} is already registered.")
                 extends \Exception
                 implements ContainerExceptionInterface {
-
             };
         }
 
@@ -86,7 +98,7 @@ class ContainerConfigurator
      */
     public function addExtension(string $id, callable $extender): void
     {
-        if (! isset($this->extensions[$id])) {
+        if (!isset($this->extensions[$id])) {
             $this->extensions[$id] = [];
         }
 
@@ -110,7 +122,7 @@ class ContainerConfigurator
      */
     public function compile(): ContainerInterface
     {
-        if (! $this->compiledContainer) {
+        if (!$this->compiledContainer) {
             $this->compiledContainer = new Container(
                 $this->factories,
                 $this->extensions,
