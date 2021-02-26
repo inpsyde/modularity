@@ -84,7 +84,7 @@ class Bootstrap
     /**
      * Contains the progress of all modules.
      *
-     * @see Bootstrap::progress()
+     * @see Bootstrap::moduleProgress()
      *
      * @var array<array<string>>
      */
@@ -156,7 +156,7 @@ class Bootstrap
                 $this->containerConfigurator->addFactory($serviceName, $callable);
             }
             $added = true;
-            $this->progress($module->id(), self::MODULE_REGISTERED);
+            $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
         }
 
         // ExecutableModules are collected and executed on Bootstrap::boot()
@@ -171,11 +171,11 @@ class Bootstrap
                 $this->containerConfigurator->addExtension($serviceName, $extender);
             }
             $added = true;
-            $this->progress($module->id(), self::MODULE_EXTENDED);
+            $this->moduleProgress($module->id(), self::MODULE_EXTENDED);
         }
 
         if ($added) {
-            $this->progress($module->id(), self::MODULE_ADDED);
+            $this->moduleProgress($module->id(), self::MODULE_ADDED);
         }
 
         return $this;
@@ -250,7 +250,7 @@ class Bootstrap
     {
         foreach ($this->executables as $executable) {
             $success = $executable->run($this->container());
-            $this->progress(
+            $this->moduleProgress(
                 $executable->id(),
                 $success
                     ? self::MODULE_EXECUTED
@@ -265,7 +265,7 @@ class Bootstrap
      *
      * @return  void
      */
-    private function progress(string $moduleId, string $type)
+    private function moduleProgress(string $moduleId, string $type)
     {
         $this->progress[$type][] = $moduleId;
         $this->progress[self::MODULES_ALL][] = sprintf('%1$s %2$s.', $moduleId, $type);
