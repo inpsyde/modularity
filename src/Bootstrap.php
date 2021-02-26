@@ -14,6 +14,16 @@ class Bootstrap
 {
     private const FILTER_MODULES_PREFIX = 'inpsyde.modularity.';
     /**
+     * Identifier to access Properties in Container.
+     *
+     * @example
+     * $container->has(Boostrap::PROPERTIES);
+     * $container->get(Boostrap::PROPERTIES);
+     *
+     * @var string
+     */
+    public const PROPERTIES = Properties::class;
+    /**
      * Custom action which is triggered before application
      * is booted to extend modules and access properties.
      *
@@ -125,7 +135,7 @@ class Bootstrap
         $this->properties = $properties;
 
         $containerConfigurator = new ContainerConfigurator();
-        $containerConfigurator->addService('properties', $properties);
+        $containerConfigurator->addService(self::PROPERTIES, $properties);
         $this->containerConfigurator = $containerConfigurator;
     }
 
