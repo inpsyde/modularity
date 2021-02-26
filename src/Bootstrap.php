@@ -22,7 +22,7 @@ class Bootstrap
      *
      * @var string
      */
-    public const PROPERTIES = Properties::class;
+    public const PROPERTIES = 'properties';
     /**
      * Custom action which is triggered before application
      * is booted to extend modules and access properties.
