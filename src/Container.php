@@ -61,6 +61,8 @@ class Container implements ContainerInterface
      */
     public function get($id)
     {
+        assert(is_string($id));
+
         if (array_key_exists($id, $this->factories)) {
             $service = $this->factories[$id]($this);
             $this->services[$id] = $this->resolveExtensions($id, $service);
@@ -95,6 +97,8 @@ class Container implements ContainerInterface
      */
     public function has($id)
     {
+        assert(is_string($id));
+
         if (array_key_exists($id, $this->factories)) {
             return true;
         }
