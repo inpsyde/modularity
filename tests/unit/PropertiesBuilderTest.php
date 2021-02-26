@@ -146,7 +146,6 @@ class PropertiesBuilderTest extends TestCase
             "config" => [
                 "platform" => [
                     "php" => $expectedPhpVersion,
-                    "wordpress" => $expecteWpVersion,
                 ],
             ],
             "extra" => [
@@ -156,6 +155,7 @@ class PropertiesBuilderTest extends TestCase
                     "textDomain" => $expectedTextDomain,
                     "uri" => $expectedUri,
                     "version" => $expectedVersion,
+                    "requiresWp" => $expecteWpVersion,
                 ],
             ],
         ];

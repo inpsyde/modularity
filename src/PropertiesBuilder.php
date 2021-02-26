@@ -109,14 +109,14 @@ final class PropertiesBuilder
 
         // Custom settings which can be stored in composer.json "extra.modularity"
         $extra = $composerJsonData['extra']['modularity'] ?? [];
-        $extraKeys = ['domainPath', 'name', 'textDomain', 'uri', 'version'];
+        $extraKeys = ['domainPath', 'name', 'textDomain', 'uri', 'version', 'requiresWp'];
         foreach ($extraKeys as $key) {
             $properties[$key] = $extra[$key] ?? '';
         }
 
         // platform specific settings
         $platform = $composerJsonData['config']['platform'] ?? [];
-        $platformMapping = ['php' => 'requiresPhp', 'wordpress' => 'requiresWp'];
+        $platformMapping = ['php' => 'requiresPhp'];
         foreach ($platformMapping as $search => $mappedTo) {
             $properties[$mappedTo] = $platform[$search] ?? '';
         }
