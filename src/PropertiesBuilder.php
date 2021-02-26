@@ -6,7 +6,6 @@ namespace Inpsyde\Modularity;
 
 final class PropertiesBuilder
 {
-
     /**
      * Available methods of Properties::__call()
      * from plugin headers.
@@ -72,7 +71,7 @@ final class PropertiesBuilder
      */
     public static function forLibrary(string $composerJsonFile): PropertiesBuilder
     {
-        if (! \is_file($composerJsonFile) || ! \is_readable($composerJsonFile)) {
+        if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
             throw new \Exception(sprintf('File %1$s does not exist or is not readable!', $composerJsonFile));
         }
 
@@ -87,10 +86,26 @@ final class PropertiesBuilder
         $properties = [
             'description' => $composerJsonData['description'] ?? '',
             'tags' => $composerJsonData['keywords'] ?? [],
-            // Author information - we just use the first Author.
-            'author' => $composerJsonData['authors'][0]['name'] ?? '',
-            'authorUri' => $composerJsonData['authors'][0]['homepage'] ?? '',
+            // default author and authorUri
+            'author' => '',
+            'authorUri' => '',
         ];
+
+        $authors = $composerJsonData['authors'] ?? [];
+        $names = [];
+        foreach ((array) $authors as $author) {
+            $name = $author['name'] ?? null;
+            if ($name) {
+                $names[] = $name;
+            }
+            $url = $author['homepage'] ?? null;
+            if ($url && !$properties['authorUri']) {
+                $properties['authorUri'] = $url;
+            }
+        }
+        if (count($names) > 0) {
+            $properties['author'] = implode(', ', $names);
+        }
 
         // Custom settings which can be stored in composer.json "extra.modularity"
         $extra = $composerJsonData['extra']['modularity'] ?? [];
@@ -121,8 +136,8 @@ final class PropertiesBuilder
      */
     public static function forPlugin(string $pluginMainFile): PropertiesBuilder
     {
-        if (! function_exists('get_plugin_data')) {
-            require_once ABSPATH.'wp-admin/includes/plugin.php';
+        if (!function_exists('get_plugin_data')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
 
         $pluginData = get_plugin_data($pluginMainFile);
@@ -150,8 +165,8 @@ final class PropertiesBuilder
      */
     public static function forTheme(string $themeDirectory): PropertiesBuilder
     {
-        if (! function_exists('wp_get_theme')) {
-            require_once ABSPATH.'wp-includes/theme.php';
+        if (!function_exists('wp_get_theme')) {
+            require_once ABSPATH . 'wp-includes/theme.php';
         }
 
         /** @var \WP_Theme $theme */
