@@ -9,7 +9,7 @@ use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
-use Inpsyde\Modularity\PropertiesInterface;
+use Inpsyde\Modularity\Properties\Properties;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
 use PHPUnit\Framework\TestCase as FrameworkTestCase;
@@ -33,11 +33,11 @@ abstract class TestCase extends FrameworkTestCase
     /**
      * @param string $basename
      *
-     * @return PropertiesInterface|MockInterface
+     * @return Properties|MockInterface
      */
     protected function mockProperties(string $basename = 'basename')
     {
-        $stub = \Mockery::mock(PropertiesInterface::class);
+        $stub = \Mockery::mock(Properties::class);
         $stub
             ->shouldReceive('basename')
             ->andReturn($basename);

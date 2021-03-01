@@ -8,6 +8,7 @@ use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
+use Inpsyde\Modularity\Properties\Properties;
 use Psr\Container\ContainerInterface;
 
 class Bootstrap
@@ -102,7 +103,7 @@ class Bootstrap
     private $executables = [];
 
     /**
-     * @var PropertiesInterface
+     * @var Properties
      */
     private $properties;
 
@@ -119,19 +120,19 @@ class Bootstrap
     private $booted = false;
 
     /**
-     * @param PropertiesInterface $properties
+     * @param Properties $properties
      *
      * @return Bootstrap
      */
-    public static function new(PropertiesInterface $properties): Bootstrap
+    public static function new(Properties $properties): Bootstrap
     {
         return new self($properties);
     }
 
     /**
-     * @param PropertiesInterface $properties
+     * @param Properties $properties
      */
-    private function __construct(PropertiesInterface $properties)
+    private function __construct(Properties $properties)
     {
         $this->properties = $properties;
 
@@ -317,9 +318,9 @@ class Bootstrap
     }
 
     /**
-     * @return PropertiesInterface
+     * @return Properties
      */
-    public function properties(): PropertiesInterface
+    public function properties(): Properties
     {
         return $this->properties;
     }

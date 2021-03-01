@@ -7,7 +7,7 @@ namespace Inpsyde\Modularity\Tests\Unit;
 use Inpsyde\Modularity\Bootstrap;
 use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\ModuleClassNameIdTrait;
-use Inpsyde\Modularity\PropertiesInterface;
+use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -27,7 +27,7 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($propertiesStub);
         static::assertTrue($testee->boot());
         static::assertSame($expectedName, $testee->name());
-        static::assertInstanceOf(PropertiesInterface::class, $testee->properties());
+        static::assertInstanceOf(Properties::class, $testee->properties());
         static::assertInstanceOf(ContainerInterface::class, $testee->container());
         static::assertEmpty($testee->modulesStatus()['_all']);
     }
