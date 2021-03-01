@@ -206,6 +206,7 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($properties);
 
         static::assertFalse($testee->boot($throwingModule));
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_FAILED_BOOT));
     }
 
     /**
