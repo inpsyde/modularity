@@ -386,6 +386,7 @@ class Bootstrap
      * @param string $operator
      *
      * @throws \Exception
+     * @psalm-suppress ArgumentTypeCoercion
      */
     private function assertStatus(int $status, string $action, string $operator = '=='): void
     {
