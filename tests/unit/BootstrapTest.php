@@ -25,7 +25,10 @@ class BootstrapTest extends TestCase
         $propertiesStub = $this->mockProperties($expectedName);
 
         $testee = Bootstrap::new($propertiesStub);
+
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_IDLE));
         static::assertTrue($testee->boot());
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_BOOTED));
         static::assertSame($expectedName, $testee->name());
         static::assertInstanceOf(PropertiesInterface::class, $testee->properties());
         static::assertInstanceOf(ContainerInterface::class, $testee->container());
@@ -43,6 +46,7 @@ class BootstrapTest extends TestCase
 
         $moduleStub = $this->mockModule($expectedModuleId);
         $propertiesStub = $this->mockProperties();
+        $propertiesStub->expects('isDebug')->andReturn(false);
 
         $testee = Bootstrap::new($propertiesStub);
 
@@ -239,6 +243,7 @@ class BootstrapTest extends TestCase
             ->andReturn(true);
 
         $properties = $this->mockProperties();
+
         $testee = Bootstrap::new($properties);
 
         static::assertTrue($testee->boot($executableModule));
