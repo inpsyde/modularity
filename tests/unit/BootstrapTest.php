@@ -124,66 +124,6 @@ class BootstrapTest extends TestCase
     }
 
     /**
-     * @test
-     */
-    public function testAddContainer(): void
-    {
-        $childContainer = new class implements ContainerInterface {
-
-            public function get($id)
-            {
-                return $id;
-            }
-
-            public function has($id)
-            {
-                return $id;
-            }
-        };
-
-        $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
-        $testee->addContainer($childContainer);
-    }
-
-    /**
-     * @test
-     */
-    public function testAddContainerAfterBooted(): void
-    {
-        static::expectException(\Exception::class);
-
-        $childContainer = new class implements ContainerInterface {
-
-            public function get($id)
-            {
-                return $id;
-            }
-
-            public function has($id)
-            {
-                return $id;
-            }
-        };
-        $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
-        $testee->boot();
-        $testee->addContainer($childContainer);
-    }
-
-    /**
-     * @test
-     */
-    public function testContainerAccessTooEarly(): void
-    {
-        static::expectException(\Exception::class);
-
-        $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
-        $testee->container();
-    }
-
-    /**
      * Test if on Properties::isDebug() === false no Exception is thrown
      * and Boostrap::boot() returns false.
      *

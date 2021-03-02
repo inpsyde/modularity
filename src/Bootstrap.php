@@ -136,22 +136,26 @@ class Bootstrap
 
     /**
      * @param PropertiesInterface $properties
+     * @param ContainerConfigurator|null $containerConfigurator
      *
      * @return Bootstrap
      */
-    public static function new(PropertiesInterface $properties): Bootstrap
-    {
-        return new self($properties);
+    public static function new(
+        PropertiesInterface $properties,
+        ContainerConfigurator $containerConfigurator = null
+    ): Bootstrap {
+        return new self($properties, $containerConfigurator);
     }
 
     /**
      * @param PropertiesInterface $properties
+     * @param ContainerConfigurator|null $containerConfigurator
      */
-    private function __construct(PropertiesInterface $properties)
+    private function __construct(PropertiesInterface $properties, ContainerConfigurator $containerConfigurator = null)
     {
         $this->properties = $properties;
 
-        $containerConfigurator = new ContainerConfigurator();
+        $containerConfigurator = $containerConfigurator ?? new ContainerConfigurator();
         $containerConfigurator->addService(self::PROPERTIES, $properties);
         $this->containerConfigurator = $containerConfigurator;
     }
@@ -193,20 +197,6 @@ class Bootstrap
         if ($added) {
             $this->moduleProgress($module->id(), self::MODULE_ADDED);
         }
-
-        return $this;
-    }
-
-    /**
-     * @param ContainerInterface $container
-     *
-     * @return $this
-     * @throws \Exception
-     */
-    public function addContainer(ContainerInterface $container): self
-    {
-        $this->assertStatus(self::STATUS_IDLE, 'add Container');
-        $this->containerConfigurator->addContainer($container);
 
         return $this;
     }
