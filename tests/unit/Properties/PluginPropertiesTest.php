@@ -56,7 +56,7 @@ class PluginPropertiesTest extends TestCase
         Functions\expect('plugin_dir_path')
             ->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::for($expectedBasePath);
+        $testee = PluginProperties::new($expectedBasePath);
 
         static::assertInstanceOf(Properties::class, $testee);
         static::assertSame($expectedDescription, $testee->description());

@@ -48,7 +48,7 @@ class ThemeProperties extends BaseProperties
      *
      * @return ThemeProperties
      */
-    public static function for(string $themeDirectory): ThemeProperties
+    public static function new(string $themeDirectory): ThemeProperties
     {
         if (!function_exists('wp_get_theme')) {
             require_once ABSPATH . 'wp-includes/theme.php';

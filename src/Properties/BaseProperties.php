@@ -186,6 +186,11 @@ class BaseProperties implements Properties
      */
     public function set(string $key, $value)
     {
+        if (isset(self::DEFAULT_PROPERTIES[$key])) {
+            throw new class("The ${key} is a protected property and not allowed to change.") extends \InvalidArgumentException {
+            };
+        }
+
         $this->properties[$key] = $value;
     }
 

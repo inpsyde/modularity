@@ -44,7 +44,7 @@ class PluginProperties extends BaseProperties
      *
      * @return PluginProperties
      */
-    public static function for(string $pluginMainFile): PluginProperties
+    public static function new(string $pluginMainFile): PluginProperties
     {
         if (!function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';

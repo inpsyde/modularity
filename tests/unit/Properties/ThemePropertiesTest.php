@@ -61,7 +61,7 @@ class ThemePropertiesTest extends TestCase
 
         Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
 
-        $testee = ThemeProperties::for($expectedBasePath);
+        $testee = ThemeProperties::new($expectedBasePath);
 
         static::assertInstanceOf(Properties::class, $testee);
 

@@ -33,7 +33,7 @@ class LibraryProperties extends BaseProperties
      * @throws \Exception
      * @psalm-suppress MixedArrayAccess
      */
-    public static function for(string $composerJsonFile): LibraryProperties
+    public static function new(string $composerJsonFile): LibraryProperties
     {
         if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
             throw new \Exception(sprintf('File %1$s does not exist or is not readable!', $composerJsonFile));

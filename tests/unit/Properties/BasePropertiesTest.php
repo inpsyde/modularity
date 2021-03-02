@@ -73,4 +73,16 @@ class BasePropertiesTest extends TestCase
             }
         };
     }
+
+    /**
+     * @test
+     */
+    public function testSetProtectedProperty(): void
+    {
+        static::expectException(\InvalidArgumentException::class);
+
+        $testee = $this->createBaseProperties('baseName', __DIR__);
+
+        $testee->set(Properties::PROP_NAME, 'not allowed to change the name');
+    }
 }

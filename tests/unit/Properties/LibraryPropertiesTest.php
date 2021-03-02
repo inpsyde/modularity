@@ -17,7 +17,7 @@ class LibraryPropertiesTest extends TestCase
     public function testForLibraryInvalidFile(): void
     {
         static::expectException(\Exception::class);
-        LibraryProperties::for('non-existing.file');
+        LibraryProperties::new('non-existing.file');
     }
 
     /**
@@ -37,7 +37,7 @@ class LibraryPropertiesTest extends TestCase
         ];
         $root = vfsStream::setup('root', null, $structure);
 
-        $testee = LibraryProperties::for($root->url() . '/json/composer.json');
+        $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
         static::assertSame($expectedName, $testee->baseName());
     }
@@ -59,7 +59,7 @@ class LibraryPropertiesTest extends TestCase
         ];
         $root = vfsStream::setup('root', null, $structure);
 
-        $testee = LibraryProperties::for($root->url() . '/json/composer.json');
+        $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
         static::assertSame($expectedName, $testee->baseName());
     }
@@ -114,7 +114,7 @@ class LibraryPropertiesTest extends TestCase
         ];
         $root = vfsStream::setup('root', null, $structure);
 
-        $testee = LibraryProperties::for($root->url() . '/json/composer.json');
+        $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
         static::assertInstanceOf(Properties::class, $testee);
         static::assertSame($expectedBaseName, $testee->baseName());
