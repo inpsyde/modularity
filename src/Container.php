@@ -9,7 +9,6 @@ use Psr\Container\NotFoundExceptionInterface;
 
 class Container implements ContainerInterface
 {
-
     /**
      * @var array<string, callable(\Psr\Container\ContainerInterface $container):object>
      */
@@ -77,16 +76,14 @@ class Container implements ContainerInterface
             if ($container->has($id)) {
                 /** @var object $service */
                 $service = $container->get($id);
-                $this->services[$id] = $this->resolveExtensions($id, $service);
 
-                return $this->services[$id];
+                return $this->resolveExtensions($id, $service);
             }
         }
 
         throw new class ("Service with ID {$id} not found.")
             extends \Exception
             implements NotFoundExceptionInterface {
-
         };
     }
 
@@ -124,7 +121,7 @@ class Container implements ContainerInterface
      */
     private function resolveExtensions(string $id, object $service): object
     {
-        if (! isset($this->extensions[$id])) {
+        if (!isset($this->extensions[$id])) {
             return $service;
         }
 
