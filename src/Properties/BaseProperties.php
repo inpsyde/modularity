@@ -43,7 +43,7 @@ class BaseProperties implements Properties
         string $baseUrl = null,
         array $properties = []
     ) {
-        $baseName = self::sanitizeBaseName($baseName);
+        $baseName = $this->sanitizeBaseName($baseName);
         $basePath = (string) trailingslashit($basePath);
         if ($baseUrl) {
             $baseUrl = (string) trailingslashit($baseUrl);
@@ -60,7 +60,7 @@ class BaseProperties implements Properties
      *
      * @return string
      */
-    protected static function sanitizeBaseName(string $name): string
+    protected function sanitizeBaseName(string $name): string
     {
         substr_count($name, '/') and $name = dirname($name);
 
@@ -178,20 +178,6 @@ class BaseProperties implements Properties
     public function requiresPhp(): ?string
     {
         return $this->get(self::PROP_REQUIRES_PHP);
-    }
-
-    /**
-     * @param string $key
-     * @param mixed $value
-     */
-    public function set(string $key, $value)
-    {
-        if (isset(self::DEFAULT_PROPERTIES[$key])) {
-            throw new class("The ${key} is a protected property and not allowed to change.") extends \InvalidArgumentException {
-            };
-        }
-
-        $this->properties[$key] = $value;
     }
 
     /**

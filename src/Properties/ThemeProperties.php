@@ -25,7 +25,7 @@ class ThemeProperties extends BaseProperties
      *
      * @link https://developer.wordpress.org/reference/classes/wp_theme/
      */
-    private const HEADERS = [
+    protected const HEADERS = [
         self::PROP_AUTHOR => 'Author',
         self::PROP_AUTHOR_URI => 'Author URI',
         self::PROP_DESCRIPTION => 'Description',
@@ -50,6 +50,16 @@ class ThemeProperties extends BaseProperties
      */
     public static function new(string $themeDirectory): ThemeProperties
     {
+        return new self($themeDirectory);
+    }
+
+    /**
+     * ThemeProperties constructor.
+     *
+     * @param string $themeDirectory
+     */
+    protected function __construct(string $themeDirectory)
+    {
         if (!function_exists('wp_get_theme')) {
             require_once ABSPATH . 'wp-includes/theme.php';
         }
@@ -67,7 +77,7 @@ class ThemeProperties extends BaseProperties
         $basePath = $theme->get_template_directory();
         $baseUrl = (string) trailingslashit($theme->get_stylesheet_directory_uri());
 
-        return new self(
+        parent::__construct(
             $baseName,
             $basePath,
             $baseUrl,
@@ -96,5 +106,36 @@ class ThemeProperties extends BaseProperties
     public function template(): string
     {
         return (string) $this->get(self::PROP_TEMPLATE);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isChildTheme(): bool
+    {
+        return (bool) $this->template();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCurrentTheme(): bool
+    {
+        return get_stylesheet() === $this->baseName();
+    }
+
+    /**
+     * @return ThemeProperties|null
+     */
+    public function parentThemeProperties(): ?ThemeProperties
+    {
+        $template = $this->template();
+        if (!$template) {
+            return null;
+        }
+
+        $parent = wp_get_theme($template, get_theme_root($template));
+
+        return static::new($parent->get_template_directory());
     }
 }

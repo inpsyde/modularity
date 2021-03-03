@@ -23,7 +23,7 @@ class PluginProperties extends BaseProperties
      *
      * @link https://developer.wordpress.org/reference/functions/get_plugin_data/
      */
-    private const HEADERS = [
+    protected const HEADERS = [
         self::PROP_AUTHOR => 'Author',
         self::PROP_AUTHOR_URI => 'AuthorURI',
         self::PROP_DESCRIPTION => 'Description',
@@ -40,11 +40,41 @@ class PluginProperties extends BaseProperties
     ];
 
     /**
+     * @var string
+     */
+    private $pluginFile;
+
+    /**
+     * @var bool|null
+     */
+    protected $isMu;
+
+    /**
+     * @var bool|null
+     */
+    protected $isActive;
+
+    /**
+     * @var bool|null
+     */
+    protected $isNetworkActive;
+
+    /**
      * @param string $pluginMainFile
      *
      * @return PluginProperties
      */
     public static function new(string $pluginMainFile): PluginProperties
+    {
+        return new self($pluginMainFile);
+    }
+
+    /**
+     * PluginProperties constructor.
+     *
+     * @param string $pluginMainFile
+     */
+    protected function __construct(string $pluginMainFile)
     {
         if (!function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -57,11 +87,13 @@ class PluginProperties extends BaseProperties
             $properties[$key] = $pluginData[$pluginDataKey] ?? '';
         }
 
+        $this->pluginFile = $pluginMainFile;
+
         $baseName = plugin_basename($pluginMainFile);
         $basePath = plugin_dir_path($pluginMainFile);
         $baseUrl = plugins_url('/', $pluginMainFile);
 
-        return new self(
+        parent::__construct(
             $baseName,
             $basePath,
             $baseUrl,
@@ -77,5 +109,52 @@ class PluginProperties extends BaseProperties
     public function network(): bool
     {
         return (bool) $this->get(self::PROP_NETWORK, false);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        if ($this->isActive === null) {
+            if (!function_exists('is_plugin_active')) {
+                require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            }
+            $this->isActive = is_plugin_active($this->pluginFile);
+        }
+
+        return $this->isActive;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isNetworkActive(): bool
+    {
+        if ($this->isNetworkActive === null) {
+            if (!function_exists('is_plugin_active_for_network')) {
+                require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            }
+            $this->isNetworkActive = is_plugin_active_for_network($this->pluginFile);
+        }
+
+        return $this->isNetworkActive;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMuPlugin(): bool
+    {
+        if ($this->isMu === null) {
+            /**
+             * @psalm-suppress UndefinedConstant
+             * @psalm-suppress MixedArgument
+             */
+            $muPluginDir = wp_normalize_path(WPMU_PLUGIN_DIR);
+            $this->isMu = strpos($this->pluginFile, $muPluginDir) === 0;
+        }
+
+        return $this->isMu;
     }
 }

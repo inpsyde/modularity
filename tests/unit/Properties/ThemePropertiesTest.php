@@ -29,7 +29,6 @@ class ThemePropertiesTest extends TestCase
         $expecteWpVersion = "5.3";
         $expectedStatus = 'publish';
         $expectedTags = ['foo', 'bar'];
-        $expectedTemplate = 'template';
 
         $expectedBaseName = 'plugin-name';
         $expectedBasePath = '/path/to/plugin/';
@@ -48,7 +47,8 @@ class ThemePropertiesTest extends TestCase
             'Requires PHP' => $expectedPhpVersion,
             'Status' => $expectedStatus,
             'Tags' => $expectedTags,
-            'Template' => $expectedTemplate,
+            // No child-Theme.
+            'Template' => '',
         ];
 
         $themeStub = \Mockery::mock(\WP_Theme::class);
@@ -60,6 +60,7 @@ class ThemePropertiesTest extends TestCase
         $themeStub->expects('get_stylesheet_directory_uri')->andReturn($expectedBaseUrl);
 
         Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
+        Functions\expect('get_stylesheet')->andReturn($expectedBaseName);
 
         $testee = ThemeProperties::new($expectedBasePath);
 
@@ -82,7 +83,40 @@ class ThemePropertiesTest extends TestCase
 
         // specific methods for Themes.
         static::assertSame($expectedTags, $testee->tags());
-        static::assertSame($expectedTemplate, $testee->template());
+        static::assertSame('', $testee->template());
         static::assertSame($expectedStatus, $testee->status());
+
+        // API for Themes
+        static::assertFalse($testee->isChildTheme());
+        static::assertTrue($testee->isCurrentTheme());
+        static::assertNull($testee->parentThemeProperties());
+    }
+
+    /**
+     * @test
+     */
+    public function testChildTheme(): void
+    {
+        $expectedBaseName = 'plugin-name';
+        $expectedBasePath = '/path/to/plugin/';
+        $expectedBaseUrl = 'https://localhost' . $expectedBasePath;
+
+        $expectedTemplate = 'parent-theme';
+
+        $themeStub = \Mockery::mock(\WP_Theme::class);
+
+        $themeStub->expects('get')->with('Template')->andReturn($expectedTemplate);
+        $themeStub->shouldReceive('get')->zeroOrMoreTimes()->andReturnArg(0);
+
+        $themeStub->expects('get_stylesheet')->andReturn($expectedBaseName);
+        $themeStub->expects('get_template_directory')->andReturn($expectedBasePath);
+        $themeStub->expects('get_stylesheet_directory_uri')->andReturn($expectedBaseUrl);
+
+        Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
+
+        $testee = ThemeProperties::new($expectedBasePath);
+
+        static::assertSame($expectedTemplate, $testee->template());
+        static::assertTrue($testee->isChildTheme());
     }
 }
