@@ -23,7 +23,7 @@ class PluginProperties extends BaseProperties
      *
      * @link https://developer.wordpress.org/reference/functions/get_plugin_data/
      */
-    private const PLUGIN_METHODS = [
+    private const HEADERS = [
         self::PROP_AUTHOR => 'Author',
         self::PROP_AUTHOR_URI => 'AuthorURI',
         self::PROP_DESCRIPTION => 'Description',
@@ -53,7 +53,7 @@ class PluginProperties extends BaseProperties
         $pluginData = get_plugin_data($pluginMainFile);
         $properties = Properties::DEFAULT_PROPERTIES;
 
-        foreach (self::PLUGIN_METHODS as $key => $pluginDataKey) {
+        foreach (self::HEADERS as $key => $pluginDataKey) {
             $properties[$key] = $pluginData[$pluginDataKey] ?? '';
         }
 

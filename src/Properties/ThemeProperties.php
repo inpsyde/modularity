@@ -25,7 +25,7 @@ class ThemeProperties extends BaseProperties
      *
      * @link https://developer.wordpress.org/reference/classes/wp_theme/
      */
-    private const THEME_METHODS = [
+    private const HEADERS = [
         self::PROP_AUTHOR => 'Author',
         self::PROP_AUTHOR_URI => 'Author URI',
         self::PROP_DESCRIPTION => 'Description',
@@ -58,7 +58,7 @@ class ThemeProperties extends BaseProperties
         $theme = wp_get_theme($themeDirectory);
         $properties = Properties::DEFAULT_PROPERTIES;
 
-        foreach (self::THEME_METHODS as $key => $themeKey) {
+        foreach (self::HEADERS as $key => $themeKey) {
             /** @psalm-suppress DocblockTypeContradiction */
             $properties[$key] = $theme->get($themeKey) ?? '';
         }
