@@ -138,36 +138,30 @@ class Bootstrap
 
     /**
      * @param PropertiesInterface $properties
-     * @param ContainerInterface|null $container
+     * @param ContainerInterface[] $containers
      *
      * @return Bootstrap
      */
-    public static function new(
-        PropertiesInterface $properties,
-        ContainerInterface $container = null
-    ): Bootstrap {
-        return new self($properties, $container);
+    public static function new(PropertiesInterface $properties, ContainerInterface ...$containers): Bootstrap
+    {
+        return new self($properties, ...$containers);
     }
 
     /**
      * @param PropertiesInterface $properties
-     * @param ContainerInterface|null $container
+     * @param ContainerInterface[] $containers
      */
-    private function __construct(PropertiesInterface $properties, ContainerInterface $container = null)
+    private function __construct(PropertiesInterface $properties, ContainerInterface ...$containers)
     {
         $this->properties = $properties;
 
-        $this->containerConfigurator = new ContainerConfigurator();
-        if($container){
-            $this->containerConfigurator->addContainer($container);
-        }
+        $this->containerConfigurator = new ContainerConfigurator($containers);
         $this->containerConfigurator->addService(
             self::PROPERTIES,
             static function () use ($properties) {
                 return $properties;
             }
         );
-
     }
 
     /**
@@ -189,8 +183,8 @@ class Bootstrap
             $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
         }
 
-        if($module instanceof FactoryModule){
-            foreach($module->factories() as $serviceName => $callable){
+        if ($module instanceof FactoryModule) {
+            foreach ($module->factories() as $serviceName => $callable) {
                 $this->containerConfigurator->addFactory($serviceName, $callable);
             }
             $added = true;

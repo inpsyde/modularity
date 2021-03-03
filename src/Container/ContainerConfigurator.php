@@ -34,6 +34,16 @@ class ContainerConfigurator
     private $compiledContainer;
 
     /**
+     * ContainerConfigurator constructor.
+     *
+     * @param ContainerInterface[] $containers
+     */
+    public function __construct(array $containers = [])
+    {
+        array_map([$this, 'addContainer'], $containers);
+    }
+
+    /**
      * Allowing to add child containers.
      *
      * @param ContainerInterface $container

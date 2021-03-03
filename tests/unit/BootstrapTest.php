@@ -18,7 +18,7 @@ class BootstrapTest extends TestCase
      *
      * @throws \Throwable
      */
-    public function testBasic()
+    public function testBasic(): void
     {
         $expectedName = 'foo';
         $propertiesStub = $this->mockProperties($expectedName);
@@ -39,7 +39,7 @@ class BootstrapTest extends TestCase
      *
      * @throws \Throwable
      */
-    public function testBootWithModule()
+    public function testBootWithModule(): void
     {
         $expectedModuleId = 'my-module';
 
@@ -129,7 +129,7 @@ class BootstrapTest extends TestCase
      *
      * @throws \Throwable
      */
-    public function testBootWithExtendingModule()
+    public function testBootWithExtendingModule(): void
     {
         $extendingModuleId = 'my-extending-module';
         $serviceId = 'service-1';
