@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity;
 
+use Inpsyde\Modularity\Container\ContainerConfigurator;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\ExecutableModule;
+use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
 use Psr\Container\ContainerInterface;
@@ -136,28 +138,36 @@ class Bootstrap
 
     /**
      * @param PropertiesInterface $properties
-     * @param ContainerConfigurator|null $containerConfigurator
+     * @param ContainerInterface|null $container
      *
      * @return Bootstrap
      */
     public static function new(
         PropertiesInterface $properties,
-        ContainerConfigurator $containerConfigurator = null
+        ContainerInterface $container = null
     ): Bootstrap {
-        return new self($properties, $containerConfigurator);
+        return new self($properties, $container);
     }
 
     /**
      * @param PropertiesInterface $properties
-     * @param ContainerConfigurator|null $containerConfigurator
+     * @param ContainerInterface|null $container
      */
-    private function __construct(PropertiesInterface $properties, ContainerConfigurator $containerConfigurator = null)
+    private function __construct(PropertiesInterface $properties, ContainerInterface $container = null)
     {
         $this->properties = $properties;
 
-        $containerConfigurator = $containerConfigurator ?? new ContainerConfigurator();
-        $containerConfigurator->addService(self::PROPERTIES, $properties);
-        $this->containerConfigurator = $containerConfigurator;
+        $this->containerConfigurator = new ContainerConfigurator();
+        if($container){
+            $this->containerConfigurator->addContainer($container);
+        }
+        $this->containerConfigurator->addService(
+            self::PROPERTIES,
+            static function () use ($properties) {
+                return $properties;
+            }
+        );
+
     }
 
     /**
@@ -173,6 +183,14 @@ class Bootstrap
         $added = false;
         if ($module instanceof ServiceModule) {
             foreach ($module->services() as $serviceName => $callable) {
+                $this->containerConfigurator->addFactory($serviceName, $callable);
+            }
+            $added = true;
+            $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
+        }
+
+        if($module instanceof FactoryModule){
+            foreach($module->factories() as $serviceName => $callable){
                 $this->containerConfigurator->addFactory($serviceName, $callable);
             }
             $added = true;

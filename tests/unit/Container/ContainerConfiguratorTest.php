@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit;
+namespace Inpsyde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\ContainerConfigurator;
+use Inpsyde\Modularity\Container\ContainerConfigurator;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -36,7 +36,12 @@ class ContainerConfiguratorTest extends TestCase
 
         static::assertFalse($testee->hasService($expectedKey));
 
-        $testee->addService($expectedKey, $expectedValue);
+        $testee->addService(
+            $expectedKey,
+            static function () use ($expectedValue) {
+                return $expectedValue;
+            }
+        );
 
         static::assertTrue($testee->hasService($expectedKey));
     }

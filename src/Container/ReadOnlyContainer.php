@@ -2,17 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity;
+namespace Inpsyde\Modularity\Container;
 
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class Container implements ContainerInterface
+class ReadOnlyContainer implements ContainerInterface
 {
     /**
      * @var array<string, callable(\Psr\Container\ContainerInterface $container):object>
      */
-    private $factories;
+    private $services;
+
+    /**
+     * @var array<string, bool>
+     */
+    private $factoryIds = [];
 
     /**
      * @var array<string, array<callable(object, ContainerInterface $container):object>>
@@ -24,7 +29,7 @@ class Container implements ContainerInterface
      *
      * @var array<string, object>
      */
-    private $services = [];
+    private $resolvedServices = [];
 
     /**
      * @var ContainerInterface[]
@@ -34,16 +39,19 @@ class Container implements ContainerInterface
     /**
      * ReadOnlyContainer constructor.
      *
-     * @param array<string, callable(ContainerInterface $container):object> $factories
+     * @param array<string, callable(ContainerInterface $container):object> $services
+     * @param array<string, bool> $factoryIds
      * @param array<string, array<callable(object, ContainerInterface $container):object>> $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
-        array $factories,
+        array $services,
+        array $factoryIds,
         array $extensions,
         array $containers
     ) {
-        $this->factories = $factories;
+        $this->services = $services;
+        $this->factoryIds = $factoryIds;
         $this->extensions = $extensions;
         $this->containers = $containers;
     }
@@ -62,14 +70,20 @@ class Container implements ContainerInterface
     {
         assert(is_string($id));
 
-        if (array_key_exists($id, $this->factories)) {
-            $service = $this->factories[$id]($this);
-            $this->services[$id] = $this->resolveExtensions($id, $service);
-            unset($this->factories[$id]);
+        if (array_key_exists($id, $this->resolvedServices)) {
+            return $this->resolvedServices[$id];
         }
 
         if (array_key_exists($id, $this->services)) {
-            return $this->services[$id];
+            $service = $this->services[$id]($this);
+            $resolved = $this->resolveExtensions($id, $service);
+
+            if (!isset($this->factoryIds[$id])) {
+                $this->resolvedServices[$id] = $resolved;
+                unset($this->services[$id]);
+            }
+
+            return $resolved;
         }
 
         foreach ($this->containers as $container) {
@@ -96,11 +110,11 @@ class Container implements ContainerInterface
     {
         assert(is_string($id));
 
-        if (array_key_exists($id, $this->factories)) {
+        if (array_key_exists($id, $this->services)) {
             return true;
         }
 
-        if (array_key_exists($id, $this->services)) {
+        if (array_key_exists($id, $this->resolvedServices)) {
             return true;
         };
 

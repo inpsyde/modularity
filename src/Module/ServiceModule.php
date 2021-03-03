@@ -6,7 +6,8 @@ namespace Inpsyde\Modularity\Module;
 
 /**
  * A ServiceModule allows you to register an array of services
- * to your application container.
+ * to your application container. Services accessed via Container::get()
+ * will only be resolved once.
  *
  * @package Inpsyde\Modularity\Module
  */
