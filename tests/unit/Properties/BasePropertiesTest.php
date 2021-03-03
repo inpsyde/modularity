@@ -41,21 +41,6 @@ class BasePropertiesTest extends TestCase
         static::assertSame(null, $testee->requiresWp());
     }
 
-    /**
-     * @test
-     */
-    public function testSetHasGet(): void
-    {
-        $expectedValue = 'bar';
-
-        $testee = $this->createBaseProperties('foo', __DIR__);
-
-        static::assertFalse($testee->has('foo'));
-        $testee->set('foo', $expectedValue);
-        static::assertTrue($testee->has('foo'));
-        static::assertSame($expectedValue, $testee->get('foo'));
-    }
-
     private function createBaseProperties(
         string $baseName,
         string $basePath,
@@ -72,17 +57,5 @@ class BasePropertiesTest extends TestCase
                 parent::__construct($baseName, $basePath, $baseUrl, $properties);
             }
         };
-    }
-
-    /**
-     * @test
-     */
-    public function testSetProtectedProperty(): void
-    {
-        static::expectException(\InvalidArgumentException::class);
-
-        $testee = $this->createBaseProperties('baseName', __DIR__);
-
-        $testee->set(Properties::PROP_NAME, 'not allowed to change the name');
     }
 }

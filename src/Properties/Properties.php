@@ -34,14 +34,6 @@ interface Properties
 
     /**
      * @param string $key
-     * @param mixed $value
-     *
-     * @return void
-     */
-    public function set(string $key, $value);
-
-    /**
-     * @param string $key
      * @param null $default
      *
      * @return mixed

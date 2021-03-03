@@ -40,6 +40,7 @@ class LibraryProperties extends BaseProperties
         }
 
         $content = (string) file_get_contents($composerJsonFile);
+        /** @var array $composerJsonData */
         $composerJsonData = json_decode($content, true);
 
         $properties = Properties::DEFAULT_PROPERTIES;
@@ -69,14 +70,11 @@ class LibraryProperties extends BaseProperties
         }
 
         // requiresPhp in config.platform.php
-        $requiresPhp = $composerJsonData['config']['platform']['php'] ?? null;
-        if ($requiresPhp) {
-            $properties[self::PROP_REQUIRES_PHP] = $requiresPhp;
-        }
+        $properties['requiresPhp'] = self::extractPhpVersion($composerJsonData);
 
         // composer.json might has "version" in root
         $version = $composerJsonData['version'] ?? null;
-        if($version){
+        if ($version) {
             $properties[self::PROP_VERSION] = $version;
         }
 
@@ -102,5 +100,82 @@ class LibraryProperties extends BaseProperties
         $packageNamePieces = explode('/', $packageName, 2);
 
         return implode('-', $packageNamePieces);
+    }
+
+    /**
+     * Check PHP version in require, require-dev.
+     *
+     * Attempt to parse requirements to find the _minimum_ accepted version (consistent with WP).
+     * Composer requirements are parsed in a way that, for example:
+     * `>=7.2`        returns `7.2`
+     * `^7.3`         returns `7.3`
+     * `5.6 || >= 7.1` returns `5.6`
+     * `>= 7.1 < 8`   returns `7.1`
+     *
+     * @param array $composerData
+     * @param string $key
+     *
+     * @return string|null
+     */
+    private static function extractPhpVersion(array $composerData, string $key = 'require'): ?string
+    {
+        $nextKey = ($key === 'require')
+            ? 'require-dev'
+            : null;
+        $base = (array) ($composerData[$key] ?? []);
+        $requirement = $base['php'] ?? null;
+        $version = ($requirement && is_string($requirement))
+            ? trim($requirement)
+            : null;
+        if (!$version) {
+            return $nextKey
+                ? self::extractPhpVersion($composerData, $nextKey)
+                : null;
+        }
+
+        static $matcher;
+        $matcher or $matcher = static function (string $version): ?string {
+            $version = trim($version);
+            if (!$version) {
+                return null;
+            }
+
+            // versions range like `>= 7.2.4 < 8`
+            if (preg_match('{>=?([\s0-9\.]+)<}', $version, $matches)) {
+                return trim($matches[1], " \t\n\r\0\x0B.");
+            }
+
+            // aliases like `dev-src#abcde as 7.4`
+            if (preg_match('{as\s*([\s0-9\.]+)}', $version, $matches)) {
+                return trim($matches[1], " \t\n\r\0\x0B.");
+            }
+
+            // Basic requirements like 7.2, >=7.2, ^7.2, ~7.2
+            if (preg_match('{^(?:[>=\s~\^]+)?([0-9\.]+)}', $version, $matches)) {
+                return trim($matches[1], " \t\n\r\0\x0B.");
+            }
+
+            return null;
+        };
+
+        // support for simpler requirements like `7.3`, `>=7.4` or alternative like `5.6 || >=7`
+
+        $alternatives = explode('||', $version);
+        $found = null;
+        foreach ($alternatives as $alternative) {
+            /** @var callable(string):?string $matcher */
+            $itemFound = $matcher($alternative);
+            if ($itemFound && (!$found || version_compare($itemFound, $found, '<'))) {
+                $found = $itemFound;
+            }
+        }
+
+        if ($found) {
+            return $found;
+        }
+
+        return $nextKey
+            ? self::extractPhpVersion($composerData, $nextKey)
+            : null;
     }
 }

@@ -51,7 +51,7 @@ class LibraryPropertiesTest extends TestCase
         $expectedVersion = '1.0';
         $composerJsonData = [
             "name" => 'test',
-            "version" => $expectedVersion
+            "version" => $expectedVersion,
         ];
 
         $structure = [
@@ -64,7 +64,6 @@ class LibraryPropertiesTest extends TestCase
         $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
         static::assertSame($expectedVersion, $testee->version());
-
     }
 
     /**
@@ -115,10 +114,8 @@ class LibraryPropertiesTest extends TestCase
                     "homepage" => $expectedAuthorUri,
                 ],
             ],
-            "config" => [
-                "platform" => [
-                    "php" => $expectedPhpVersion,
-                ],
+            "require" => [
+                "php" => $expectedPhpVersion,
             ],
             "extra" => [
                 "modularity" => [
@@ -153,5 +150,87 @@ class LibraryPropertiesTest extends TestCase
         static::assertSame($expectedVersion, $testee->version());
         static::assertSame($expecteWpVersion, $testee->requiresWp());
         static::assertSame($expectedPhpVersion, $testee->requiresPhp());
+    }
+
+    /**
+     * @test
+     * @dataProvider providePhpRequirements
+     */
+    public function testPhpDevRequireParsing(string $requirement, ?string $expected): void
+    {
+        $composerJsonData = [
+            'name' => 'inpsyde/some-package_name',
+            'require-dev' => [
+                'php' => $requirement,
+            ],
+        ];
+
+        $structure = [
+            'json' => [
+                'composer.json' => json_encode($composerJsonData),
+            ],
+        ];
+        $root = vfsStream::setup('root', null, $structure);
+
+        $testee = LibraryProperties::new($root->url() . '/json/composer.json');
+        $php = $testee->requiresPhp();
+
+        static::assertSame($expected, $php, "For requirement: '{$requirement}'");
+    }
+
+    /**
+     * @return array
+     */
+    public function providePhpRequirements(): array
+    {
+        // [requirement, expected]
+
+        return [
+            // simple requirements
+            ['7.1', '7.1'],
+            ['7.1.3-dev', '7.1.3'],
+
+            // bigger than or equal
+            ['>=7.1', '7.1'],
+            ['>= 7.4', '7.4'],
+            ['> 7.2', '7.2'],
+            ['>7.1.3', '7.1.3'],
+
+            // semantic operators
+            ['^7.3.0', '7.3.0'],
+            ['~7.4.0', '7.4.0'],
+            ['^ 7.3.0', '7.3.0'],
+            ['~ 7.4.0', '7.4.0'],
+            ['^7', '7'],
+            ['~7.1', '7.1'],
+
+            // ranges
+            ['>= 7.2.4 < 8', '7.2.4'],
+            ['>=7.2.4 < 8', '7.2.4'],
+            ['>= 7.2.4 <8', '7.2.4'],
+            ['>=7.2.4 <8', '7.2.4'],
+            ['>=7.2.4<8', '7.2.4'],
+
+            // inline alias
+            ['dev-src#abcde as 7.4', '7.4'],
+
+            // alternatives
+            ['5.6 || >=7', '5.6'],
+            ['5.6 || >= 7', '5.6'],
+            ['5.6||>= 7', '5.6'],
+            ['5.6||>=7', '5.6'],
+            ['5.6||>= 7.2.4 < 8', '5.6'],
+
+            // composite alternatives
+            ['>= 7.2.4 < 8 || >= 7.1-dev < 7.2.3', '7.1'],
+            ['~7.0.1 || >= 7.1 < 7.2.3', '7.0.1'],
+            ['dev-src#abcde as 7.0.5-dev || >= 7.1 < 7.2.3', '7.0.5'],
+
+            // things we don't accept
+            ['<= 8', null],
+            ['<8', null],
+            ['dev-master', null],
+            ['dev-foo#abcde', null],
+        ];
     }
 }
