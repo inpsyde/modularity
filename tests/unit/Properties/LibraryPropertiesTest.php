@@ -25,9 +25,10 @@ class LibraryPropertiesTest extends TestCase
      */
     public function testForLibrary(): void
     {
-        $expectedName = "properties-test";
+        $inputName = 'vendor/test';
+        $expectedName = "vendor-test";
         $composerJsonData = [
-            "name" => $expectedName,
+            "name" => $inputName,
         ];
 
         $structure = [
@@ -40,6 +41,30 @@ class LibraryPropertiesTest extends TestCase
         $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
         static::assertSame($expectedName, $testee->baseName());
+    }
+
+    /**
+     * @test
+     */
+    public function testVersionInRoot(): void
+    {
+        $expectedVersion = '1.0';
+        $composerJsonData = [
+            "name" => 'test',
+            "version" => $expectedVersion
+        ];
+
+        $structure = [
+            'json' => [
+                'composer.json' => json_encode($composerJsonData),
+            ],
+        ];
+        $root = vfsStream::setup('root', null, $structure);
+
+        $testee = LibraryProperties::new($root->url() . '/json/composer.json');
+
+        static::assertSame($expectedVersion, $testee->version());
+
     }
 
     /**
