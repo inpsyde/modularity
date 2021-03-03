@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity;
 
+use Inpsyde\Modularity\Container\ContainerConfigurator;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\ExecutableModule;
+use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
@@ -71,9 +73,9 @@ class Bootstrap
      * @example
      *
      * $app = Bootstrap::new();
-     * $app->moduleIs(SomeModule::class, Bootstrap::STATE_EXECUTED); // false
+     * $app->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // false
      * $app->boot(new SomeModule());
-     * $app->moduleIs(SomeModule::class, Bootstrap::STATE_EXECUTED); // true
+     * $app->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // true
      */
     public const MODULE_ADDED = 'added';
     public const MODULE_REGISTERED = 'registered';
@@ -81,6 +83,29 @@ class Bootstrap
     public const MODULE_EXECUTED = 'executed';
     public const MODULE_EXECUTION_FAILED = 'executed-failed';
     private const MODULES_ALL = '_all';
+    /**
+     * Custom states for the class.
+     *
+     * @example
+     *
+     * $app = Bootstrap::new();
+     * $app->statusIs(Bootstrap::IDLE); // true
+     * $app->boot();
+     * $app->statusIs(Bootstrap::BOOTED); // true
+     */
+    public const STATUS_IDLE = 2;
+    public const STATUS_INITIALIZED = 4;
+    public const STATUS_BOOTED = 8;
+    public const STATUS_FAILED_BOOT = 16;
+
+    /**
+     * Current state of the application.
+     *
+     * @see Boostrap::STATUS_*
+     *
+     * @var int
+     */
+    private $status = self::STATUS_IDLE;
 
     /**
      * Contains the progress of all modules.
@@ -113,32 +138,31 @@ class Bootstrap
     private $containerConfigurator;
 
     /**
-     * Defines if Bootstrap::boot was executed and all modules are added.
-     *
-     * @var bool
-     */
-    private $booted = false;
-
-    /**
      * @param Properties $properties
+     * @param ContainerInterface[] $containers
      *
      * @return Bootstrap
      */
-    public static function new(Properties $properties): Bootstrap
+    public static function new(Properties $properties, ContainerInterface  ...$containers): Bootstrap
     {
-        return new self($properties);
+        return new self($properties, ...$containers);
     }
 
     /**
      * @param Properties $properties
+     * @param ContainerInterface[] $containers
      */
-    private function __construct(Properties $properties)
+    private function __construct(Properties $properties, ContainerInterface ...$containers)
     {
         $this->properties = $properties;
 
-        $containerConfigurator = new ContainerConfigurator();
-        $containerConfigurator->addService(self::PROPERTIES, $properties);
-        $this->containerConfigurator = $containerConfigurator;
+        $this->containerConfigurator = new ContainerConfigurator($containers);
+        $this->containerConfigurator->addService(
+            self::PROPERTIES,
+            static function () use ($properties) {
+                return $properties;
+            }
+        );
     }
 
     /**
@@ -149,11 +173,19 @@ class Bootstrap
      */
     public function addModule(Module $module): self
     {
-        $this->assertNotBooted('addModule');
+        $this->assertStatus(self::STATUS_IDLE, 'access Container');
 
         $added = false;
         if ($module instanceof ServiceModule) {
             foreach ($module->services() as $serviceName => $callable) {
+                $this->containerConfigurator->addFactory($serviceName, $callable);
+            }
+            $added = true;
+            $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
+        }
+
+        if ($module instanceof FactoryModule) {
+            foreach ($module->factories() as $serviceName => $callable) {
                 $this->containerConfigurator->addFactory($serviceName, $callable);
             }
             $added = true;
@@ -183,20 +215,6 @@ class Bootstrap
     }
 
     /**
-     * @param ContainerInterface $container
-     *
-     * @return $this
-     * @throws \Exception
-     */
-    public function addContainer(ContainerInterface $container): self
-    {
-        $this->assertNotBooted('addContainer');
-        $this->containerConfigurator->addContainer($container);
-
-        return $this;
-    }
-
-    /**
      * @param Module ...$defaultModules
      *
      * @return bool
@@ -207,9 +225,8 @@ class Bootstrap
     {
         try {
             // don't allow to boot the application multiple times.
-            if ($this->booted) {
-                return false;
-            }
+            $this->assertStatus(self::STATUS_IDLE, 'execute boot');
+
             // Add default Modules to the Application.
             array_map([$this, 'addModule'], $defaultModules);
 
@@ -219,7 +236,7 @@ class Bootstrap
             );
             // we want to lock adding new Modules and Containers now
             // to process everything and be able to compile the container.
-            $this->booted = true;
+            $this->progress(self::STATUS_INITIALIZED);
 
             if (count($this->executables) > 0) {
                 $this->doExecute();
@@ -230,6 +247,7 @@ class Bootstrap
                 $this
             );
         } catch (\Throwable $throwable) {
+            $this->progress(self::STATUS_FAILED_BOOT);
             do_action($this->hookName(self::ACTION_FAILED_BOOT), $throwable);
 
             if ($this->properties->isDebug()) {
@@ -238,6 +256,8 @@ class Bootstrap
 
             return false;
         }
+
+        $this->progress(self::STATUS_BOOTED);
 
         return true;
     }
@@ -332,9 +352,7 @@ class Bootstrap
      */
     public function container(): ContainerInterface
     {
-        if (!$this->booted) {
-            throw new \Exception("Can't access Container before application has booted.");
-        }
+        $this->assertStatus(self::STATUS_INITIALIZED, 'access Container', '>=');
 
         return $this->containerConfigurator->createReadOnlyContainer();
     }
@@ -348,13 +366,34 @@ class Bootstrap
     }
 
     /**
+     * @param int $status
+     */
+    private function progress(int $status): void
+    {
+        $this->status = $status;
+    }
+
+    /**
+     * @param int $status
+     *
+     * @return bool
+     */
+    public function statusIs(int $status): bool
+    {
+        return $this->status === $status;
+    }
+
+    /**
+     * @param int $status
      * @param string $action
+     * @param string $operator
      *
      * @throws \Exception
+     * @psalm-suppress ArgumentTypeCoercion
      */
-    private function assertNotBooted(string $action): void
+    private function assertStatus(int $status, string $action, string $operator = '=='): void
     {
-        if ($this->booted) {
+        if (!version_compare((string) $this->status, (string) $status, $operator)) {
             throw new \Exception(sprintf("Can't %s at this point of application.", $action));
         }
     }

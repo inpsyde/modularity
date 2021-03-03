@@ -7,6 +7,7 @@ namespace Inpsyde\Modularity\Tests;
 use Brain\Monkey;
 use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\ExtendingModule;
+use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
@@ -68,6 +69,21 @@ abstract class TestCase extends FrameworkTestCase
     protected function mockServiceModule(string $id = 'service-module')
     {
         $stub = \Mockery::mock(ServiceModule::class);
+        $stub
+            ->shouldReceive('id')
+            ->andReturn($id);
+
+        return $stub;
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return FactoryModule|MockInterface
+     */
+    protected function mockFactoryModule(string $id = 'factory-module')
+    {
+        $stub = \Mockery::mock(FactoryModule::class);
         $stub
             ->shouldReceive('id')
             ->andReturn($id);

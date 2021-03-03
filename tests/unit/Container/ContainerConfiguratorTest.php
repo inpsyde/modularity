@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit;
+namespace Inpsyde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\ContainerConfigurator;
+use Inpsyde\Modularity\Container\ContainerConfigurator;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -13,7 +13,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testBasic()
+    public function testBasic(): void
     {
         $testee = new ContainerConfigurator();
 
@@ -26,7 +26,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testAddHasService()
+    public function testAddHasService(): void
     {
         $expectedKey = 'key';
         $expectedValue = new class {
@@ -36,7 +36,12 @@ class ContainerConfiguratorTest extends TestCase
 
         static::assertFalse($testee->hasService($expectedKey));
 
-        $testee->addService($expectedKey, $expectedValue);
+        $testee->addService(
+            $expectedKey,
+            static function () use ($expectedValue) {
+                return $expectedValue;
+            }
+        );
 
         static::assertTrue($testee->hasService($expectedKey));
     }
@@ -44,7 +49,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testAddHasFactory()
+    public function testAddHasFactory(): void
     {
         $expectedKey = 'key';
         $expectedValue = new class {
@@ -67,7 +72,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testAddFactoryTwice()
+    public function testAddServiceTwice(): void
     {
         static::expectException(\Exception::class);
 
@@ -76,13 +81,13 @@ class ContainerConfiguratorTest extends TestCase
         };
 
         $testee = new ContainerConfigurator();
-        $testee->addFactory(
+        $testee->addService(
             $expectedKey,
             function () use ($expectedValue) {
                 return $expectedValue;
             }
         );
-        $testee->addFactory(
+        $testee->addService(
             $expectedKey,
             function () use ($expectedValue) {
                 return $expectedValue;
@@ -93,7 +98,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testHasServiceNotFound()
+    public function testHasServiceNotFound(): void
     {
         $testee = new ContainerConfigurator();
         static::assertFalse($testee->hasService('unknown-service'));
@@ -102,7 +107,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testHasServiceInChildContainer()
+    public function testHasServiceInChildContainer(): void
     {
         $expectedKey = 'key';
         $expectedValue = new \stdClass();
@@ -141,7 +146,7 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testAddExtension()
+    public function testAddExtension(): void
     {
         $testee = new ContainerConfigurator();
 
@@ -167,7 +172,7 @@ class ContainerConfiguratorTest extends TestCase
             }
         };
 
-        $testee->addFactory(
+        $testee->addService(
             $expectedKey,
             function () use ($expectedOriginalValue) {
                 return $expectedOriginalValue;
@@ -186,5 +191,40 @@ class ContainerConfiguratorTest extends TestCase
         static::assertTrue($testee->hasService($expectedKey));
         static::assertTrue($testee->hasExtension($expectedKey));
         static::assertSame($expectedExtendedValue, $testee->createReadOnlyContainer()->get($expectedKey));
+    }
+
+    /**
+     * @test
+     */
+    public function testCustomContainer(): void
+    {
+        $expectedId = 'expected-id';
+        $expectedValue = new \stdClass();
+
+        $childContainer = new class($expectedId, $expectedValue) implements ContainerInterface {
+            private $values;
+
+            public function __construct(string $expectedId, object $expectedValue)
+            {
+                $this->values[$expectedId] = $expectedValue;
+            }
+
+            public function get($id)
+            {
+                return $this->values[$id];
+            }
+
+            public function has($id)
+            {
+                return isset($this->values[$id]);
+            }
+        };
+
+        $testee = new ContainerConfigurator([$childContainer]);
+
+        static::assertTrue($testee->hasService($expectedId));
+
+        $readOnlyContainer = $testee->createReadOnlyContainer();
+        static::assertSame($expectedValue, $readOnlyContainer->get($expectedId));
     }
 }

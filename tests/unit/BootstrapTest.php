@@ -13,19 +13,21 @@ use Psr\Container\ContainerInterface;
 
 class BootstrapTest extends TestCase
 {
-
     /**
      * @test
      *
      * @throws \Throwable
      */
-    public function testBasic()
+    public function testBasic(): void
     {
         $expectedName = 'foo';
         $propertiesStub = $this->mockProperties($expectedName);
 
         $testee = Bootstrap::new($propertiesStub);
+
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_IDLE));
         static::assertTrue($testee->boot());
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_BOOTED));
         static::assertSame($expectedName, $testee->name());
         static::assertInstanceOf(Properties::class, $testee->properties());
         static::assertInstanceOf(ContainerInterface::class, $testee->container());
@@ -37,12 +39,13 @@ class BootstrapTest extends TestCase
      *
      * @throws \Throwable
      */
-    public function testBootWithModule()
+    public function testBootWithModule(): void
     {
         $expectedModuleId = 'my-module';
 
         $moduleStub = $this->mockModule($expectedModuleId);
         $propertiesStub = $this->mockProperties();
+        $propertiesStub->expects('isDebug')->andReturn(false);
 
         $testee = Bootstrap::new($propertiesStub);
 
@@ -58,19 +61,18 @@ class BootstrapTest extends TestCase
      *
      * @throws \Throwable
      */
-    public function testBootWithServiceModule()
+    public function testBootWithServiceModule(): void
     {
         $serviceModuleId = 'my-service-module';
         $serviceId = 'service-id';
 
-        $moduleStub = $this->mockServiceModule($serviceModuleId);
-        $moduleStub
+        $serviceModuleStub = $this->mockServiceModule($serviceModuleId);
+        $serviceModuleStub
             ->shouldReceive('services')
             ->andReturn(
                 [
                     $serviceId => function () {
                         return new class() {
-
                             public function __toString()
                             {
                                 return 'bar';
@@ -81,12 +83,45 @@ class BootstrapTest extends TestCase
             );
 
         $propertiesStub = $this->mockProperties();
-
         $testee = Bootstrap::new($propertiesStub);
 
-        static::assertTrue($testee->boot($moduleStub));
+        static::assertTrue($testee->boot($serviceModuleStub));
         static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::MODULE_ADDED));
         static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::MODULE_REGISTERED));
+        static::assertTrue($testee->container()->has($serviceId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBootWithFactoryModule(): void
+    {
+        $factoryModuleId = 'my-factory-module';
+        $factoryId = 'factory-id';
+
+        $factoryModuleStub = $this->mockFactoryModule($factoryModuleId);
+        $factoryModuleStub
+            ->shouldReceive('factories')
+            ->andReturn(
+                [
+                    $factoryId => function () {
+                        return new class() {
+                            public function __toString()
+                            {
+                                return 'foo';
+                            }
+                        };
+                    },
+                ]
+            );
+
+        $propertiesStub = $this->mockProperties();
+        $testee = Bootstrap::new($propertiesStub);
+
+        static::assertTrue($testee->boot($factoryModuleStub));
+        static::assertTrue($testee->moduleIs($factoryModuleId, Bootstrap::MODULE_ADDED));
+        static::assertTrue($testee->moduleIs($factoryModuleId, Bootstrap::MODULE_REGISTERED));
+        static::assertTrue($testee->container()->has($factoryId));
     }
 
     /**
@@ -94,7 +129,7 @@ class BootstrapTest extends TestCase
      *
      * @throws \Throwable
      */
-    public function testBootWithExtendingModule()
+    public function testBootWithExtendingModule(): void
     {
         $extendingModuleId = 'my-extending-module';
         $serviceId = 'service-1';
@@ -120,66 +155,6 @@ class BootstrapTest extends TestCase
     }
 
     /**
-     * @test
-     */
-    public function testAddContainer(): void
-    {
-        $childContainer = new class implements ContainerInterface {
-
-            public function get($id)
-            {
-                return $id;
-            }
-
-            public function has($id)
-            {
-                return $id;
-            }
-        };
-
-        $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
-        $testee->addContainer($childContainer);
-    }
-
-    /**
-     * @test
-     */
-    public function testAddContainerAfterBooted(): void
-    {
-        static::expectException(\Exception::class);
-
-        $childContainer = new class implements ContainerInterface {
-
-            public function get($id)
-            {
-                return $id;
-            }
-
-            public function has($id)
-            {
-                return $id;
-            }
-        };
-        $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
-        $testee->boot();
-        $testee->addContainer($childContainer);
-    }
-
-    /**
-     * @test
-     */
-    public function testContainerAccessTooEarly(): void
-    {
-        static::expectException(\Exception::class);
-
-        $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
-        $testee->container();
-    }
-
-    /**
      * Test if on Properties::isDebug() === false no Exception is thrown
      * and Boostrap::boot() returns false.
      *
@@ -188,7 +163,6 @@ class BootstrapTest extends TestCase
     public function testBootWithThrowingModuleAndDebugFalse(): void
     {
         $throwingModule = new class implements ExecutableModule {
-
             use ModuleClassNameIdTrait;
 
             public function run(ContainerInterface $container): bool
@@ -202,6 +176,7 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($properties);
 
         static::assertFalse($testee->boot($throwingModule));
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_FAILED_BOOT));
     }
 
     /**
@@ -214,7 +189,6 @@ class BootstrapTest extends TestCase
         static::expectException(\Exception::class);
 
         $throwingModule = new class implements ExecutableModule {
-
             use ModuleClassNameIdTrait;
 
             public function run(ContainerInterface $container): bool
@@ -239,6 +213,7 @@ class BootstrapTest extends TestCase
             ->andReturn(true);
 
         $properties = $this->mockProperties();
+
         $testee = Bootstrap::new($properties);
 
         static::assertTrue($testee->boot($executableModule));

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity;
+namespace Inpsyde\Modularity\Container;
 
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -11,7 +11,12 @@ class ContainerConfigurator
     /**
      * @var array<string, callable(ContainerInterface $container):object>
      */
-    private $factories = [];
+    private $services = [];
+
+    /**
+     * @var array<string, bool>
+     */
+    private $factoryIds = [];
 
     /**
      * @var array<string, array<callable(object, ContainerInterface $container):object>>
@@ -29,6 +34,16 @@ class ContainerConfigurator
     private $compiledContainer;
 
     /**
+     * ContainerConfigurator constructor.
+     *
+     * @param ContainerInterface[] $containers
+     */
+    public function __construct(array $containers = [])
+    {
+        array_map([$this, 'addContainer'], $containers);
+    }
+
+    /**
      * Allowing to add child containers.
      *
      * @param ContainerInterface $container
@@ -39,26 +54,22 @@ class ContainerConfigurator
     }
 
     /**
-     * Shortcut to add already instantiated services to the container.
-     *
      * @param string $id
-     * @param object $service
+     * @param callable(ContainerInterface $container):object $factory
      */
-    public function addService(string $id, object $service): void
+    public function addFactory(string $id, callable $factory): void
     {
-        $factory = static function () use ($service) {
-            return $service;
-        };
-        $this->addFactory($id, $factory);
+        $this->addService($id, $factory);
+        $this->factoryIds[$id] = true;
     }
 
     /**
      * @param string $id
-     * @param callable(ContainerInterface $container):object $factory
+     * @param callable(ContainerInterface $container):object $service
      *
      * @return void
      */
-    public function addFactory(string $id, callable $factory): void
+    public function addService(string $id, callable $service): void
     {
         if ($this->hasService($id)) {
             throw new class ("Service with ID {$id} is already registered.")
@@ -67,7 +78,7 @@ class ContainerConfigurator
             };
         }
 
-        $this->factories[$id] = $factory;
+        $this->services[$id] = $service;
     }
 
     /**
@@ -77,7 +88,7 @@ class ContainerConfigurator
      */
     public function hasService(string $id): bool
     {
-        if (array_key_exists($id, $this->factories)) {
+        if (array_key_exists($id, $this->services)) {
             return true;
         }
 
@@ -123,8 +134,9 @@ class ContainerConfigurator
     public function createReadOnlyContainer(): ContainerInterface
     {
         if (!$this->compiledContainer) {
-            $this->compiledContainer = new Container(
-                $this->factories,
+            $this->compiledContainer = new ReadOnlyContainer(
+                $this->services,
+                $this->factoryIds,
                 $this->extensions,
                 $this->containers
             );

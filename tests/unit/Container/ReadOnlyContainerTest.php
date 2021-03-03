@@ -2,21 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit;
+namespace Inpsyde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\Container;
+use Inpsyde\Modularity\Container\ReadOnlyContainer as Container;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
-class ContainerTest extends TestCase
+class ReadOnlyContainerTest extends TestCase
 {
-
     /**
      * @test
      */
     public function testBasic(): void
     {
-        $testee = new Container([], [], []);
+        $testee = new Container([], [], [], []);
 
         static::assertInstanceOf(ContainerInterface::class, $testee);
         static::assertFalse($testee->has('unknown'));
@@ -29,7 +28,7 @@ class ContainerTest extends TestCase
     {
         static::expectException(\Exception::class);
 
-        $testee = new Container([], [], []);
+        $testee = new Container([], [], [], []);
         $testee->get('unknown');
     }
 
@@ -46,6 +45,7 @@ class ContainerTest extends TestCase
                     return $expectedValue;
                 },
             ],
+            [],
             [],
             []
         );
@@ -67,7 +67,6 @@ class ContainerTest extends TestCase
         $expectedValue = new \stdClass();
 
         $childContainer = new class($expectedServiceKey, $expectedValue) implements ContainerInterface {
-
             private $data = [];
 
             public function __construct(string $key, \stdClass $value)
@@ -87,6 +86,7 @@ class ContainerTest extends TestCase
         };
 
         $testee = new Container(
+            [],
             [],
             [],
             [$childContainer]
@@ -115,6 +115,7 @@ class ContainerTest extends TestCase
                     return $expectedInitialService;
                 },
             ],
+            [],
             [
                 $expectedServiceKey => [
                     function ($initialService) use ($expectedInitialService, $extendedService) {
@@ -128,5 +129,54 @@ class ContainerTest extends TestCase
         );
 
         static::assertSame($extendedService, $testee->get($expectedServiceKey));
+    }
+
+    /**
+     * @test
+     */
+    public function testFactoriesAndServices(): void
+    {
+        $expectedServiceKey = 'service';
+        $expectedFactoryKey = 'factory';
+
+        $testee = new Container(
+            [
+                $expectedServiceKey => function () {
+                    return new class {
+                        protected $counter = 0;
+
+                        public function count(): int
+                        {
+                            $this->counter++;
+
+                            return $this->counter;
+                        }
+                    };
+                },
+                $expectedFactoryKey => function () {
+                    return new class {
+                        protected $counter = 0;
+
+                        public function count(): int
+                        {
+                            $this->counter++;
+
+                            return $this->counter;
+                        }
+                    };
+                },
+            ],
+            [$expectedFactoryKey => true],
+            [],
+            []
+        );
+
+        // Services are cached and same instance is returned.
+        static::assertSame(1, $testee->get($expectedServiceKey)->count());
+        static::assertSame(2, $testee->get($expectedServiceKey)->count());
+
+        // Factories always a new instance is created.
+        static::assertSame(1, $testee->get($expectedFactoryKey)->count());
+        static::assertSame(1, $testee->get($expectedFactoryKey)->count());
     }
 }
