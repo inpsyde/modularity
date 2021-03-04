@@ -178,7 +178,7 @@ class Bootstrap
         $added = false;
         if ($module instanceof ServiceModule) {
             foreach ($module->services() as $serviceName => $callable) {
-                $this->containerConfigurator->addFactory($serviceName, $callable);
+                $this->containerConfigurator->addService($serviceName, $callable);
             }
             $added = true;
             $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
