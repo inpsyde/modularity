@@ -12,6 +12,10 @@ namespace Inpsyde\Modularity\Properties;
 class LibraryProperties extends BaseProperties
 {
     /**
+     * Additional properties specific for libraries.
+     */
+    public const PROP_TAGS = 'tags';
+    /**
      * Allowed configuration in composer.json "extra.modularity".
      *
      * @var array
@@ -45,7 +49,7 @@ class LibraryProperties extends BaseProperties
 
         $properties = Properties::DEFAULT_PROPERTIES;
         $properties[self::PROP_DESCRIPTION] = $composerJsonData['description'] ?? '';
-        $properties['tags'] = $composerJsonData['keywords'] ?? [];
+        $properties[self::PROP_TAGS] = $composerJsonData['keywords'] ?? [];
 
         $authors = $composerJsonData['authors'] ?? [];
         $names = [];
@@ -69,8 +73,8 @@ class LibraryProperties extends BaseProperties
             $properties[$key] = $extra[$key] ?? '';
         }
 
-        // requiresPhp in config.platform.php
-        $properties['requiresPhp'] = self::extractPhpVersion($composerJsonData);
+        // requiresPhp in "require.php" or "require-dev.php"
+        $properties[self::PROP_REQUIRES_PHP] = self::extractPhpVersion($composerJsonData);
 
         // composer.json might has "version" in root
         $version = $composerJsonData['version'] ?? null;
@@ -177,5 +181,13 @@ class LibraryProperties extends BaseProperties
         return $nextKey
             ? self::extractPhpVersion($composerData, $nextKey)
             : null;
+    }
+
+    /**
+     * @return array
+     */
+    public function tags(): array
+    {
+        return (array) $this->get(self::PROP_TAGS);
     }
 }
