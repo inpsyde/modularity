@@ -49,12 +49,8 @@ class PluginPropertiesTest extends TestCase
             );
 
         Functions\when('plugins_url')->returnArg(1);
-
-        Functions\expect('plugin_basename')
-            ->andReturn($expectedBaseName);
-
-        Functions\expect('plugin_dir_path')
-            ->andReturn($expectedBasePath);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
         $testee = PluginProperties::new($expectedBasePath);
 
@@ -72,4 +68,93 @@ class PluginPropertiesTest extends TestCase
         // Custom to Plugins
         static::assertSame($expectedNetwork, $testee->network());
     }
+
+    /**
+     * @test
+     */
+    public function testIsActive(): void
+    {
+        $expectedBaseName = 'plugin-name';
+        $expectedBasePath = '/path/to/plugin/';
+
+        Functions\when('get_plugin_data')->justReturn([]);
+        Functions\when('plugins_url')->returnArg(1);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
+
+        $testee = PluginProperties::new($expectedBasePath);
+
+        Functions\expect('is_plugin_active')->andReturn(true);
+
+        static::assertTrue($testee->isActive());
+    }
+
+
+    /**
+     * @test
+     */
+    public function testIsNetworkActive(): void
+    {
+        $expectedBaseName = 'plugin-name';
+        $expectedBasePath = '/path/to/plugin/';
+
+        Functions\expect('get_plugin_data')->andReturn([]);
+        Functions\when('plugins_url')->returnArg(1);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
+
+        Functions\expect('is_plugin_active_for_network')->andReturn(true);
+
+        $testee = PluginProperties::new($expectedBasePath);
+        static::assertTrue($testee->isNetworkActive());
+    }
+
+    /**
+     *
+     * @param string $pluginPath
+     * @param string $muPluginDir
+     * @param bool$expected
+     *
+     * @test
+     *
+     * @runInSeparateProcess
+     *
+     * @dataProvider provideIsMuPluginData
+     */
+    public function testIsMuPlugin(string $pluginPath, string $muPluginDir, bool $expected): void
+    {
+        $expectedBaseName = 'plugin-name';
+
+
+        Functions\expect('get_plugin_data')->andReturn([]);
+        Functions\when('plugins_url')->returnArg(1);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\expect('plugin_dir_path')->andReturn($pluginPath);
+
+        Functions\expect('wp_normalize_path')->andReturnFirstArg();
+
+        define('WPMU_PLUGIN_DIR', $muPluginDir);
+
+        $testee = PluginProperties::new($pluginPath);
+        static::assertSame($expected, $testee->isMuPlugin());
+    }
+
+    /**
+     * @return array[]
+     */
+    public function provideIsMuPluginData(): array {
+        return [
+            'is not mu-plugin' => [
+                '/wp-content/plugins/the-plugin/',
+                '/wp-content/mu-plugins/',
+                false
+            ],
+            'is mu-plugin' => [
+                '/wp-content/mu-plugins/the-plugin/',
+                '/wp-content/mu-plugins/',
+                true
+            ]
+        ];
+    }
+
 }
