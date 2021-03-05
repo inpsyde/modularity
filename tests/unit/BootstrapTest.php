@@ -31,7 +31,7 @@ class BootstrapTest extends TestCase
         static::assertSame($expectedName, $testee->name());
         static::assertInstanceOf(Properties::class, $testee->properties());
         static::assertInstanceOf(ContainerInterface::class, $testee->container());
-        static::assertEmpty($testee->modulesStatus()['_all']);
+        static::assertEmpty($testee->modulesStatus()[Bootstrap::MODULES_ALL]);
     }
 
     /**
@@ -176,7 +176,7 @@ class BootstrapTest extends TestCase
         $testee = Bootstrap::new($properties);
 
         static::assertFalse($testee->boot($throwingModule));
-        static::assertTrue($testee->statusIs(Bootstrap::STATUS_FAILED_BOOT));
+        static::assertTrue($testee->statusIs(Bootstrap::STATUS_FAILED));
     }
 
     /**

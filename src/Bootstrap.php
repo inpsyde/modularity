@@ -15,7 +15,11 @@ use Psr\Container\ContainerInterface;
 
 class Bootstrap
 {
-    private const FILTER_MODULES_PREFIX = 'inpsyde.modularity.';
+    /**
+     * All the hooks fired in this class use this prefix.
+     * @var string
+     */
+    private const HOOK_PREFIX = 'inpsyde.modularity.';
     /**
      * Identifier to access Properties in Container.
      *
@@ -27,17 +31,18 @@ class Bootstrap
      */
     public const PROPERTIES = 'properties';
     /**
-     * Custom action which is triggered before application
-     * is booted to extend modules and access properties.
+     * Custom action to be used to add Modules to the package.
+     * It might also be used to access package properties.
      *
      * @example
-     *
-     * $app = Bootstrap::new();
+     * <code>
+     * $package = Bootstrap::new();
      *
      * add_action(
-     *      $app->hookName(Bootstrap::ACTION_INIT),
+     *      $package->hookName(Bootstrap::ACTION_INIT),
      *      $callback
      * );
+     * </code>
      */
     public const ACTION_INIT = 'init';
     /**
@@ -45,58 +50,62 @@ class Bootstrap
      * is booted to access container and properties.
      *
      * @example
-     *
-     * $app = Bootstrap::new();
+     * <code>
+     * $package = Bootstrap::new();
      *
      * add_action(
-     *      $app->hookName(Bootstrap::ACTION_READY),
+     *      $package->hookName(Bootstrap::ACTION_READY),
      *      $callback
      * );
+     * </code>
      */
     public const ACTION_READY = 'ready';
     /**
      * Custom action which is triggered when application failed to boot.
      *
      * @example
-     *
-     * $app = Bootstrap::new();
+     * <code>
+     * $package = Bootstrap::new();
      *
      * add_action(
-     *      $app->hookName(Bootstrap::ACTION_FAILED_BOOT),
+     *      $package->hookName(Bootstrap::ACTION_FAILED_BOOT),
      *      $callback
      * );
+     * </code>
      */
     public const ACTION_FAILED_BOOT = 'failed-boot';
     /**
      * Module states can be used to get information about your module.
      *
      * @example
-     *
-     * $app = Bootstrap::new();
-     * $app->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // false
-     * $app->boot(new SomeModule());
-     * $app->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // true
+     * <code>
+     * $package = Bootstrap::new();
+     * $package->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // false
+     * $package->boot(new SomeModule());
+     * $package->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // true
+     * </code>
      */
     public const MODULE_ADDED = 'added';
     public const MODULE_REGISTERED = 'registered';
     public const MODULE_EXTENDED = 'extended';
     public const MODULE_EXECUTED = 'executed';
     public const MODULE_EXECUTION_FAILED = 'executed-failed';
-    private const MODULES_ALL = '_all';
+    public const MODULES_ALL = '*';
     /**
      * Custom states for the class.
      *
      * @example
-     *
-     * $app = Bootstrap::new();
-     * $app->statusIs(Bootstrap::IDLE); // true
-     * $app->boot();
-     * $app->statusIs(Bootstrap::BOOTED); // true
+     * <code>
+     * $package = Bootstrap::new();
+     * $package->statusIs(Bootstrap::IDLE); // true
+     * $package->boot();
+     * $package->statusIs(Bootstrap::BOOTED); // true
+     * </code>
      */
     public const STATUS_IDLE = 2;
     public const STATUS_INITIALIZED = 4;
     public const STATUS_BOOTED = 8;
-    public const STATUS_FAILED_BOOT = 16;
+    public const STATUS_FAILED = -8;
 
     /**
      * Current state of the application.
@@ -114,7 +123,7 @@ class Bootstrap
      *
      * @var array<array<string>>
      */
-    private $progress = [
+    private $moduleStatus = [
         self::MODULES_ALL => [],
         self::MODULE_ADDED => [],
         self::MODULE_REGISTERED => [],
@@ -247,7 +256,7 @@ class Bootstrap
                 $this
             );
         } catch (\Throwable $throwable) {
-            $this->progress(self::STATUS_FAILED_BOOT);
+            $this->progress(self::STATUS_FAILED);
             do_action($this->hookName(self::ACTION_FAILED_BOOT), $throwable);
 
             if ($this->properties->isDebug()) {
@@ -288,8 +297,8 @@ class Bootstrap
      */
     private function moduleProgress(string $moduleId, string $type)
     {
-        $this->progress[$type][] = $moduleId;
-        $this->progress[self::MODULES_ALL][] = sprintf('%1$s %2$s.', $moduleId, $type);
+        $this->moduleStatus[$type][] = $moduleId;
+        $this->moduleStatus[self::MODULES_ALL][] = sprintf('%1$s %2$s.', $moduleId, $type);
     }
 
     /**
@@ -297,7 +306,7 @@ class Bootstrap
      */
     public function modulesStatus(): array
     {
-        return $this->progress;
+        return $this->moduleStatus;
     }
 
     /**
@@ -308,7 +317,7 @@ class Bootstrap
      */
     public function moduleIs(string $moduleId, string $status): bool
     {
-        return in_array($moduleId, $this->progress[$status], true);
+        return in_array($moduleId, $this->moduleStatus[$status], true);
     }
 
     /**
@@ -328,7 +337,7 @@ class Bootstrap
      */
     public function hookName(string $suffix = ''): string
     {
-        $filter = self::FILTER_MODULES_PREFIX . $this->properties->baseName();
+        $filter = self::HOOK_PREFIX . $this->properties->baseName();
 
         if ($suffix) {
             $filter .= '.' . $suffix;
