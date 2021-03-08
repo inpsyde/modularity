@@ -15,7 +15,7 @@ class ReadOnlyContainerTest extends TestCase
      */
     public function testBasic(): void
     {
-        $testee = new Container([], [], [], []);
+        $testee = $this->createContainer();
 
         static::assertInstanceOf(ContainerInterface::class, $testee);
         static::assertFalse($testee->has('unknown'));
@@ -28,7 +28,7 @@ class ReadOnlyContainerTest extends TestCase
     {
         static::expectException(\Exception::class);
 
-        $testee = new Container([], [], [], []);
+        $testee = $this->createContainer();
         $testee->get('unknown');
     }
 
@@ -39,16 +39,12 @@ class ReadOnlyContainerTest extends TestCase
     {
         $expectedServiceKey = 'service';
         $expectedValue = new \stdClass();
-        $testee = new Container(
-            [
-                'service' => static function () use ($expectedValue) {
-                    return $expectedValue;
-                },
-            ],
-            [],
-            [],
-            []
-        );
+        $services = [
+            'service' => static function () use ($expectedValue) {
+                return $expectedValue;
+            },
+        ];
+        $testee = $this->createContainer($services);
 
         // check in Services
         static::assertTrue($testee->has($expectedServiceKey));
@@ -85,12 +81,7 @@ class ReadOnlyContainerTest extends TestCase
             }
         };
 
-        $testee = new Container(
-            [],
-            [],
-            [],
-            [$childContainer]
-        );
+        $testee = $this->createContainer([], [], [], [$childContainer]);
 
         // check in child Container
         static::assertTrue($testee->has($expectedServiceKey));
@@ -109,24 +100,22 @@ class ReadOnlyContainerTest extends TestCase
         $expectedInitialService = new \stdClass();
         $extendedService = new \stdClass();
 
-        $testee = new Container(
-            [
-                $expectedServiceKey => function () use ($expectedInitialService) {
-                    return $expectedInitialService;
+        $services = [
+            $expectedServiceKey => function () use ($expectedInitialService) {
+                return $expectedInitialService;
+            },
+        ];
+        $extensions = [
+            $expectedServiceKey => [
+                function ($initialService) use ($expectedInitialService, $extendedService) {
+                    static::assertSame($expectedInitialService, $initialService);
+
+                    return $extendedService;
                 },
             ],
-            [],
-            [
-                $expectedServiceKey => [
-                    function ($initialService) use ($expectedInitialService, $extendedService) {
-                        static::assertSame($expectedInitialService, $initialService);
+        ];
 
-                        return $extendedService;
-                    },
-                ],
-            ],
-            []
-        );
+        $testee = $this->createContainer($services, [], $extensions);
 
         static::assertSame($extendedService, $testee->get($expectedServiceKey));
     }
@@ -139,37 +128,35 @@ class ReadOnlyContainerTest extends TestCase
         $expectedServiceKey = 'service';
         $expectedFactoryKey = 'factory';
 
-        $testee = new Container(
-            [
-                $expectedServiceKey => function () {
-                    return new class {
-                        protected $counter = 0;
+        $services = [
+            $expectedServiceKey => function () {
+                return new class {
+                    protected $counter = 0;
 
-                        public function count(): int
-                        {
-                            $this->counter++;
+                    public function count(): int
+                    {
+                        $this->counter++;
 
-                            return $this->counter;
-                        }
-                    };
-                },
-                $expectedFactoryKey => function () {
-                    return new class {
-                        protected $counter = 0;
+                        return $this->counter;
+                    }
+                };
+            },
+            $expectedFactoryKey => function () {
+                return new class {
+                    protected $counter = 0;
 
-                        public function count(): int
-                        {
-                            $this->counter++;
+                    public function count(): int
+                    {
+                        $this->counter++;
 
-                            return $this->counter;
-                        }
-                    };
-                },
-            ],
-            [$expectedFactoryKey => true],
-            [],
-            []
-        );
+                        return $this->counter;
+                    }
+                };
+            },
+        ];
+        $factoryIds = [$expectedFactoryKey => true];
+
+        $testee = $this->createContainer($services, $factoryIds);
 
         // Services are cached and same instance is returned.
         static::assertSame(1, $testee->get($expectedServiceKey)->count());
@@ -178,5 +165,22 @@ class ReadOnlyContainerTest extends TestCase
         // Factories always a new instance is created.
         static::assertSame(1, $testee->get($expectedFactoryKey)->count());
         static::assertSame(1, $testee->get($expectedFactoryKey)->count());
+    }
+
+    /**
+     * @param array $services
+     * @param array $factoryIds
+     * @param array $extensions
+     * @param array $containers
+     *
+     * @return Container
+     */
+    private function createContainer(
+        array $services = [],
+        array $factoryIds = [],
+        array $extensions = [],
+        array $containers = []
+    ): Container {
+        return new Container($services, $factoryIds, $extensions, $containers);
     }
 }

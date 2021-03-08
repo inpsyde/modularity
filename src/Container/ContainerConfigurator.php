@@ -60,6 +60,8 @@ class ContainerConfigurator
     public function addFactory(string $id, callable $factory): void
     {
         $this->addService($id, $factory);
+        // We're using a hash table to detect later
+        // via isset() if a Service as a Factory.
         $this->factoryIds[$id] = true;
     }
 
