@@ -24,8 +24,8 @@ class Package
      * Identifier to access Properties in Container.
      *
      * @example
-     * $container->has(Boostrap::PROPERTIES);
-     * $container->get(Boostrap::PROPERTIES);
+     * $container->has(Package::PROPERTIES);
+     * $container->get(Package::PROPERTIES);
      *
      * @var string
      */
@@ -110,7 +110,7 @@ class Package
     /**
      * Current state of the application.
      *
-     * @see Boostrap::STATUS_*
+     * @see Package::STATUS_*
      *
      * @var int
      */
