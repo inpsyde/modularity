@@ -6,17 +6,13 @@ namespace Inpsyde\Modularity\Module;
 
 use Psr\Container\ContainerInterface;
 
-/**
- * An ExecutableModule is meant to executed services after they
- * are registered to the application container. This is the best chance to add some
- * hooks to WordPress or listen to them.
- *
- * @package Inpsyde\Modularity\Module
- */
 interface ExecutableModule extends Module
 {
 
     /**
+     * Perform actions with objects retrieved from the container. Usually, adding WordPress hooks.
+     * Return true to signal a success, false to signal a failure.
+     *
      * @param ContainerInterface $container
      *
      * @return bool     true when successfully booted, otherwhise false.
