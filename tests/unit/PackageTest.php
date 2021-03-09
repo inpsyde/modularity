@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Tests\Unit;
 
-use Inpsyde\Modularity\Bootstrap;
+use Inpsyde\Modularity\Package;
 use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\ModuleClassNameIdTrait;
 use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
-class BootstrapTest extends TestCase
+class PackageTest extends TestCase
 {
     /**
      * @test
@@ -23,15 +23,15 @@ class BootstrapTest extends TestCase
         $expectedName = 'foo';
         $propertiesStub = $this->mockProperties($expectedName);
 
-        $testee = Bootstrap::new($propertiesStub);
+        $testee = Package::new($propertiesStub);
 
-        static::assertTrue($testee->statusIs(Bootstrap::STATUS_IDLE));
+        static::assertTrue($testee->statusIs(Package::STATUS_IDLE));
         static::assertTrue($testee->boot());
-        static::assertTrue($testee->statusIs(Bootstrap::STATUS_BOOTED));
+        static::assertTrue($testee->statusIs(Package::STATUS_BOOTED));
         static::assertSame($expectedName, $testee->name());
         static::assertInstanceOf(Properties::class, $testee->properties());
         static::assertInstanceOf(ContainerInterface::class, $testee->container());
-        static::assertEmpty($testee->modulesStatus()[Bootstrap::MODULES_ALL]);
+        static::assertEmpty($testee->modulesStatus()[Package::MODULES_ALL]);
     }
 
     /**
@@ -47,10 +47,10 @@ class BootstrapTest extends TestCase
         $propertiesStub = $this->mockProperties();
         $propertiesStub->expects('isDebug')->andReturn(false);
 
-        $testee = Bootstrap::new($propertiesStub);
+        $testee = Package::new($propertiesStub);
 
         static::assertTrue($testee->boot($moduleStub));
-        static::assertFalse($testee->moduleIs($expectedModuleId, Bootstrap::MODULE_ADDED));
+        static::assertFalse($testee->moduleIs($expectedModuleId, Package::MODULE_ADDED));
 
         // booting again will do nothing.
         static::assertFalse($testee->boot());
@@ -83,11 +83,11 @@ class BootstrapTest extends TestCase
             );
 
         $propertiesStub = $this->mockProperties();
-        $testee = Bootstrap::new($propertiesStub);
+        $testee = Package::new($propertiesStub);
 
         static::assertTrue($testee->boot($serviceModuleStub));
-        static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::MODULE_ADDED));
-        static::assertTrue($testee->moduleIs($serviceModuleId, Bootstrap::MODULE_REGISTERED));
+        static::assertTrue($testee->moduleIs($serviceModuleId, Package::MODULE_ADDED));
+        static::assertTrue($testee->moduleIs($serviceModuleId, Package::MODULE_REGISTERED));
         static::assertTrue($testee->container()->has($serviceId));
     }
 
@@ -116,11 +116,11 @@ class BootstrapTest extends TestCase
             );
 
         $propertiesStub = $this->mockProperties();
-        $testee = Bootstrap::new($propertiesStub);
+        $testee = Package::new($propertiesStub);
 
         static::assertTrue($testee->boot($factoryModuleStub));
-        static::assertTrue($testee->moduleIs($factoryModuleId, Bootstrap::MODULE_ADDED));
-        static::assertTrue($testee->moduleIs($factoryModuleId, Bootstrap::MODULE_REGISTERED));
+        static::assertTrue($testee->moduleIs($factoryModuleId, Package::MODULE_ADDED));
+        static::assertTrue($testee->moduleIs($factoryModuleId, Package::MODULE_REGISTERED));
         static::assertTrue($testee->container()->has($factoryId));
     }
 
@@ -147,11 +147,11 @@ class BootstrapTest extends TestCase
 
         $propertiesStub = $this->mockProperties();
 
-        $testee = Bootstrap::new($propertiesStub);
+        $testee = Package::new($propertiesStub);
 
         static::assertTrue($testee->boot($extendingModuleStub));
-        static::assertTrue($testee->moduleIs($extendingModuleId, Bootstrap::MODULE_ADDED));
-        static::assertTrue($testee->moduleIs($extendingModuleId, Bootstrap::MODULE_EXTENDED));
+        static::assertTrue($testee->moduleIs($extendingModuleId, Package::MODULE_ADDED));
+        static::assertTrue($testee->moduleIs($extendingModuleId, Package::MODULE_EXTENDED));
     }
 
     /**
@@ -173,10 +173,10 @@ class BootstrapTest extends TestCase
 
         $properties = $this->mockProperties();
         $properties->expects('isDebug')->andReturn(false);
-        $testee = Bootstrap::new($properties);
+        $testee = Package::new($properties);
 
         static::assertFalse($testee->boot($throwingModule));
-        static::assertTrue($testee->statusIs(Bootstrap::STATUS_FAILED));
+        static::assertTrue($testee->statusIs(Package::STATUS_FAILED));
     }
 
     /**
@@ -199,7 +199,7 @@ class BootstrapTest extends TestCase
 
         $properties = $this->mockProperties();
         $properties->expects('isDebug')->andReturn(true);
-        Bootstrap::new($properties)->boot($throwingModule);
+        Package::new($properties)->boot($throwingModule);
     }
 
     /**
@@ -214,10 +214,10 @@ class BootstrapTest extends TestCase
 
         $properties = $this->mockProperties();
 
-        $testee = Bootstrap::new($properties);
+        $testee = Package::new($properties);
 
         static::assertTrue($testee->boot($executableModule));
-        static::assertTrue($testee->moduleIs($serviceId, Bootstrap::MODULE_EXECUTED));
+        static::assertTrue($testee->moduleIs($serviceId, Package::MODULE_EXECUTED));
     }
 
     /**
@@ -233,9 +233,9 @@ class BootstrapTest extends TestCase
             ->andReturn(false);
 
         $properties = $this->mockProperties();
-        $testee = Bootstrap::new($properties);
+        $testee = Package::new($properties);
 
         static::assertTrue($testee->boot($executableModule));
-        static::assertTrue($testee->moduleIs($serviceId, Bootstrap::MODULE_EXECUTION_FAILED));
+        static::assertTrue($testee->moduleIs($serviceId, Package::MODULE_EXECUTION_FAILED));
     }
 }

@@ -13,7 +13,7 @@ use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
 use Psr\Container\ContainerInterface;
 
-class Bootstrap
+class Package
 {
     /**
      * All the hooks fired in this class use this prefix.
@@ -36,10 +36,10 @@ class Bootstrap
      *
      * @example
      * <code>
-     * $package = Bootstrap::new();
+     * $package = Package::new();
      *
      * add_action(
-     *      $package->hookName(Bootstrap::ACTION_INIT),
+     *      $package->hookName(Package::ACTION_INIT),
      *      $callback
      * );
      * </code>
@@ -51,10 +51,10 @@ class Bootstrap
      *
      * @example
      * <code>
-     * $package = Bootstrap::new();
+     * $package = Package::new();
      *
      * add_action(
-     *      $package->hookName(Bootstrap::ACTION_READY),
+     *      $package->hookName(Package::ACTION_READY),
      *      $callback
      * );
      * </code>
@@ -65,10 +65,10 @@ class Bootstrap
      *
      * @example
      * <code>
-     * $package = Bootstrap::new();
+     * $package = Package::new();
      *
      * add_action(
-     *      $package->hookName(Bootstrap::ACTION_FAILED_BOOT),
+     *      $package->hookName(Package::ACTION_FAILED_BOOT),
      *      $callback
      * );
      * </code>
@@ -79,10 +79,10 @@ class Bootstrap
      *
      * @example
      * <code>
-     * $package = Bootstrap::new();
-     * $package->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // false
+     * $package = Package::new();
+     * $package->moduleIs(SomeModule::class, Package::MODULE_ADDED); // false
      * $package->boot(new SomeModule());
-     * $package->moduleIs(SomeModule::class, Bootstrap::MODULE_ADDED); // true
+     * $package->moduleIs(SomeModule::class, Package::MODULE_ADDED); // true
      * </code>
      */
     public const MODULE_ADDED = 'added';
@@ -96,10 +96,10 @@ class Bootstrap
      *
      * @example
      * <code>
-     * $package = Bootstrap::new();
-     * $package->statusIs(Bootstrap::IDLE); // true
+     * $package = Package::new();
+     * $package->statusIs(Package::IDLE); // true
      * $package->boot();
-     * $package->statusIs(Bootstrap::BOOTED); // true
+     * $package->statusIs(Package::BOOTED); // true
      * </code>
      */
     public const STATUS_IDLE = 2;
@@ -119,7 +119,7 @@ class Bootstrap
     /**
      * Contains the progress of all modules.
      *
-     * @see Bootstrap::moduleProgress()
+     * @see Package::moduleProgress()
      *
      * @var array<array<string>>
      */
@@ -150,9 +150,9 @@ class Bootstrap
      * @param Properties $properties
      * @param ContainerInterface[] $containers
      *
-     * @return Bootstrap
+     * @return Package
      */
-    public static function new(Properties $properties, ContainerInterface  ...$containers): Bootstrap
+    public static function new(Properties $properties, ContainerInterface  ...$containers): Package
     {
         return new self($properties, ...$containers);
     }
@@ -201,7 +201,7 @@ class Bootstrap
             $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
         }
 
-        // ExecutableModules are collected and executed on Bootstrap::boot()
+        // ExecutableModules are collected and executed on Package::boot()
         // when the Container is being compiled.
         if ($module instanceof ExecutableModule) {
             $this->executables[] = $module;
@@ -332,7 +332,7 @@ class Bootstrap
      * @param string $suffix
      *
      * @return string
-     * @see Bootstrap::name()
+     * @see Package::name()
      *
      */
     public function hookName(string $suffix = ''): string
