@@ -35,6 +35,53 @@ class PackageTest extends TestCase
     }
 
     /**
+     * @param string $suffix
+     * @param string $baseName
+     * @param string $expectedHookName
+     *
+     * @test
+     * @dataProvider provideHookNameSuffix
+     */
+    public function testHookName(string $suffix, string $baseName, string $expectedHookName): void
+    {
+        $propertiesStub = $this->mockProperties($baseName);
+        $testee = Package::new($propertiesStub);
+        static::assertSame($expectedHookName, $testee->hookName($suffix));
+    }
+
+    /**
+     * @return \Generator
+     */
+    public function provideHookNameSuffix(): \Generator
+    {
+        $expectedName = 'baseName';
+        $baseHookName = 'inpsyde.modularity.' . $expectedName;
+        yield 'no suffix' => [
+            '',
+            $expectedName,
+            $baseHookName,
+        ];
+
+        yield 'failed boot' => [
+            Package::ACTION_FAILED_BOOT,
+            $expectedName,
+            $baseHookName . '.' . Package::ACTION_FAILED_BOOT,
+        ];
+
+        yield 'init' => [
+            Package::ACTION_INIT,
+            $expectedName,
+            $baseHookName . '.' . Package::ACTION_INIT,
+        ];
+
+        yield 'ready' => [
+            Package::ACTION_READY,
+            $expectedName,
+            $baseHookName . '.' . Package::ACTION_READY,
+        ];
+    }
+
+    /**
      * @test
      *
      * @throws \Throwable
