@@ -24,8 +24,14 @@ class Package
      * Identifier to access Properties in Container.
      *
      * @example
+     * <code>
+     * $package = Package::new();
+     * $package->boot();
+     *
+     * $container = $package->container();
      * $container->has(Package::PROPERTIES);
      * $container->get(Package::PROPERTIES);
+     * </code>
      *
      * @var string
      */
