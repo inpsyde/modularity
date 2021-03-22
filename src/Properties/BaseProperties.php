@@ -181,6 +181,14 @@ class BaseProperties implements Properties
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function tags(): array
+    {
+        return (array) $this->get(self::PROP_TAGS);
+    }
+
+    /**
      * {@inheritdoc}
      * @psalm-suppress InvalidArgument
      */

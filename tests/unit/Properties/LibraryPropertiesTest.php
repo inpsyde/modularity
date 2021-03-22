@@ -104,6 +104,7 @@ class LibraryPropertiesTest extends TestCase
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
         $expecteWpVersion = "5.3";
+        $expectedKeywords = ["expected", "keywords"];
 
         $composerJsonData = [
             "name" => $expectedBaseName,
@@ -114,6 +115,7 @@ class LibraryPropertiesTest extends TestCase
                     "homepage" => $expectedAuthorUri,
                 ],
             ],
+            "keywords" => $expectedKeywords,
             "require" => [
                 "php" => $expectedPhpVersion,
             ],
@@ -139,6 +141,7 @@ class LibraryPropertiesTest extends TestCase
         $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
         static::assertInstanceOf(Properties::class, $testee);
+        static::assertSame($expectedKeywords, $testee->tags());
         static::assertSame($expectedBaseName, $testee->baseName());
         static::assertSame($expectedDescription, $testee->description());
         static::assertSame($expectedAuthor, $testee->author());

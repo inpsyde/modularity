@@ -16,6 +16,7 @@ interface Properties
     public const PROP_VERSION = 'version';
     public const PROP_REQUIRES_WP = 'requiresWp';
     public const PROP_REQUIRES_PHP = 'requiresPhp';
+    public const PROP_TAGS = 'tags';
     /**
      * @var array
      */
@@ -30,6 +31,7 @@ interface Properties
         self::PROP_VERSION => '',
         self::PROP_REQUIRES_WP => null,
         self::PROP_REQUIRES_PHP => null,
+        self::PROP_TAGS => [],
     ];
 
     /**
@@ -123,4 +125,15 @@ interface Properties
      * @return string
      */
     public function requiresPhp(): ?string;
+
+    /**
+     * Optional. Currently only available for Theme and Library.
+     * Plugins do not have support for "tags"/"keywords" in header.
+     *
+     * @link https://developer.wordpress.org/reference/classes/wp_theme/#properties
+     * @link https://getcomposer.org/doc/04-schema.md#keywords
+     *
+     * @return array
+     */
+    public function tags(): array;
 }

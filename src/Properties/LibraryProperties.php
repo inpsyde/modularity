@@ -12,10 +12,6 @@ namespace Inpsyde\Modularity\Properties;
 class LibraryProperties extends BaseProperties
 {
     /**
-     * Additional properties specific for libraries.
-     */
-    public const PROP_TAGS = 'tags';
-    /**
      * Allowed configuration in composer.json "extra.modularity".
      *
      * @var array
@@ -181,13 +177,5 @@ class LibraryProperties extends BaseProperties
         return $nextKey
             ? self::extractPhpVersion($composerData, $nextKey)
             : null;
-    }
-
-    /**
-     * @return array
-     */
-    public function tags(): array
-    {
-        return (array) $this->get(self::PROP_TAGS);
     }
 }

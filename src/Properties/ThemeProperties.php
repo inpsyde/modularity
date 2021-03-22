@@ -17,7 +17,6 @@ class ThemeProperties extends BaseProperties
      * Additional properties specific for themes.
      */
     public const PROP_STATUS = 'status';
-    public const PROP_TAGS = 'tags';
     public const PROP_TEMPLATE = 'template';
     /**
      * Available methods of Properties::__call()
@@ -93,14 +92,6 @@ class ThemeProperties extends BaseProperties
     public function status(): string
     {
         return (string) $this->get(self::PROP_STATUS);
-    }
-
-    /**
-     * @return array
-     */
-    public function tags(): array
-    {
-        return (array) $this->get(self::PROP_TAGS);
     }
 
     public function template(): string

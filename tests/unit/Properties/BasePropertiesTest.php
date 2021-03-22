@@ -29,6 +29,8 @@ class BasePropertiesTest extends TestCase
 
         // Defaults
         static::assertFalse($testee->isDebug());
+        static::assertEmpty($testee->tags());
+        static::assertFalse($testee->has('unknown-key'));
         static::assertSame(null, $testee->baseUrl());
         static::assertSame('', $testee->author());
         static::assertSame('', $testee->authorUri());
