@@ -12,7 +12,7 @@ Aside from that, the `Package`-class will boot your Application on a specific po
 Inpsyde\Modularity\Package::new($properties)->boot();
 ```
 
-The `Package`-class contains following public API:
+The `Package`-class contains the following public API:
 
 **Package::moduleStatus(): array**
 
@@ -20,7 +20,7 @@ Returns an array of all Modules and the current status.
 
 **Package::moduleIs(string $moduleId, string $status): bool**
 
-Allows to check a status for a given Module::id(). Following Module status are available:
+Allows to check the status for a given Module::id(). Following Module status are available:
 
 - `Package::MODULE_ADDED` - Module was successfully added to the Application.
 - `Package::MODULE_REGISTERED` - ServiceModule or FactoryModule were added.
@@ -186,7 +186,7 @@ Inpsyde\Modularity\Package::new($properties)
 	->boot();
 ```
 
-Each Module implementation will extend the basic `Module`-interface which is required to define a `Module::id(): string`. This identifier will be re-used in Package-class to keep track of the current state of your Module and will allow easier debugging of your Application. To avoid defining this by hand, it is possible to use following Trait: `Inpsyde\Modularity\Module\ModuleClassNameIdTrait`
+Each Module implementation will extend the basic `Module`-interface which is required to define a `Module::id(): string`. This identifier will be re-used in Package-class to keep track of the current state of your Module and will allow easier debugging of your Application. To avoid defining this by hand, it is possible to use the following Trait: `Inpsyde\Modularity\Module\ModuleClassNameIdTrait`
 
 ### ServiceModule
 A ServiceModule will allow you to register new Services to the Container, to access them later on a specific point. The `ServiceModule::services(): array` will return an array of Services. Each array-key is an identifier for your Service, while the array-value will contain a callable which receives the primary Container (read-only) to set up your Service.
@@ -365,7 +365,7 @@ class ModuleThree implements ExecutableModule
 }
 ```
 
-A specific instance of your Properties will use following data:
+A specific instance of your Properties will use the following data:
 
 | Properties method | Theme - style.css | Plugin - file header | Library - composer.json |
 | --- | --- | --- | --- |
@@ -386,7 +386,7 @@ A specific instance of your Properties will use following data:
 | Properties::template() | Template |  |  |
 
 ### PluginProperties
-Inside your Plugin you can use following code to automatically generate Properties based on the [Plugins Header](https://developer.wordpress.org/reference/functions/get_plugin_data/):
+Inside your Plugin you can use the following code to automatically generate Properties based on the [Plugins Header](https://developer.wordpress.org/reference/functions/get_plugin_data/):
 
 ```php
 <?php
@@ -395,7 +395,7 @@ use Inpsyde\Modularity\Properties;
 $properties = Properties\PluginProperties::new('/path/to/plugin-main-file.php');
 ```
 
-Additionally, PluginProperties will have following public API:
+Additionally, PluginProperties will have the following public API:
 
 - `PluginProperties::network(): bool` - returns if the Plugin is only network-wide usable.
 - `PluginProperties::isActive(): bool` - returns if the current Plugin is active.
@@ -412,7 +412,7 @@ use Inpsyde\Modularity\Properties;
 $properties = Properties\ThemeProperties::new('/path/to/theme/directory/')
 ```
 
-Additionally, ThemeProperties will have following public API:
+Additionally, ThemeProperties will have the following public API:
 
 - `ThemeProperties::status(): string` - If the current Theme is “published”.
 - `ThemeProperties::tags(): array` - Tags defined in style.css.
@@ -430,7 +430,7 @@ use Inpsyde\Modularity\Properties;
 $properties = Properties\LibraryProperties::new('path/to/composer.json');
 ```
 
-Additionally, LibraryProperties will have following public API:
+Additionally, LibraryProperties will have the following public API:
 
 - `LibraryProperties::tags(): array` - returns a list of keywords defined in composer.json.
 

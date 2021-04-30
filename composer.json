@@ -2,7 +2,7 @@
     "name": "inpsyde/modularity",
     "description": "Inpsyde modularity",
     "type": "library",
-    "license": "gpl-v2-or-later",
+    "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
