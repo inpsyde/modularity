@@ -30,7 +30,10 @@
         }
     },
     "extra": {
-        "wordpress-install-dir": "vendor/wordpress/wordpress"
+        "wordpress-install-dir": "vendor/wordpress/wordpress",
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        }
     },
     "scripts": {
         "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
