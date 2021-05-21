@@ -63,7 +63,6 @@ class ThemeProperties extends BaseProperties
             require_once ABSPATH . 'wp-includes/theme.php';
         }
 
-        /** @var \WP_Theme $theme */
         $theme = wp_get_theme($themeDirectory);
         $properties = Properties::DEFAULT_PROPERTIES;
 
