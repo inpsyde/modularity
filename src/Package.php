@@ -190,10 +190,10 @@ class Package
     /**
      * @param Module $module
      *
-     * @return $this
+     * @return static
      * @throws \Exception
      */
-    public function addModule(Module $module): self
+    public function addModule(Module $module): Package
     {
         $this->assertStatus(self::STATUS_IDLE, 'access Container');
 
