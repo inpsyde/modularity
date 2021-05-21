@@ -88,7 +88,6 @@ class ReadOnlyContainer implements ContainerInterface
 
         foreach ($this->containers as $container) {
             if ($container->has($id)) {
-                /** @var object $service */
                 $service = $container->get($id);
 
                 return $this->resolveExtensions($id, $service);
