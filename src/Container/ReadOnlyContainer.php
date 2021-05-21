@@ -10,7 +10,7 @@ use Psr\Container\NotFoundExceptionInterface;
 class ReadOnlyContainer implements ContainerInterface
 {
     /**
-     * @var array<string, callable(\Psr\Container\ContainerInterface $container):object>
+     * @var array<string, callable(\Psr\Container\ContainerInterface $container):mixed>
      */
     private $services;
 
@@ -20,14 +20,14 @@ class ReadOnlyContainer implements ContainerInterface
     private $factoryIds = [];
 
     /**
-     * @var array<string, array<callable(object, ContainerInterface $container):object>>
+     * @var array<string, array<callable(mixed, ContainerInterface $container):mixed>>
      */
     private $extensions;
 
     /**
      * Resolved factories.
      *
-     * @var array<string, object>
+     * @var array<string, mixed>
      */
     private $resolvedServices = [];
 
@@ -39,9 +39,9 @@ class ReadOnlyContainer implements ContainerInterface
     /**
      * ReadOnlyContainer constructor.
      *
-     * @param array<string, callable(ContainerInterface $container):object> $services
+     * @param array<string, callable(ContainerInterface $container):mixed> $services
      * @param array<string, bool> $factoryIds
-     * @param array<string, array<callable(object, ContainerInterface $container):object>> $extensions
+     * @param array<string, array<callable(mixed, ContainerInterface $container):mixed>> $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
@@ -88,7 +88,6 @@ class ReadOnlyContainer implements ContainerInterface
 
         foreach ($this->containers as $container) {
             if ($container->has($id)) {
-                /** @var object $service */
                 $service = $container->get($id);
 
                 return $this->resolveExtensions($id, $service);
@@ -129,11 +128,11 @@ class ReadOnlyContainer implements ContainerInterface
 
     /**
      * @param string $id
-     * @param object $service
+     * @param mixed $service
      *
-     * @return object
+     * @return mixed
      */
-    private function resolveExtensions(string $id, object $service): object
+    private function resolveExtensions(string $id, $service)
     {
         if (!isset($this->extensions[$id])) {
             return $service;

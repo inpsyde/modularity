@@ -34,24 +34,48 @@ class ReadOnlyContainerTest extends TestCase
 
     /**
      * @test
+     *
+     * @dataProvider provideServices
      */
-    public function testHasGetService(): void
+    public function testHasGetService($expected, callable $service): void
     {
-        $expectedServiceKey = 'service';
-        $expectedValue = new \stdClass();
-        $services = [
-            'service' => static function () use ($expectedValue) {
-                return $expectedValue;
-            },
-        ];
+        $expectedId = 'service';
+        $services = [$expectedId => $service];
         $testee = $this->createContainer($services);
 
         // check in Services
-        static::assertTrue($testee->has($expectedServiceKey));
+        static::assertTrue($testee->has($expectedId));
         // resolve Service
-        static::assertSame($expectedValue, $testee->get($expectedServiceKey));
+        static::assertSame($expected, $testee->get($expectedId));
         // check in Factories
-        static::assertTrue($testee->has($expectedServiceKey));
+        static::assertTrue($testee->has($expectedId));
+    }
+
+    public function provideServices(): \Generator
+    {
+        $service = new \stdClass();
+        yield 'object service' => [
+            $service,
+            function () use ($service) {
+                return $service;
+            },
+        ];
+
+        $service = 'foo';
+        yield 'string service' => [
+            $service,
+            function () use ($service) {
+                return $service;
+            },
+        ];
+
+        $service = ['foo', 'bar'];
+        yield 'array service' => [
+            $service,
+            function () use ($service) {
+                return $service;
+            },
+        ];
     }
 
     /**
