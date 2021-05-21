@@ -95,7 +95,7 @@ add_action(
 );
 ```
 
-By providing the `Acme\app()`-function, you’ll enable externals to hook into your Application:
+By providing the `Acme\plugin()`-function, you’ll enable externals to hook into your Application:
 
 ```php
 <?php
