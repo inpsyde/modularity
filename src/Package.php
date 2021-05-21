@@ -140,6 +140,7 @@ class Package
         self::MODULE_ADDED => [],
         self::MODULE_REGISTERED => [],
         self::MODULE_EXTENDED => [],
+        self::MODULE_EXECUTED => [],
         self::MODULE_EXECUTION_FAILED => [],
     ];
 
