@@ -409,7 +409,7 @@ To generate Properties for your Theme you need to provide the Theme directory or
 <?php
 use Inpsyde\Modularity\Properties;
 
-$properties = Properties\ThemeProperties::new('/path/to/theme/directory/')
+$properties = Properties\ThemeProperties::new('/path/to/theme/directory/');
 ```
 
 Additionally, ThemeProperties will have the following public API:
@@ -430,11 +430,33 @@ use Inpsyde\Modularity\Properties;
 $properties = Properties\LibraryProperties::new('path/to/composer.json');
 ```
 
-Additionally, LibraryProperties will have the following public API:
+Often when creating a library we don't know the base URL of library, because we don't know where it
+gets installed and WP does not natively support libraries. That is why by default 
+`LibraryProperties::baseUrl()` returns null.
+
+In the case a `LibraryProperties` instance is created in a context where the base URL is known, it
+is possible to include it when creating the instance:
+
+```php
+$url = 'https://example.com/wp-content/vendor/my/library';
+$properties = Inpsyde\Modularity\Properties\LibraryProperties::new('path/to/composer.json', $url);
+```
+
+Alternatively, is the URL is known at a later time, when an instance of `LibraryProperties` is
+already present, it is possible to use the `withBaseUrl()` method:
+
+```php
+$url = 'https://example.com/wp-content/vendor/my/library';
+/** @var Inpsyde\Modularity\Properties\LibraryProperties $properties */
+$properties->withBaseUrl($url);
+```
+
+Please note that `withBaseUrl()` will only work if a base URL is not set already, otherwise it will
+throw an exception.
+
+Additionally, `LibraryProperties` will have the following public API:
 
 - `LibraryProperties::tags(): array` - returns a list of keywords defined in composer.json.
-
-
 
 ## License
 
