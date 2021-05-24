@@ -189,15 +189,10 @@ class LibraryProperties extends BaseProperties
     public function withBaseUrl(string $url): LibraryProperties
     {
         if ($this->baseUrl !== null) {
-            throw new \Exception(
-                sprintf(
-                    'File %s::$baseUrl property is not overridable.',
-                    __CLASS__
-                )
-            );
+            throw new \Exception(sprintf('%s::$baseUrl property is not overridable.', __CLASS__));
         }
 
-        $this->baseUrl = $url;
+        $this->baseUrl = trailingslashit($url);
 
         return $this;
     }
