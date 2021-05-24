@@ -75,7 +75,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function baseName(): string
     {
@@ -83,7 +83,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function basePath(): string
     {
@@ -91,7 +91,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string|null
      */
     public function baseUrl(): ?string
     {
@@ -99,7 +99,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function author(): string
     {
@@ -107,7 +107,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function authorUri(): string
     {
@@ -115,7 +115,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function description(): string
     {
@@ -123,7 +123,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function textDomain(): string
     {
@@ -131,7 +131,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function domainPath(): string
     {
@@ -139,7 +139,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function name(): string
     {
@@ -147,7 +147,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function uri(): string
     {
@@ -155,7 +155,7 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
+     * @return string
      */
     public function version(): string
     {
@@ -163,25 +163,27 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritDoc}
-     * @psalm-suppress MixedInferredReturnType, MixedReturnStatement
+     * @return string|null
      */
     public function requiresWp(): ?string
     {
-        return $this->get(self::PROP_REQUIRES_WP);
+        $value = $this->get(self::PROP_REQUIRES_WP);
+
+        return $value && is_string($value) ? $value : null;
     }
 
     /**
-     * {@inheritDoc}
-     * @psalm-suppress MixedInferredReturnType, MixedReturnStatement
+     * @return string|null
      */
     public function requiresPhp(): ?string
     {
-        return $this->get(self::PROP_REQUIRES_PHP);
+        $value = $this->get(self::PROP_REQUIRES_PHP);
+
+        return $value && is_string($value) ? $value : null;
     }
 
     /**
-     * {@inheritDoc}
+     * @return array
      */
     public function tags(): array
     {
@@ -189,8 +191,9 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritdoc}
-     * @psalm-suppress InvalidArgument
+     * @param string $key
+     * @param null $default
+     * @return mixed
      */
     public function get(string $key, $default = null)
     {
@@ -198,7 +201,8 @@ class BaseProperties implements Properties
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $key
+     * @return bool
      */
     public function has(string $key): bool
     {
