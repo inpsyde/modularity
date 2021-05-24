@@ -20,6 +20,7 @@ class Package
      * @var string
      */
     private const HOOK_PREFIX = 'inpsyde.modularity.';
+
     /**
      * Identifier to access Properties in Container.
      *
@@ -36,6 +37,7 @@ class Package
      * @var string
      */
     public const PROPERTIES = 'properties';
+
     /**
      * Custom action to be used to add Modules to the package.
      * It might also be used to access package properties.
@@ -51,6 +53,7 @@ class Package
      * </code>
      */
     public const ACTION_INIT = 'init';
+
     /**
      * Custom action which is triggered after the application
      * is booted to access container and properties.
@@ -66,6 +69,7 @@ class Package
      * </code>
      */
     public const ACTION_READY = 'ready';
+
     /**
      * Custom action which is triggered when application failed to boot.
      *
@@ -80,6 +84,7 @@ class Package
      * </code>
      */
     public const ACTION_FAILED_BOOT = 'failed-boot';
+
     /**
      * Module states can be used to get information about your module.
      *
@@ -97,6 +102,7 @@ class Package
     public const MODULE_EXECUTED = 'executed';
     public const MODULE_EXECUTION_FAILED = 'executed-failed';
     public const MODULES_ALL = '*';
+
     /**
      * Custom states for the class.
      *
@@ -127,13 +133,14 @@ class Package
      *
      * @see Package::moduleProgress()
      *
-     * @var array<array<string>>
+     * @var array<string, list<string>>
      */
     private $moduleStatus = [
         self::MODULES_ALL => [],
         self::MODULE_ADDED => [],
         self::MODULE_REGISTERED => [],
         self::MODULE_EXTENDED => [],
+        self::MODULE_EXECUTED => [],
         self::MODULE_EXECUTION_FAILED => [],
     ];
 
@@ -183,10 +190,10 @@ class Package
     /**
      * @param Module $module
      *
-     * @return $this
+     * @return static
      * @throws \Exception
      */
-    public function addModule(Module $module): self
+    public function addModule(Module $module): Package
     {
         $this->assertStatus(self::STATUS_IDLE, 'access Container');
 
@@ -308,7 +315,7 @@ class Package
     }
 
     /**
-     * @return array<array<string>>
+     * @return array<string, list<string>>
      */
     public function modulesStatus(): array
     {

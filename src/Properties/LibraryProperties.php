@@ -78,7 +78,7 @@ class LibraryProperties extends BaseProperties
             $properties[self::PROP_VERSION] = $version;
         }
 
-        $baseName = self::buildBaseName((string) $composerJsonData['name']);
+        $baseName = static::buildBaseName((string) $composerJsonData['name']);
         $basePath = dirname($composerJsonFile);
         $baseUrl = null;
 
@@ -129,7 +129,7 @@ class LibraryProperties extends BaseProperties
             : null;
         if (!$version) {
             return $nextKey
-                ? self::extractPhpVersion($composerData, $nextKey)
+                ? static::extractPhpVersion($composerData, $nextKey)
                 : null;
         }
 
@@ -175,7 +175,7 @@ class LibraryProperties extends BaseProperties
         }
 
         return $nextKey
-            ? self::extractPhpVersion($composerData, $nextKey)
+            ? static::extractPhpVersion($composerData, $nextKey)
             : null;
     }
 }
