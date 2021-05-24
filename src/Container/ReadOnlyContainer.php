@@ -59,11 +59,6 @@ class ReadOnlyContainer implements ContainerInterface
     /**
      * @param string $id
      *
-     *
-     * @psalm-suppress MissingReturnType
-     * @psalm-suppress MissingParamType
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MixedInferredReturnType
      * @return mixed
      */
     public function get($id)
