@@ -18,7 +18,7 @@ interface ExtendingModule extends Module
      * That is done by using as ID (array key in the `extensions` method) the target module ID
      * and the service ID.
      *
-     * @return array<string, callable(object $object, \Psr\Container\ContainerInterface $container):object>
+     * @return array<string, callable(mixed $service, \Psr\Container\ContainerInterface $container):mixed>
      */
     public function extensions(): array;
 }

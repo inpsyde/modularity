@@ -15,7 +15,7 @@ interface ServiceModule extends Module
      * Services are "cached", so the given factory is called once the first time `get()` is called
      * in the container, and on subsequent `get()` the same instance is returned again and again.
      *
-     * @return array<string, callable(\Psr\Container\ContainerInterface $container):object>
+     * @return array<string, callable(\Psr\Container\ContainerInterface $container):mixed>
      */
     public function services(): array;
 }
