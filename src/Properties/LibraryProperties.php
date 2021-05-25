@@ -27,16 +27,17 @@ class LibraryProperties extends BaseProperties
 
     /**
      * @param string $composerJsonFile
+     * @param string|null $baseUrl
      *
      * @return LibraryProperties
      *
      * @throws \Exception
      * @psalm-suppress MixedArrayAccess
      */
-    public static function new(string $composerJsonFile): LibraryProperties
+    public static function new(string $composerJsonFile, ?string $baseUrl = null): LibraryProperties
     {
         if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
-            throw new \Exception(sprintf('File %1$s does not exist or is not readable!', $composerJsonFile));
+            throw new \Exception("File {$composerJsonFile} does not exist or is not readable.");
         }
 
         $content = (string) file_get_contents($composerJsonFile);
@@ -80,7 +81,6 @@ class LibraryProperties extends BaseProperties
 
         $baseName = static::buildBaseName((string) $composerJsonData['name']);
         $basePath = dirname($composerJsonFile);
-        $baseUrl = null;
 
         return new self(
             $baseName,
@@ -107,10 +107,10 @@ class LibraryProperties extends BaseProperties
      *
      * Attempt to parse requirements to find the _minimum_ accepted version (consistent with WP).
      * Composer requirements are parsed in a way that, for example:
-     * `>=7.2`        returns `7.2`
-     * `^7.3`         returns `7.3`
+     * `>=7.2`         returns `7.2`
+     * `^7.3`          returns `7.3`
      * `5.6 || >= 7.1` returns `5.6`
-     * `>= 7.1 < 8`   returns `7.1`
+     * `>= 7.1 < 8`    returns `7.1`
      *
      * @param array $composerData
      * @param string $key
@@ -177,5 +177,23 @@ class LibraryProperties extends BaseProperties
         return $nextKey
             ? static::extractPhpVersion($composerData, $nextKey)
             : null;
+    }
+
+    /**
+     * @param string $url
+     *
+     * @return static
+     *
+     * @throws \Exception
+     */
+    public function withBaseUrl(string $url): LibraryProperties
+    {
+        if ($this->baseUrl !== null) {
+            throw new \Exception(sprintf('%s::$baseUrl property is not overridable.', __CLASS__));
+        }
+
+        $this->baseUrl = trailingslashit($url);
+
+        return $this;
     }
 }

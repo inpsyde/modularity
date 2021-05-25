@@ -182,6 +182,40 @@ class LibraryPropertiesTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function testBaseUrlCanBeSet(): void
+    {
+        $root = vfsStream::setup('root', null, ['composer.json' => '{"name": "vendor/test"}']);
+
+        $properties = LibraryProperties::new($root->url() . '/composer.json');
+
+        static::assertNull($properties->baseUrl());
+
+        $properties->withBaseUrl('https://example.com');
+        static::assertSame('https://example.com/', $properties->baseUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function testBaseUrlCanNotBeOverridden(): void
+    {
+        $root = vfsStream::setup('root', null, ['composer.json' => '{"name": "vendor/test"}']);
+
+        $properties = LibraryProperties::new(
+            $root->url() . '/composer.json',
+            'https://example.com'
+        );
+
+        static::assertSame('https://example.com/', $properties->baseUrl());
+
+        $this->expectExceptionMessageMatches('/not overridable/i');
+
+        $properties->withBaseUrl('https://example.com/something');
+    }
+
+    /**
      * @return array
      */
     public function providePhpRequirements(): array
