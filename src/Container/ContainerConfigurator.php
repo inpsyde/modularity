@@ -9,7 +9,7 @@ use Psr\Container\ContainerInterface;
 class ContainerConfigurator
 {
     /**
-     * @var array<string, callable(ContainerInterface $container):object>
+     * @var array<string, callable(ContainerInterface $container):mixed>
      */
     private $services = [];
 
@@ -19,7 +19,7 @@ class ContainerConfigurator
     private $factoryIds = [];
 
     /**
-     * @var array<string, array<callable(object, ContainerInterface $container):object>>
+     * @var array<string, array<callable(mixed $service, ContainerInterface $container):mixed>>
      */
     private $extensions = [];
 
@@ -55,7 +55,7 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     * @param callable(ContainerInterface $container):object $factory
+     * @param callable(ContainerInterface $container):mixed $factory
      */
     public function addFactory(string $id, callable $factory): void
     {
@@ -67,7 +67,7 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     * @param callable(ContainerInterface $container):object $service
+     * @param callable(ContainerInterface $container):mixed $service
      *
      * @return void
      */
@@ -105,7 +105,7 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     * @param callable(object $object, ContainerInterface $container):object $extender
+     * @param callable(mixed $service, ContainerInterface $container):mixed $extender
      *
      * @return void
      */
