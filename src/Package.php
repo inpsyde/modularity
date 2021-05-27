@@ -97,7 +97,9 @@ class Package
      * </code>
      */
     public const MODULE_ADDED = 'added';
+    public const MODULE_SKIPPED = 'skipped';
     public const MODULE_REGISTERED = 'registered';
+    public const MODULE_REGISTERED_FACTORIES = 'registered-factories';
     public const MODULE_EXTENDED = 'extended';
     public const MODULE_EXECUTED = 'executed';
     public const MODULE_EXECUTION_FAILED = 'executed-failed';
@@ -135,14 +137,7 @@ class Package
      *
      * @var array<string, list<string>>
      */
-    private $moduleStatus = [
-        self::MODULES_ALL => [],
-        self::MODULE_ADDED => [],
-        self::MODULE_REGISTERED => [],
-        self::MODULE_EXTENDED => [],
-        self::MODULE_EXECUTED => [],
-        self::MODULE_EXECUTION_FAILED => [],
-    ];
+    private $moduleStatus = [self::MODULES_ALL => []];
 
     /**
      * @var ExecutableModule[]
@@ -197,22 +192,11 @@ class Package
     {
         $this->assertStatus(self::STATUS_IDLE, 'access Container');
 
-        $added = false;
-        if ($module instanceof ServiceModule) {
-            foreach ($module->services() as $serviceName => $callable) {
-                $this->containerConfigurator->addService($serviceName, $callable);
-            }
-            $added = true;
-            $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
-        }
+        $registered = $this->addModuleServices($module, self::MODULE_REGISTERED);
+        $addedFactories = $this->addModuleServices($module, self::MODULE_REGISTERED_FACTORIES);
+        $extended = $this->addModuleServices($module, self::MODULE_EXTENDED);
 
-        if ($module instanceof FactoryModule) {
-            foreach ($module->factories() as $serviceName => $callable) {
-                $this->containerConfigurator->addFactory($serviceName, $callable);
-            }
-            $added = true;
-            $this->moduleProgress($module->id(), self::MODULE_REGISTERED);
-        }
+        $added = $registered || $addedFactories || $extended;
 
         // ExecutableModules are collected and executed on Package::boot()
         // when the Container is being compiled.
@@ -221,17 +205,8 @@ class Package
             $added = true;
         }
 
-        if ($module instanceof ExtendingModule) {
-            foreach ($module->extensions() as $serviceName => $extender) {
-                $this->containerConfigurator->addExtension($serviceName, $extender);
-            }
-            $added = true;
-            $this->moduleProgress($module->id(), self::MODULE_EXTENDED);
-        }
-
-        if ($added) {
-            $this->moduleProgress($module->id(), self::MODULE_ADDED);
-        }
+        $status = $added ? self::MODULE_ADDED : self::MODULE_SKIPPED;
+        $this->moduleProgress($module->id(), $status);
 
         return $this;
     }
@@ -285,6 +260,50 @@ class Package
     }
 
     /**
+     * @param Module $module
+     * @param string $status
+     * @return bool
+     */
+    private function addModuleServices(Module $module, string $status): bool
+    {
+        $services = null;
+        $addCallback = null;
+        switch ($status) {
+            case self::MODULE_REGISTERED:
+                $services = $module instanceof ServiceModule ? $module->services() : null;
+                $addCallback = [$this->containerConfigurator, 'addService'];
+                break;
+            case self::MODULE_REGISTERED_FACTORIES:
+                $services = $module instanceof FactoryModule ? $module->factories() : null;
+                $addCallback = [$this->containerConfigurator, 'addFactory'];
+                break;
+            case self::MODULE_EXTENDED:
+                $services = $module instanceof ExtendingModule ? $module->extensions() : null;
+                $addCallback = [$this->containerConfigurator, 'addExtension'];
+                break;
+        }
+
+        if (!$services) {
+            return false;
+        }
+
+        $ids = [];
+        array_walk(
+            $services,
+            static function (callable $service, string $id) use ($addCallback, &$ids) {
+                /** @var callable(string, callable) $addCallback */
+                $addCallback($id, $service);
+                /** @var list<string> $ids */
+                $ids[] = $id;
+            }
+        );
+        /** @var list<string> $ids */
+        $this->moduleProgress($module->id(), $status, $ids);
+
+        return true;
+    }
+
+    /**
      * @return void
      *
      * @throws \Throwable
@@ -305,13 +324,23 @@ class Package
     /**
      * @param string $moduleId
      * @param string $type
+     * @param list<string>|null $services
      *
      * @return  void
      */
-    private function moduleProgress(string $moduleId, string $type)
+    private function moduleProgress(string $moduleId, string $type, ?array $services = null)
     {
+        isset($this->moduleStatus[$type]) or $this->moduleStatus[$type] = [];
         $this->moduleStatus[$type][] = $moduleId;
-        $this->moduleStatus[self::MODULES_ALL][] = sprintf('%1$s %2$s.', $moduleId, $type);
+
+        if (!$services || !$this->properties->isDebug()) {
+            $this->moduleStatus[self::MODULES_ALL][] = "{$moduleId} {$type}";
+
+            return;
+        }
+
+        $description = sprintf('%s %s (%s)', $moduleId, $type, implode(', ', $services));
+        $this->moduleStatus[self::MODULES_ALL][] = $description;
     }
 
     /**
@@ -330,7 +359,7 @@ class Package
      */
     public function moduleIs(string $moduleId, string $status): bool
     {
-        return in_array($moduleId, $this->moduleStatus[$status], true);
+        return in_array($moduleId, $this->moduleStatus[$status] ?? [], true);
     }
 
     /**

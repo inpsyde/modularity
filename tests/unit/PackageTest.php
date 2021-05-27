@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Tests\Unit;
 
+use Brain\Monkey;
+use Inpsyde\Modularity\Module\ExtendingModule;
+use Inpsyde\Modularity\Module\FactoryModule;
+use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Package;
 use Inpsyde\Modularity\Module\ExecutableModule;
-use Inpsyde\Modularity\Module\ModuleClassNameIdTrait;
 use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
@@ -15,23 +18,21 @@ class PackageTest extends TestCase
 {
     /**
      * @test
-     *
-     * @throws \Throwable
      */
     public function testBasic(): void
     {
         $expectedName = 'foo';
         $propertiesStub = $this->mockProperties($expectedName);
 
-        $testee = Package::new($propertiesStub);
+        $package = Package::new($propertiesStub);
 
-        static::assertTrue($testee->statusIs(Package::STATUS_IDLE));
-        static::assertTrue($testee->boot());
-        static::assertTrue($testee->statusIs(Package::STATUS_BOOTED));
-        static::assertSame($expectedName, $testee->name());
-        static::assertInstanceOf(Properties::class, $testee->properties());
-        static::assertInstanceOf(ContainerInterface::class, $testee->container());
-        static::assertEmpty($testee->modulesStatus()[Package::MODULES_ALL]);
+        static::assertTrue($package->statusIs(Package::STATUS_IDLE));
+        static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertSame($expectedName, $package->name());
+        static::assertInstanceOf(Properties::class, $package->properties());
+        static::assertInstanceOf(ContainerInterface::class, $package->container());
+        static::assertEmpty($package->modulesStatus()[Package::MODULES_ALL]);
     }
 
     /**
@@ -45,8 +46,8 @@ class PackageTest extends TestCase
     public function testHookName(string $suffix, string $baseName, string $expectedHookName): void
     {
         $propertiesStub = $this->mockProperties($baseName);
-        $testee = Package::new($propertiesStub);
-        static::assertSame($expectedHookName, $testee->hookName($suffix));
+        $package = Package::new($propertiesStub);
+        static::assertSame($expectedHookName, $package->hookName($suffix));
     }
 
     /**
@@ -83,59 +84,47 @@ class PackageTest extends TestCase
 
     /**
      * @test
-     *
-     * @throws \Throwable
      */
-    public function testBootWithModule(): void
+    public function testBootWithEmptyModule(): void
     {
-        $expectedModuleId = 'my-module';
+        $expectedId = 'my-module';
 
-        $moduleStub = $this->mockModule($expectedModuleId);
-        $propertiesStub = $this->mockProperties();
-        $propertiesStub->expects('isDebug')->andReturn(false);
+        $moduleStub = $this->mockModule($expectedId);
+        $propertiesStub = $this->mockProperties('name', false);
 
-        $testee = Package::new($propertiesStub);
+        $package = Package::new($propertiesStub);
 
-        static::assertTrue($testee->boot($moduleStub));
-        static::assertFalse($testee->moduleIs($expectedModuleId, Package::MODULE_ADDED));
+        static::assertTrue($package->boot($moduleStub));
+        static::assertTrue($package->moduleIs($expectedId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_EXTENDED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_ADDED));
 
         // booting again will do nothing.
-        static::assertFalse($testee->boot());
+        static::assertFalse($package->boot());
     }
 
     /**
      * @test
-     *
-     * @throws \Throwable
      */
     public function testBootWithServiceModule(): void
     {
-        $serviceModuleId = 'my-service-module';
+        $moduleId = 'my-service-module';
         $serviceId = 'service-id';
 
-        $serviceModuleStub = $this->mockServiceModule($serviceModuleId);
-        $serviceModuleStub
-            ->shouldReceive('services')
-            ->andReturn(
-                [
-                    $serviceId => function () {
-                        return new class() {
-                            public function __toString()
-                            {
-                                return 'bar';
-                            }
-                        };
-                    },
-                ]
-            );
+        $module = $this->mockModule($moduleId, ServiceModule::class);
+        $module->shouldReceive('services')->andReturn($this->stubServices($serviceId));
 
-        $propertiesStub = $this->mockProperties();
-        $testee = Package::new($propertiesStub);
+        $package = Package::new($this->mockProperties());
 
-        static::assertTrue($testee->boot($serviceModuleStub));
-        static::assertTrue($testee->moduleIs($serviceModuleId, Package::MODULE_ADDED));
-        static::assertTrue($testee->moduleIs($serviceModuleId, Package::MODULE_REGISTERED));
-        static::assertTrue($testee->container()->has($serviceId));
+        static::assertTrue($package->boot($module));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($serviceId));
     }
 
     /**
@@ -143,62 +132,67 @@ class PackageTest extends TestCase
      */
     public function testBootWithFactoryModule(): void
     {
-        $factoryModuleId = 'my-factory-module';
+        $moduleId = 'my-factory-module';
         $factoryId = 'factory-id';
 
-        $factoryModuleStub = $this->mockFactoryModule($factoryModuleId);
-        $factoryModuleStub
-            ->shouldReceive('factories')
-            ->andReturn(
-                [
-                    $factoryId => function () {
-                        return new class() {
-                            public function __toString()
-                            {
-                                return 'foo';
-                            }
-                        };
-                    },
-                ]
-            );
+        $module = $this->mockModule($moduleId, FactoryModule::class);
+        $module->shouldReceive('factories')->andReturn($this->stubServices($factoryId));
 
-        $propertiesStub = $this->mockProperties();
-        $testee = Package::new($propertiesStub);
+        $package = Package::new($this->mockProperties());
 
-        static::assertTrue($testee->boot($factoryModuleStub));
-        static::assertTrue($testee->moduleIs($factoryModuleId, Package::MODULE_ADDED));
-        static::assertTrue($testee->moduleIs($factoryModuleId, Package::MODULE_REGISTERED));
-        static::assertTrue($testee->container()->has($factoryId));
+        static::assertTrue($package->boot($module));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($factoryId));
     }
 
     /**
      * @test
-     *
-     * @throws \Throwable
      */
-    public function testBootWithExtendingModule(): void
+    public function testBootWithExtendingModuleWithNonExistingService(): void
     {
-        $extendingModuleId = 'my-extending-module';
-        $serviceId = 'service-1';
+        $moduleId = 'my-extension-module';
+        $extensionId = 'extension-id';
 
-        $extendingModuleStub = $this->mockExtendingModule($extendingModuleId);
-        $extendingModuleStub
-            ->shouldReceive('extensions')
-            ->andReturn(
-                [
-                    $serviceId => function () {
-                        return 'foo';
-                    },
-                ]
-            );
+        $module = $this->mockModule($moduleId, ExtendingModule::class);
+        $module->shouldReceive('extensions')->andReturn($this->stubServices($extensionId));
 
-        $propertiesStub = $this->mockProperties();
+        $package = Package::new($this->mockProperties());
 
-        $testee = Package::new($propertiesStub);
+        static::assertTrue($package->boot($module));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        // false because extending a service not in container
+        static::assertFalse($package->container()->has($extensionId));
+    }
 
-        static::assertTrue($testee->boot($extendingModuleStub));
-        static::assertTrue($testee->moduleIs($extendingModuleId, Package::MODULE_ADDED));
-        static::assertTrue($testee->moduleIs($extendingModuleId, Package::MODULE_EXTENDED));
+    /**
+     * @test
+     */
+    public function testBootWithExtendingModuleWithExistingService(): void
+    {
+        $moduleId = 'my-extension-module';
+        $serviceId = 'service-id';
+
+        $module = $this->mockModule($moduleId, ServiceModule::class, ExtendingModule::class);
+        $module->shouldReceive('services')->andReturn($this->stubServices($serviceId));
+        $module->shouldReceive('extensions')->andReturn($this->stubServices($serviceId));
+
+        $package = Package::new($this->mockProperties());
+
+        static::assertTrue($package->boot($module));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($serviceId));
     }
 
     /**
@@ -209,21 +203,18 @@ class PackageTest extends TestCase
      */
     public function testBootWithThrowingModuleAndDebugFalse(): void
     {
-        $throwingModule = new class implements ExecutableModule {
-            use ModuleClassNameIdTrait;
+        $exception = new \Exception("Catch me if you can!");
 
-            public function run(ContainerInterface $container): bool
-            {
-                throw new \Exception("Catch me if you can!");
-            }
-        };
+        $module = $this->mockModule('id', ExecutableModule::class);
+        $module->shouldReceive('run')->andThrow($exception);
 
-        $properties = $this->mockProperties();
-        $properties->expects('isDebug')->andReturn(false);
-        $testee = Package::new($properties);
+        $package = Package::new($this->mockProperties('basename', false));
 
-        static::assertFalse($testee->boot($throwingModule));
-        static::assertTrue($testee->statusIs(Package::STATUS_FAILED));
+        $failedHook = $package->hookName(Package::ACTION_FAILED_BOOT);
+        Monkey\Actions\expectDone($failedHook)->once()->with($exception);
+
+        static::assertFalse($package->boot($module));
+        static::assertTrue($package->statusIs(Package::STATUS_FAILED));
     }
 
     /**
@@ -233,20 +224,18 @@ class PackageTest extends TestCase
      */
     public function testBootWithThrowingModuleAndDebugTrue(): void
     {
-        static::expectException(\Exception::class);
+        $exception = new \Exception("Catch me if you can!");
 
-        $throwingModule = new class implements ExecutableModule {
-            use ModuleClassNameIdTrait;
+        $module = $this->mockModule('id', ExecutableModule::class);
+        $module->shouldReceive('run')->andThrow($exception);
 
-            public function run(ContainerInterface $container): bool
-            {
-                throw new \Exception("Catch me if you can!");
-            }
-        };
+        $package = Package::new($this->mockProperties('basename', true));
 
-        $properties = $this->mockProperties();
-        $properties->expects('isDebug')->andReturn(true);
-        Package::new($properties)->boot($throwingModule);
+        $failedHook = $package->hookName(Package::ACTION_FAILED_BOOT);
+        Monkey\Actions\expectDone($failedHook)->once()->with($exception);
+
+        $this->expectExceptionObject($exception);
+        $package->boot($module);
     }
 
     /**
@@ -254,17 +243,16 @@ class PackageTest extends TestCase
      */
     public function testBootWithExecutableModule(): void
     {
-        $serviceId = 'executable-module';
-        $executableModule = $this->mockExecutableModule($serviceId);
-        $executableModule->shouldReceive('run')
-            ->andReturn(true);
+        $moduleId = 'executable-module';
+        $module = $this->mockModule($moduleId, ExecutableModule::class);
+        $module->shouldReceive('run')->andReturn(true);
 
-        $properties = $this->mockProperties();
+        $package = Package::new($this->mockProperties());
 
-        $testee = Package::new($properties);
-
-        static::assertTrue($testee->boot($executableModule));
-        static::assertTrue($testee->moduleIs($serviceId, Package::MODULE_EXECUTED));
+        static::assertTrue($package->boot($module));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXECUTED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXECUTION_FAILED));
     }
 
     /**
@@ -274,15 +262,199 @@ class PackageTest extends TestCase
      */
     public function testBootWithExecutableModuleFailed(): void
     {
-        $serviceId = 'executable-module';
-        $executableModule = $this->mockExecutableModule($serviceId);
-        $executableModule->shouldReceive('run')
-            ->andReturn(false);
+        $moduleId = 'executable-module';
+        $module = $this->mockModule($moduleId, ExecutableModule::class);
+        $module->shouldReceive('run')->andReturn(false);
 
-        $properties = $this->mockProperties();
-        $testee = Package::new($properties);
+        $package = Package::new($this->mockProperties());
 
-        static::assertTrue($testee->boot($executableModule));
-        static::assertTrue($testee->moduleIs($serviceId, Package::MODULE_EXECUTION_FAILED));
+        static::assertTrue($package->boot($module));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXECUTED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXECUTION_FAILED));
+    }
+
+    /**
+     * Test, when multiple modules are added, and debug is true, 'modules' status is set correctly.
+     *
+     * @test
+     */
+    public function testStatusForMultipleModulesWhenDebug(): void
+    {
+        $emptyModule = $this->mockModule('empty');
+        $emptyServicesModule = $this->mockModule('empty_services', ServiceModule::class);
+        $emptyFactoriesModule = $this->mockModule('empty_factories', FactoryModule::class);
+        $emptyExtensionsModule = $this->mockModule('empty_extensions', ExtendingModule::class);
+
+        $servicesModule = $this->mockModule('service', ServiceModule::class);
+        $servicesModule->shouldReceive('services')->andReturn($this->stubServices('S1', 'S2'));
+
+        $factoriesModule = $this->mockModule('factory', FactoryModule::class);
+        $factoriesModule->shouldReceive('factories')->andReturn($this->stubServices('F'));
+
+        $extendingModule = $this->mockModule('extension', ExtendingModule::class);
+        $extendingModule->shouldReceive('extensions')->andReturn($this->stubServices('E'));
+
+        $multiModule = $this->mockModule(
+            'multi',
+            ServiceModule::class,
+            ExtendingModule::class,
+            FactoryModule::class
+        );
+        $multiModule->shouldReceive('services')->andReturn($this->stubServices('MS1'));
+        $multiModule->shouldReceive('factories')->andReturn($this->stubServices('MF1', 'MF2'));
+        $multiModule->shouldReceive('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
+
+        $package = Package::new($this->mockProperties('name', true))
+            ->addModule($emptyServicesModule)
+            ->addModule($emptyFactoriesModule)
+            ->addModule($emptyExtensionsModule)
+            ->addModule($servicesModule)
+            ->addModule($multiModule)
+            ->addModule($factoriesModule);
+
+        static::assertTrue($package->boot($emptyModule, $extendingModule));
+
+        $expectedStatus = [
+            Package::MODULES_ALL => [
+                'empty_services ' . Package::MODULE_SKIPPED,
+                'empty_factories ' . Package::MODULE_SKIPPED,
+                'empty_extensions ' . Package::MODULE_SKIPPED,
+                'service ' . Package::MODULE_REGISTERED . ' (S1, S2)',
+                'service ' . Package::MODULE_ADDED,
+                'multi ' . Package::MODULE_REGISTERED . ' (MS1)',
+                'multi ' . Package::MODULE_REGISTERED_FACTORIES . ' (MF1, MF2)',
+                'multi ' . Package::MODULE_EXTENDED . ' (ME1, ME2)',
+                'multi ' . Package::MODULE_ADDED,
+                'factory ' . Package::MODULE_REGISTERED_FACTORIES . ' (F)',
+                'factory ' . Package::MODULE_ADDED,
+                'empty ' . Package::MODULE_SKIPPED,
+                'extension ' . Package::MODULE_EXTENDED . ' (E)',
+                'extension ' . Package::MODULE_ADDED,
+            ],
+            Package::MODULE_SKIPPED => [
+                'empty_services',
+                'empty_factories',
+                'empty_extensions',
+                'empty',
+            ],
+            Package::MODULE_REGISTERED => [
+                'service',
+                'multi',
+            ],
+            Package::MODULE_REGISTERED_FACTORIES => [
+                'multi',
+                'factory',
+            ],
+            Package::MODULE_EXTENDED => [
+                'multi',
+                'extension',
+            ],
+            Package::MODULE_ADDED => [
+                'service',
+                'multi',
+                'factory',
+                'extension',
+            ],
+        ];
+
+        $actualStatus = $package->modulesStatus();
+
+        ksort($expectedStatus, SORT_STRING);
+        ksort($actualStatus, SORT_STRING);
+
+        static::assertSame($expectedStatus, $actualStatus);
+    }
+
+    /**
+     * Test, when multiple modules are added, and debug is false, 'modules' status is set correctly.
+     *
+     * @test
+     */
+    public function testStatusForMultipleModulesWhenNotDebug(): void
+    {
+        $emptyModule = $this->mockModule('empty');
+        $emptyServicesModule = $this->mockModule('empty_services', ServiceModule::class);
+        $emptyFactoriesModule = $this->mockModule('empty_factories', FactoryModule::class);
+        $emptyExtensionsModule = $this->mockModule('empty_extensions', ExtendingModule::class);
+
+        $servicesModule = $this->mockModule('service', ServiceModule::class);
+        $servicesModule->shouldReceive('services')->andReturn($this->stubServices('S1', 'S2'));
+
+        $factoriesModule = $this->mockModule('factory', FactoryModule::class);
+        $factoriesModule->shouldReceive('factories')->andReturn($this->stubServices('F'));
+
+        $extendingModule = $this->mockModule('extension', ExtendingModule::class);
+        $extendingModule->shouldReceive('extensions')->andReturn($this->stubServices('E'));
+
+        $multiModule = $this->mockModule(
+            'multi',
+            ServiceModule::class,
+            ExtendingModule::class,
+            FactoryModule::class
+        );
+        $multiModule->shouldReceive('services')->andReturn($this->stubServices('MS1'));
+        $multiModule->shouldReceive('factories')->andReturn($this->stubServices('MF1', 'MF2'));
+        $multiModule->shouldReceive('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
+
+        $package = Package::new($this->mockProperties('name', false))
+            ->addModule($emptyServicesModule)
+            ->addModule($emptyFactoriesModule)
+            ->addModule($emptyExtensionsModule)
+            ->addModule($servicesModule)
+            ->addModule($multiModule)
+            ->addModule($factoriesModule);
+
+        static::assertTrue($package->boot($emptyModule, $extendingModule));
+
+        $expectedStatus = [
+            Package::MODULES_ALL => [
+                'empty_services ' . Package::MODULE_SKIPPED,
+                'empty_factories ' . Package::MODULE_SKIPPED,
+                'empty_extensions ' . Package::MODULE_SKIPPED,
+                'service ' . Package::MODULE_REGISTERED,
+                'service ' . Package::MODULE_ADDED,
+                'multi ' . Package::MODULE_REGISTERED,
+                'multi ' . Package::MODULE_REGISTERED_FACTORIES,
+                'multi ' . Package::MODULE_EXTENDED,
+                'multi ' . Package::MODULE_ADDED,
+                'factory ' . Package::MODULE_REGISTERED_FACTORIES,
+                'factory ' . Package::MODULE_ADDED,
+                'empty ' . Package::MODULE_SKIPPED,
+                'extension ' . Package::MODULE_EXTENDED,
+                'extension ' . Package::MODULE_ADDED,
+            ],
+            Package::MODULE_SKIPPED => [
+                'empty_services',
+                'empty_factories',
+                'empty_extensions',
+                'empty',
+            ],
+            Package::MODULE_REGISTERED => [
+                'service',
+                'multi',
+            ],
+            Package::MODULE_REGISTERED_FACTORIES => [
+                'multi',
+                'factory',
+            ],
+            Package::MODULE_EXTENDED => [
+                'multi',
+                'extension',
+            ],
+            Package::MODULE_ADDED => [
+                'service',
+                'multi',
+                'factory',
+                'extension',
+            ],
+        ];
+
+        $actualStatus = $package->modulesStatus();
+
+        ksort($expectedStatus, SORT_STRING);
+        ksort($actualStatus, SORT_STRING);
+
+        static::assertSame($expectedStatus, $actualStatus);
     }
 }

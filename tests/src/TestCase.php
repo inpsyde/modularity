@@ -33,91 +33,66 @@ abstract class TestCase extends FrameworkTestCase
 
     /**
      * @param string $basename
+     * @param bool $isDebug
      *
      * @return Properties|MockInterface
      */
-    protected function mockProperties(string $basename = 'basename')
-    {
+    protected function mockProperties(
+        string $basename = 'basename',
+        bool $isDebug = false
+    ): Properties {
+
         $stub = \Mockery::mock(Properties::class);
-        $stub
-            ->shouldReceive('basename')
-            ->andReturn($basename);
+        $stub->shouldReceive('basename')->andReturn($basename);
+        $stub->shouldReceive('isDebug')->andReturn($isDebug);
 
         return $stub;
     }
 
     /**
      * @param string $id
-     *
+     * @param class-string ...$interfaces
      * @return Module|MockInterface
      */
-    protected function mockModule(string $id = 'module')
+    protected function mockModule(string $id = 'module', string ...$interfaces): Module
     {
-        $stub = \Mockery::mock(Module::class);
-        $stub
-            ->shouldReceive('id')
-            ->andReturn($id);
+        in_array(Module::class, $interfaces, true) or $interfaces[] = Module::class;
+
+        $stub = \Mockery::mock(...$interfaces);
+        $stub->shouldReceive('id')->andReturn($id);
+
+        if (in_array(ServiceModule::class, $interfaces, true) ) {
+            $stub->shouldReceive('services')->byDefault()->andReturn([]);
+        }
+
+        if (in_array(FactoryModule::class, $interfaces, true) ) {
+            $stub->shouldReceive('factories')->byDefault()->andReturn([]);
+        }
+
+        if (in_array(ExtendingModule::class, $interfaces, true) ) {
+            $stub->shouldReceive('extensions')->byDefault()->andReturn([]);
+        }
+
+        if (in_array(ExecutableModule::class, $interfaces, true) ) {
+            $stub->shouldReceive('run')->byDefault()->andReturn(false);
+        }
 
         return $stub;
     }
 
     /**
-     * @param string $id
-     *
-     * @return ServiceModule|MockInterface
+     * @param string ...$ids
+     * @return array<string, callable>
      */
-    protected function mockServiceModule(string $id = 'service-module')
+    protected function stubServices(string ...$ids): array
     {
-        $stub = \Mockery::mock(ServiceModule::class);
-        $stub
-            ->shouldReceive('id')
-            ->andReturn($id);
+        $services = [];
+        foreach ($ids as $id) {
+            $services[$id] = static function () use ($id) {
+                return new \ArrayObject(['id' => $id]);
+            };
+        }
 
-        return $stub;
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return FactoryModule|MockInterface
-     */
-    protected function mockFactoryModule(string $id = 'factory-module')
-    {
-        $stub = \Mockery::mock(FactoryModule::class);
-        $stub
-            ->shouldReceive('id')
-            ->andReturn($id);
-
-        return $stub;
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return ExtendingModule|MockInterface
-     */
-    protected function mockExtendingModule(string $id = 'extending-module')
-    {
-        $stub = \Mockery::mock(ExtendingModule::class);
-        $stub
-            ->shouldReceive('id')
-            ->andReturn($id);
-
-        return $stub;
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return ExecutableModule|MockInterface
-     */
-    protected function mockExecutableModule(string $id = 'executable-module')
-    {
-        $stub = \Mockery::mock(ExecutableModule::class);
-        $stub
-            ->shouldReceive('id')
-            ->andReturn($id);
-
-        return $stub;
+        return $services;
     }
 }
