@@ -20,13 +20,24 @@ Returns an array of all Modules and the current status.
 
 **Package::moduleIs(string $moduleId, string $status): bool**
 
-Allows to check the status for a given Module::id(). Following Module status are available:
+Allows to check the status for a given `Module::id()`.
 
-- `Package::MODULE_ADDED` - Module was successfully added to the Application.
-- `Package::MODULE_REGISTERED` - ServiceModule or FactoryModule were added.
-- `Package::MODULE_EXTENDED` - ExtendingModule was added.
-- `Package::MODULE_EXECUTED` - ExecutableModule was executed successfully.
-- `Package::MODULE_EXECUTION_FAILED` - ExecutableModule failed to execute.
+Following `Module` status are available:
+
+- `Package::MODULE_ADDED` - A `Module` (of any type) was successfully added to the application.
+- `Package::MODULE_REGISTERED` - A `ServiceModule` was added.
+- `Package::MODULE_REGISTERED_FACTORIES` - A `FactoryModule` were added.
+- `Package::MODULE_EXTENDED` - An `ExtendingModule` was added.
+- `Package::MODULE_EXECUTED` - An `ExecutableModule` was executed successfully.
+- `Package::MODULE_EXECUTION_FAILED` - An `ExecutableModule` failed to execute.
+- `Package::MODULE_SKIPPED` - A `Module` was not added to the application.
+
+`Package::MODULE_SKIPPED` status can be assigned in two cases:
+
+- when the `Module` class _only_ implements `Module` interface and not a more specific
+  interfaces like `ServiceModule` or `ExecutableModule`, etc
+- when even implementing a more specific interface, the class return no services/factories/extensions
+  e.g. a `ServiceModule` whose `services()` method returns an empty array.
 
 **Package::hookName(string $suffix = ''): string**
 
