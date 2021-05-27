@@ -56,7 +56,7 @@ abstract class TestCase extends FrameworkTestCase
      */
     protected function mockModule(string $id = 'module', string ...$interfaces): Module
     {
-        in_array(Module::class, $interfaces, true) or $interfaces[] = Module::class;
+        $interfaces or $interfaces[] = Module::class;
 
         $stub = \Mockery::mock(...$interfaces);
         $stub->shouldReceive('id')->andReturn($id);
