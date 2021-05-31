@@ -22,22 +22,17 @@ Returns an array of all Modules and the current status.
 
 Allows to check the status for a given `Module::id()`.
 
-Following `Module` status are available:
+Following `Module` statuses are available:
 
-- `Package::MODULE_ADDED` - A `Module` (of any type) was successfully added to the application.
-- `Package::MODULE_REGISTERED` - A `ServiceModule` was added.
-- `Package::MODULE_REGISTERED_FACTORIES` - A `FactoryModule` were added.
-- `Package::MODULE_EXTENDED` - An `ExtendingModule` was added.
-- `Package::MODULE_EXECUTED` - An `ExecutableModule` was executed successfully.
-- `Package::MODULE_EXECUTION_FAILED` - An `ExecutableModule` failed to execute.
-- `Package::MODULE_SKIPPED` - A `Module` was not added to the application.
-
-`Package::MODULE_SKIPPED` status can be assigned in two cases:
-
-- when the `Module` class _only_ implements `Module` interface and not a more specific
-  interfaces like `ServiceModule` or `ExecutableModule`, etc
-- when even implementing a more specific interface, the class return no services/factories/extensions
-  e.g. a `ServiceModule` whose `services()` method returns an empty array.
+| Status                                 | Description                                                  |
+| -------------------------------------- | ------------------------------------------------------------ |
+| `Package::MODULE_REGISTERED`           | A `ServiceModule` was added and returned a non-zero number of services. |
+| `Package::MODULE_REGISTERED_FACTORIES` | A `FactoryModule` was added and returned a non-zero number of factories. |
+| `Package::MODULE_EXTENDED`             | An `ExtendingModule` was added and returned a non-zero number of extension. |
+| `Package::MODULE_ADDED`                | _Any_ of the three statuses above applied, or a module implements `ExecutableModule` |
+| `Package::MODULE_NOT_ADDED`            | _None_ of the first three statuses applied for a modules that is non-executable. That might happen in two scenarios: a module only implemented base `Module` interface, or did not return any service/factory/extension. |
+| `Package::MODULE_EXECUTED`             | An `ExecutableModule::run()` method was called and returned `true`. |
+| `Package::MODULE_EXECUTION_FAILED`     | An `ExecutableModule::run()` method was called and returned `false`. |
 
 **Package::hookName(string $suffix = ''): string**
 
