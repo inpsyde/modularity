@@ -97,7 +97,7 @@ class Package
      * </code>
      */
     public const MODULE_ADDED = 'added';
-    public const MODULE_SKIPPED = 'skipped';
+    public const MODULE_NOT_ADDED = 'not-added';
     public const MODULE_REGISTERED = 'registered';
     public const MODULE_REGISTERED_FACTORIES = 'registered-factories';
     public const MODULE_EXTENDED = 'extended';
@@ -140,7 +140,7 @@ class Package
     private $moduleStatus = [self::MODULES_ALL => []];
 
     /**
-     * @var ExecutableModule[]
+     * @var list<ExecutableModule>
      */
     private $executables = [];
 
@@ -192,20 +192,20 @@ class Package
     {
         $this->assertStatus(self::STATUS_IDLE, 'access Container');
 
-        $registered = $this->addModuleServices($module, self::MODULE_REGISTERED);
-        $addedFactories = $this->addModuleServices($module, self::MODULE_REGISTERED_FACTORIES);
+        $registeredServices = $this->addModuleServices($module, self::MODULE_REGISTERED);
+        $registeredFactories = $this->addModuleServices($module, self::MODULE_REGISTERED_FACTORIES);
         $extended = $this->addModuleServices($module, self::MODULE_EXTENDED);
-
-        $added = $registered || $addedFactories || $extended;
+        $isExecutable = $module instanceof ExecutableModule;
 
         // ExecutableModules are collected and executed on Package::boot()
         // when the Container is being compiled.
-        if ($module instanceof ExecutableModule) {
+        if ($isExecutable) {
+            /** @var ExecutableModule $module */
             $this->executables[] = $module;
-            $added = true;
         }
 
-        $status = $added ? self::MODULE_ADDED : self::MODULE_SKIPPED;
+        $added = $registeredServices || $registeredFactories || $extended || $isExecutable;
+        $status = $added ? self::MODULE_ADDED : self::MODULE_NOT_ADDED;
         $this->moduleProgress($module->id(), $status);
 
         return $this;

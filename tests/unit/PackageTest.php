@@ -95,7 +95,7 @@ class PackageTest extends TestCase
         $package = Package::new($propertiesStub);
 
         static::assertTrue($package->boot($moduleStub));
-        static::assertTrue($package->moduleIs($expectedId, Package::MODULE_SKIPPED));
+        static::assertTrue($package->moduleIs($expectedId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED_FACTORIES));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_EXTENDED));
@@ -119,7 +119,7 @@ class PackageTest extends TestCase
         $package = Package::new($this->mockProperties());
 
         static::assertTrue($package->boot($module));
-        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
@@ -141,7 +141,7 @@ class PackageTest extends TestCase
         $package = Package::new($this->mockProperties());
 
         static::assertTrue($package->boot($module));
-        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
@@ -163,7 +163,7 @@ class PackageTest extends TestCase
         $package = Package::new($this->mockProperties());
 
         static::assertTrue($package->boot($module));
-        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
@@ -187,7 +187,7 @@ class PackageTest extends TestCase
         $package = Package::new($this->mockProperties());
 
         static::assertTrue($package->boot($module));
-        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_SKIPPED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
@@ -317,9 +317,9 @@ class PackageTest extends TestCase
 
         $expectedStatus = [
             Package::MODULES_ALL => [
-                'empty_services ' . Package::MODULE_SKIPPED,
-                'empty_factories ' . Package::MODULE_SKIPPED,
-                'empty_extensions ' . Package::MODULE_SKIPPED,
+                'empty_services ' . Package::MODULE_NOT_ADDED,
+                'empty_factories ' . Package::MODULE_NOT_ADDED,
+                'empty_extensions ' . Package::MODULE_NOT_ADDED,
                 'service ' . Package::MODULE_REGISTERED . ' (S1, S2)',
                 'service ' . Package::MODULE_ADDED,
                 'multi ' . Package::MODULE_REGISTERED . ' (MS1)',
@@ -328,11 +328,11 @@ class PackageTest extends TestCase
                 'multi ' . Package::MODULE_ADDED,
                 'factory ' . Package::MODULE_REGISTERED_FACTORIES . ' (F)',
                 'factory ' . Package::MODULE_ADDED,
-                'empty ' . Package::MODULE_SKIPPED,
+                'empty ' . Package::MODULE_NOT_ADDED,
                 'extension ' . Package::MODULE_EXTENDED . ' (E)',
                 'extension ' . Package::MODULE_ADDED,
             ],
-            Package::MODULE_SKIPPED => [
+            Package::MODULE_NOT_ADDED => [
                 'empty_services',
                 'empty_factories',
                 'empty_extensions',
@@ -409,9 +409,9 @@ class PackageTest extends TestCase
 
         $expectedStatus = [
             Package::MODULES_ALL => [
-                'empty_services ' . Package::MODULE_SKIPPED,
-                'empty_factories ' . Package::MODULE_SKIPPED,
-                'empty_extensions ' . Package::MODULE_SKIPPED,
+                'empty_services ' . Package::MODULE_NOT_ADDED,
+                'empty_factories ' . Package::MODULE_NOT_ADDED,
+                'empty_extensions ' . Package::MODULE_NOT_ADDED,
                 'service ' . Package::MODULE_REGISTERED,
                 'service ' . Package::MODULE_ADDED,
                 'multi ' . Package::MODULE_REGISTERED,
@@ -420,11 +420,11 @@ class PackageTest extends TestCase
                 'multi ' . Package::MODULE_ADDED,
                 'factory ' . Package::MODULE_REGISTERED_FACTORIES,
                 'factory ' . Package::MODULE_ADDED,
-                'empty ' . Package::MODULE_SKIPPED,
+                'empty ' . Package::MODULE_NOT_ADDED,
                 'extension ' . Package::MODULE_EXTENDED,
                 'extension ' . Package::MODULE_ADDED,
             ],
-            Package::MODULE_SKIPPED => [
+            Package::MODULE_NOT_ADDED => [
                 'empty_services',
                 'empty_factories',
                 'empty_extensions',
