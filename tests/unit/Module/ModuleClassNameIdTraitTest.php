@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Module;
+namespace Inpsyde\Modularity\Tests\Unit\Module;
 
+use Inpsyde\Modularity;
 use Inpsyde\Modularity\Tests\TestCase;
 
 class ModuleClassNameIdTraitTest extends TestCase
@@ -12,13 +13,13 @@ class ModuleClassNameIdTraitTest extends TestCase
     /**
      * @test
      */
-    public function testBasic(): void
+    public function testIdMatchesClassName(): void
     {
-        $testee = new class implements Module {
+        $module = new class implements Modularity\Module\Module {
 
-            use ModuleClassNameIdTrait;
+            use Modularity\Module\ModuleClassNameIdTrait;
         };
 
-        static::assertSame(get_class($testee), $testee->id());
+        static::assertSame(get_class($module), $module->id());
     }
 }

@@ -20,13 +20,19 @@ Returns an array of all Modules and the current status.
 
 **Package::moduleIs(string $moduleId, string $status): bool**
 
-Allows to check the status for a given Module::id(). Following Module status are available:
+Allows to check the status for a given `Module::id()`.
 
-- `Package::MODULE_ADDED` - Module was successfully added to the Application.
-- `Package::MODULE_REGISTERED` - ServiceModule or FactoryModule were added.
-- `Package::MODULE_EXTENDED` - ExtendingModule was added.
-- `Package::MODULE_EXECUTED` - ExecutableModule was executed successfully.
-- `Package::MODULE_EXECUTION_FAILED` - ExecutableModule failed to execute.
+Following `Module` statuses are available:
+
+| Status                                 | Description                                                  |
+| -------------------------------------- | ------------------------------------------------------------ |
+| `Package::MODULE_REGISTERED`           | A `ServiceModule` was added and returned a non-zero number of services. |
+| `Package::MODULE_REGISTERED_FACTORIES` | A `FactoryModule` was added and returned a non-zero number of factories. |
+| `Package::MODULE_EXTENDED`             | An `ExtendingModule` was added and returned a non-zero number of extension. |
+| `Package::MODULE_ADDED`                | _Any_ of the three statuses above applied, or a module implements `ExecutableModule` |
+| `Package::MODULE_NOT_ADDED`            | _None_ of the first three statuses applied for a modules that is non-executable. That might happen in two scenarios: a module only implemented base `Module` interface, or did not return any service/factory/extension. |
+| `Package::MODULE_EXECUTED`             | An `ExecutableModule::run()` method was called and returned `true`. |
+| `Package::MODULE_EXECUTION_FAILED`     | An `ExecutableModule::run()` method was called and returned `false`. |
 
 **Package::hookName(string $suffix = ''): string**
 
