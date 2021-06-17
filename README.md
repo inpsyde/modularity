@@ -3,7 +3,6 @@
 [![Version](https://img.shields.io/packagist/v/inpsyde/modularity.svg)](https://packagist.org/packages/inpsyde/modularity)
 [![Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/inpsyde/modularity)
 [![codecov](https://codecov.io/gh/inpsyde/modularity/branch/master/graph/badge.svg)](https://codecov.io/gh/inpsyde/modularity)
-[![Build](https://img.shields.io/travis/inpsyde/modularity.svg)](http://travis-ci.org/inpsyde/modularity)
 [![Downloads](https://img.shields.io/packagist/dt/inpsyde/modularity.svg)](https://packagist.org/packages/inpsyde/modularity)
 [![License](https://img.shields.io/packagist/l/inpsyde/modularity.svg)](https://packagist.org/packages/inpsyde/modularity)
 
