@@ -22,4 +22,10 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-suggest -a
 
       - name: Run unit tests
-        run: composer tests:no-cov
+        run: composer tests:codecov
+
+      - uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          verbose: true
