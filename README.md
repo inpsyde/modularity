@@ -6,7 +6,28 @@
 [![Downloads](https://img.shields.io/packagist/dt/inpsyde/modularity.svg)](https://packagist.org/packages/inpsyde/modularity)
 [![License](https://img.shields.io/packagist/l/inpsyde/modularity.svg)](https://packagist.org/packages/inpsyde/modularity)
 
-A modular [PSR-11](https://github.com/php-fig/container) implementation for WordPress Plugins, Themes or Libraries.
+## Introduction
+
+inpsyde/modularity is a modular [PSR-11](https://github.com/php-fig/container) implementation for WordPress Plugins, Themes or Libraries.
+
+## Installation
+
+```
+$ composer require inpsyde/modularity
+```
+
+## Minimum Requirements and Dependencies
+
+* PHP 7.2+
+
+When installed for development, via Composer, the package also requires:
+
+* inpsyde/php-coding-standards
+* roots/wordpress
+* vimeo/psalm
+* phpunit/phpunit
+* brain/monkey
+* mikey179/vfsstream
 
 ## Package
 This is the central class, which will allow you to add multiple Containers, register Modules and use Properties to get more information about your Application.
