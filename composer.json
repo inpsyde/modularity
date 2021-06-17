@@ -1,6 +1,6 @@
 {
     "name": "inpsyde/modularity",
-    "description": "Inpsyde modularity",
+    "description": "A modular PSR-11 implementation for WordPress Plugins, Themes or Libraries.",
     "type": "library",
     "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
