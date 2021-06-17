@@ -5,6 +5,24 @@
     "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Inpsyde GmbH",
+            "homepage": "https://inpsyde.com/",
+            "email": "hello@inpsyde.com",
+            "role": "Company"
+        },
+        {
+            "name": "Christian Leucht",
+            "email": "c.leucht@inpsyde.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Pablo Kauffman",
+            "email": "p.kauffman@inpsyde.com",
+            "role": "Developer"
+        }
+    ],
     "require": {
         "php": ">=7.2",
         "ext-json": "*",
