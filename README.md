@@ -32,7 +32,7 @@ When installed for development, via Composer, the package also requires:
 ## Package
 This is the central class, which will allow you to add multiple Containers, register Modules and use Properties to get more information about your Application.
 
-Aside from that, the `Package`-class will boot your Application on a specific point (like plugins_loaded) and grants access for other Applications via hook to register and extend Services via Modules.
+Aside from that, the `Package`-class will boot your Application on a specific point (like `plugins_loaded`) and grants access for other Applications via hook to register and extend Services via Modules.
 
 ```php
 <?php
