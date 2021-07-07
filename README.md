@@ -33,7 +33,7 @@ When installed for development, via Composer, the package also requires:
 ## Documentation
 
 1. [Package](docs/Package.md)
-2. [PSR-11 Container](docs/PSR-11%20Container.md)
+2. [PSR-11 Container](docs/PSR-11-Container.md)
 3. [Modules](docs/Modules.md)
 4. [Properties](docs/Properties.md)
 
