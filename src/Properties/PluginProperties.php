@@ -83,9 +83,12 @@ class PluginProperties extends BaseProperties
         $pluginData = get_plugin_data($pluginMainFile);
         $properties = Properties::DEFAULT_PROPERTIES;
 
+        // Map pluginData to internal structure.
         foreach (self::HEADERS as $key => $pluginDataKey) {
             $properties[$key] = $pluginData[$pluginDataKey] ?? '';
+            unset($pluginData[$pluginDataKey]);
         }
+        $properties = array_merge($properties, $pluginData);
 
         $this->pluginFile = $pluginMainFile;
 

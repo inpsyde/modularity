@@ -89,7 +89,6 @@ class PluginPropertiesTest extends TestCase
         static::assertTrue($testee->isActive());
     }
 
-
     /**
      * @test
      */
@@ -110,10 +109,82 @@ class PluginPropertiesTest extends TestCase
     }
 
     /**
+     * @test
+     * @dataProvider provideCustomHeaders
+     *
+     * @param array $customHeaders
+     */
+    public function testCustomPluginHeaders(array $customHeaders): void
+    {
+        $expectedBaseName = 'plugin-name';
+        $expectedBasePath = '/path/to/plugin/';
+        $expectedAuthor = 'Inpsyde GmbH';
+        $expectedAuthorUri = 'https://www.inpsyde.com';
+
+        $pluginData = array_merge(
+            [
+                'Author' => $expectedAuthor,
+                'AuthorURI' => $expectedAuthorUri,
+
+            ],
+            $customHeaders
+        );
+
+        Functions\expect('get_plugin_data')->andReturn($pluginData);
+        Functions\when('plugins_url')->returnArg(1);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
+
+        $testee = PluginProperties::new($expectedBasePath);
+
+        // Check if PluginProperties do behave as normal
+        static::assertSame($expectedBaseName, $testee->baseName());
+        static::assertSame($expectedBasePath, $testee->basePath());
+
+        // Test default Headers
+        static::assertSame($expectedAuthor, $testee->author());
+        static::assertSame($expectedAuthor, $testee->get(Properties::PROP_AUTHOR));
+        static::assertSame($expectedAuthorUri, $testee->authorUri());
+        static::assertSame($expectedAuthorUri, $testee->get(Properties::PROP_AUTHOR_URI));
+
+        // Test headers from get_plugin_data() are removed from properties
+        // "Author" will be mapped to Properties::PROP_AUTHOR
+        static::assertFalse($testee->has('Author'));
+        static::assertFalse($testee->has('AuthorURI'));
+
+        // Test custom Headers
+        foreach ($customHeaders as $key => $value) {
+            static::assertTrue($testee->has($key));
+            static::assertSame($value, $testee->get($key));
+        }
+    }
+
+    /**
+     * Provides custom Plugin Headers which will
+     * be returned by get_plugin_data()
+     */
+    public function provideCustomHeaders(): \Generator
+    {
+        yield 'WooCommerce Plugin Headers' => [
+            [
+                'WC requires at least' => '2.2',
+                'WC tested up to:' => '2.3',
+            ],
+        ];
+
+        yield 'Custom Plugin Headers' => [
+            [
+                'Foo' => 'bar',
+                'Baz' => 'bam',
+            ],
+        ];
+    }
+
+    /**
      *
      * @param string $pluginPath
      * @param string $muPluginDir
-     * @param bool$expected
+     * @param bool $expected
      *
      * @test
      *
@@ -124,7 +195,6 @@ class PluginPropertiesTest extends TestCase
     public function testIsMuPlugin(string $pluginPath, string $muPluginDir, bool $expected): void
     {
         $expectedBaseName = 'plugin-name';
-
 
         Functions\expect('get_plugin_data')->andReturn([]);
         Functions\when('plugins_url')->returnArg(1);
@@ -142,19 +212,19 @@ class PluginPropertiesTest extends TestCase
     /**
      * @return array[]
      */
-    public function provideIsMuPluginData(): array {
+    public function provideIsMuPluginData(): array
+    {
         return [
             'is not mu-plugin' => [
                 '/wp-content/plugins/the-plugin/',
                 '/wp-content/mu-plugins/',
-                false
+                false,
             ],
             'is mu-plugin' => [
                 '/wp-content/mu-plugins/the-plugin/',
                 '/wp-content/mu-plugins/',
-                true
-            ]
+                true,
+            ],
         ];
     }
-
 }
