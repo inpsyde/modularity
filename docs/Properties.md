@@ -42,8 +42,8 @@ A specific instance of your Properties will use the following data:
 | Properties::textDomain() | Text Domain | Text Domain | extra.modularity.textDomain |
 | Properties::uri() | Theme URI | Plugin URI | extra.modularity.uri |
 | Properties::version() | Version | Version | version<br>extra.modularity.version |
-| Properties::requiresWp() | RequiresWP | Requires at least | extra.modularity.requiresWp |
-| Properties::requiresPhp() | RequiresPHP | Requires PHP | require.php<br>require-dev.php |
+| Properties::requiresWp() | Requires at least | Requires at least | extra.modularity.requiresWp |
+| Properties::requiresPhp() | Requires PHP | Requires PHP | require.php<br>require-dev.php |
 | Properties::baseUrl() | WP_Theme::get_stylesheet_directory_uri() | plugins_url() |  |
 | Properties::network() |  | Network |  |
 | Properties::status() | Status |  |  |
