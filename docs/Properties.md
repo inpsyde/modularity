@@ -35,15 +35,15 @@ A specific instance of your Properties will use the following data:
 | Properties method | Theme - style.css | Plugin - file header | Library - composer.json |
 | --- | --- | --- | --- |
 | Properties::author() | Author | Author | authors[0].name |
-| Properties::authorUri() | Author URI | AuthorURI | authors[0].homepage |
+| Properties::authorUri() | Author URI | Author URI | authors[0].homepage |
 | Properties::description() | Description | Description | description |
-| Properties::domainPath() | Domain Path | DomainPath | extra.modularity.domainPath |
-| Properties::name() | Theme Name | Name | extra.modularity.name |
-| Properties::textDomain() | Text Domain | TextDomain | extra.modularity.textDomain |
-| Properties::uri() | Theme URI | PluginURI | extra.modularity.uri |
+| Properties::domainPath() | Domain Path | Domain Path | extra.modularity.domainPath |
+| Properties::name() | Theme Name | Plugin Name | extra.modularity.name |
+| Properties::textDomain() | Text Domain | Text Domain | extra.modularity.textDomain |
+| Properties::uri() | Theme URI | Plugin URI | extra.modularity.uri |
 | Properties::version() | Version | Version | version<br>extra.modularity.version |
-| Properties::requiresWp() | RequiresWP | RequiresWP | extra.modularity.requiresWp |
-| Properties::requiresPhp() | RequiresPHP | RequiresPHP | require.php<br>require-dev.php |
+| Properties::requiresWp() | RequiresWP | Requires at least | extra.modularity.requiresWp |
+| Properties::requiresPhp() | RequiresPHP | Requires PHP | require.php<br>require-dev.php |
 | Properties::baseUrl() | WP_Theme::get_stylesheet_directory_uri() | plugins_url() |  |
 | Properties::network() |  | Network |  |
 | Properties::status() | Status |  |  |
