@@ -1,15 +1,13 @@
 {
     "name": "inpsyde/modularity",
-    "description": "A modular PSR-11 implementation for WordPress Plugins, Themes or Libraries.",
     "type": "library",
+    "description": "Modular PSR-11 implementation for WordPress plugins, themes or libraries.",
     "license": "GPL-2.0-or-later",
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "authors": [
         {
             "name": "Inpsyde GmbH",
-            "homepage": "https://inpsyde.com/",
             "email": "hello@inpsyde.com",
+            "homepage": "https://inpsyde.com/",
             "role": "Company"
         },
         {
@@ -29,12 +27,18 @@
         "psr/container": "~1.0"
     },
     "require-dev": {
-        "inpsyde/php-coding-standards": "^1",
-        "roots/wordpress": "@stable",
-        "vimeo/psalm": "@stable",
-        "phpunit/phpunit": "^8",
         "brain/monkey": "^2",
-        "mikey179/vfsstream": "^1"
+        "inpsyde/php-coding-standards": "^1",
+        "mikey179/vfsstream": "^1",
+        "phpunit/phpunit": "^8",
+        "roots/wordpress": "@stable",
+        "vimeo/psalm": "@stable"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        },
+        "wordpress-install-dir": "vendor/wordpress/wordpress"
     },
     "autoload": {
         "psr-4": {
@@ -47,22 +51,18 @@
             "Inpsyde\\Modularity\\Tests\\Unit\\": "tests/unit/"
         }
     },
-    "extra": {
-        "wordpress-install-dir": "vendor/wordpress/wordpress",
-        "branch-alias": {
-            "dev-master": "1.x-dev"
-        }
-    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "scripts": {
         "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
         "psalm": "@php ./vendor/vimeo/psalm/psalm",
-        "tests": "@php ./vendor/phpunit/phpunit/phpunit",
-        "tests:no-cov": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
-        "tests:codecov": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover coverage.xml",
         "qa": [
             "@tests:no-cov",
             "@cs",
             "@psalm"
-        ]
+        ],
+        "tests": "@php ./vendor/phpunit/phpunit/phpunit",
+        "tests:codecov": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover coverage.xml",
+        "tests:no-cov": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage"
     }
 }
