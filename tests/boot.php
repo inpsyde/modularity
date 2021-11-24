@@ -1,22 +1,28 @@
 <?php
 
-// phpcs:disable
+$testsDir = str_replace('\\', '/', __DIR__);
+$libDir = dirname($testsDir);
+$vendorDir = "{$libDir}/vendor";
+$autoload = "{$vendorDir}/autoload.php";
 
-declare(strict_types=1);
-
-$vendor = dirname(__DIR__).'/vendor';
-
-if (! realpath($vendor)) {
+if (!is_file($autoload)) {
     die('Please install via Composer before running tests.');
 }
 
-putenv('TESTS_DIR='.__DIR__);
-putenv('LIB_DIR='.dirname(__DIR__));
+putenv('TESTS_DIR=' . $testsDir);
+putenv('LIB_DIR=' . $libDir);
+putenv('VENDOR_DIR=' . $vendorDir);
 
-// Define WordPress ABSPATH for usage in IntegrationTests
-if (! defined('ABSPATH')) {
-    define('ABSPATH', __DIR__.'/../vendor/wordpress/wordpress/');
+error_reporting(E_ALL); // phpcs:ignore
+
+require_once "{$libDir}/vendor/antecedent/patchwork/Patchwork.php";
+
+if (!defined('PHPUNIT_COMPOSER_INSTALL')) {
+    define('PHPUNIT_COMPOSER_INSTALL', $autoload);
+    require_once $autoload;
 }
 
-require_once "{$vendor}/autoload.php";
-unset($vendor);
+defined('ABSPATH') or define('ABSPATH', "{$vendorDir}/johnpbloch/wordpress-core/");
+require_once "{$vendorDir}/johnpbloch/wordpress-core/wp-includes/class-wp-error.php";
+
+unset($testsDir, $libDir, $vendorDir, $autoload);

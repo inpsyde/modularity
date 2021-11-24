@@ -1,4 +1,4 @@
-## Modules
+# Modules
 Services can be _registered_, _extended_ and _booted_ via a so-called Module in your Application.
 
 Those Modules can be registered to your Application via the provided `ServiceModule`-, `FactoryModule`-, `ExtendingModule`- and `ExecutableModule`-interfaces.
@@ -17,7 +17,7 @@ Inpsyde\Modularity\Package::new($properties)
 
 Each Module implementation will extend the basic `Module`-interface which is required to define a `Module::id(): string`. This identifier will be re-used in Package-class to keep track of the current state of your Module and will allow easier debugging of your Application. To avoid defining this by hand, it is possible to use the following Trait: `Inpsyde\Modularity\Module\ModuleClassNameIdTrait`
 
-### ServiceModule
+## ServiceModule
 A ServiceModule will allow you to register new Services to the Container, to access them later on a specific point. The `ServiceModule::services(): array` will return an array of Services. Each array-key is an identifier for your Service, while the array-value will contain a callable which receives the primary Container (read-only) to set up your Service.
 
 Services registered via `ServiceModule::services()` will only be resolved and extended once and on continues access the same instance will be returned.
@@ -46,7 +46,7 @@ class ModuleWhichProvidesServices implements ServiceModule
 }
 ```
 
-### FactoryModule
+## FactoryModule
 The `FactoryModule::factories(): array` will allow you to register new Services as factories. This means, that every time you’re accessing the Service via Container::get() you’ll get a new instance of the Service.
 
 ```php
@@ -73,7 +73,7 @@ class ModuleWhichProvidesFactories implements FactoryModule
 }
 ```
 
-### ExtendingModule
+## ExtendingModule
 The `ExtendingModule::extensions(): array` will allow you to return an array of Extensions for your Services. Those Extensions will be added to your Services after registration. Each Extension will return a callable function which will receive the original Service and the primary Container (read-only).
 
 ```php
@@ -101,7 +101,7 @@ class ModuleWhichProvidesExtensions implements ExtendingModule
 }
 ```
 
-### ExecutableModule
+## ExecutableModule
 If there is functionality that needs to be executed, you can make the Module executable like following:
 
 ```php
@@ -129,7 +129,7 @@ class ModuleWhichIsExecuted implements ExecutableModule
 
 The return value true/false will determine if the Module has successfully been executed or not.
 
-#### Context-based execution of Services
+### Context-based execution of Services
 To execute Services based on a Context like “Rest Request” or “FrontOffice” we recommend the usage of [inpsyde/wp-context](https://github.com/inpsyde/wp-context). This package allows you to access the current request context and based on that you can execute your Services:
 
 ```php

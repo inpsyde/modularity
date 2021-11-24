@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity;
 
 use Inpsyde\Modularity\Container\ContainerConfigurator;
+use Inpsyde\Modularity\Container\PackageProxyContainer;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\FactoryModule;
@@ -86,6 +87,16 @@ class Package
     public const ACTION_FAILED_BOOT = 'failed-boot';
 
     /**
+     * Custom action which is triggered when a package is connected.
+     */
+    public const ACTION_PACKAGE_CONNECTED = 'package-connected';
+
+    /**
+     * Custom action which is triggered when a package cannot be connected.
+     */
+    public const ACTION_FAILED_CONNECTION = 'failed-connection';
+
+    /**
      * Module states can be used to get information about your module.
      *
      * @example
@@ -138,6 +149,16 @@ class Package
      * @var array<string, list<string>>
      */
     private $moduleStatus = [self::MODULES_ALL => []];
+
+    /**
+     * Hashmap of where keys are names of connected packages, and values are boolean, true
+     * if connection was successful.
+     *
+     * @see Package::connect()
+     *
+     * @var array<string, bool>
+     */
+    private $connectedPackages = [];
 
     /**
      * @var list<ExecutableModule>
@@ -209,6 +230,72 @@ class Package
         $this->moduleProgress($module->id(), $status);
 
         return $this;
+    }
+
+    /**
+     * @param Package $package
+     * @return bool
+     * @throws \Exception
+     */
+    public function connect(Package $package): bool
+    {
+        if (($package === $this)) {
+            return false;
+        }
+
+        $packageName = $package->name();
+        $errorData = ['package' => $packageName, 'status' => $this->status];
+
+        // Don't connect, if already connected
+        if (array_key_exists($packageName, $this->connectedPackages)) {
+            do_action(
+                $this->hookName(self::ACTION_FAILED_CONNECTION),
+                $packageName,
+                new \WP_Error('already_connected', 'already connected', $errorData)
+            );
+
+            return false;
+        }
+
+        // Don't connect, if already booted or boot failed
+        if (in_array($this->status, [self::STATUS_BOOTED, self::STATUS_FAILED], true)) {
+            $this->connectedPackages[$packageName] = false;
+            do_action(
+                $this->hookName(self::ACTION_FAILED_CONNECTION),
+                $packageName,
+                new \WP_Error('no_connect_status', 'no connect status', $errorData)
+            );
+
+            return false;
+        }
+
+        $this->connectedPackages[$packageName] = true;
+
+        // We put connected package's properties in this package's container, so that in modules
+        // "run" method we can access them if we need to.
+        $this->containerConfigurator->addService(
+            sprintf('%s.%s', $package->name(), self::PROPERTIES),
+            static function () use ($package): Properties {
+                return $package->properties();
+            }
+        );
+
+        // If the other package is booted, we can obtain a container, otherwise
+        // we build a proxy container
+        $container = $package->statusIs(self::STATUS_BOOTED)
+            ? $package->container()
+            : new PackageProxyContainer($package);
+
+        $this->containerConfigurator->addContainer($container);
+
+        do_action(
+            $this->hookName(self::ACTION_PACKAGE_CONNECTED),
+            $packageName,
+            $this->status,
+            $container instanceof PackageProxyContainer
+        );
+
+        return true;
     }
 
     /**
@@ -349,6 +436,23 @@ class Package
     public function modulesStatus(): array
     {
         return $this->moduleStatus;
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function connectedPackages(): array
+    {
+        return $this->connectedPackages;
+    }
+
+    /**
+     * @param string $packageName
+     * @return bool
+     */
+    public function isPackageConnected(string $packageName): bool
+    {
+        return $this->connectedPackages[$packageName] ?? false;
     }
 
     /**

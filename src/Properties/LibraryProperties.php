@@ -52,11 +52,11 @@ class LibraryProperties extends BaseProperties
         $names = [];
         foreach ((array) $authors as $author) {
             $name = $author['name'] ?? null;
-            if ($name) {
+            if ($name && is_string($name)) {
                 $names[] = $name;
             }
             $url = $author['homepage'] ?? null;
-            if ($url && !$properties['authorUri']) {
+            if ($url && !$properties['authorUri'] && is_string($url)) {
                 $properties[self::PROP_AUTHOR_URI] = $url;
             }
         }
@@ -70,12 +70,12 @@ class LibraryProperties extends BaseProperties
             $properties[$key] = $extra[$key] ?? '';
         }
 
-        // requiresPhp in "require.php" or "require-dev.php"
+        // PHP requirement in composer.json "require" or "require-dev"
         $properties[self::PROP_REQUIRES_PHP] = self::extractPhpVersion($composerJsonData);
 
-        // composer.json might has "version" in root
+        // composer.json might have "version" in root
         $version = $composerJsonData['version'] ?? null;
-        if ($version) {
+        if ($version && is_string($version)) {
             $properties[self::PROP_VERSION] = $version;
         }
 
