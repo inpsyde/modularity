@@ -134,7 +134,7 @@ That can be done using the `Package::connect()` method.
 For example:
 
 ```php
-// a theme funcions.php
+// a theme functions.php
 
 $properties = Properties\ThemeProperties::new('/path/to/theme/dir/');
 $theme = Inpsyde\Modularity\Package::new($properties);

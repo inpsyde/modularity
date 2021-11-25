@@ -127,7 +127,7 @@ interface Properties
     public function requiresPhp(): ?string;
 
     /**
-     * Optional. Currently only available for Theme and Library.
+     * Optional. Currently, only available for Theme and Library.
      * Plugins do not have support for "tags"/"keywords" in header.
      *
      * @link https://developer.wordpress.org/reference/classes/wp_theme/#properties

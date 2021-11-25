@@ -17,7 +17,7 @@ class ReadOnlyContainer implements ContainerInterface
     /**
      * @var array<string, bool>
      */
-    private $factoryIds = [];
+    private $factoryIds;
 
     /**
      * @var array<string, array<callable(mixed, ContainerInterface $container):mixed>>
@@ -110,7 +110,7 @@ class ReadOnlyContainer implements ContainerInterface
 
         if (array_key_exists($id, $this->resolvedServices)) {
             return true;
-        };
+        }
 
         foreach ($this->containers as $container) {
             if ($container->has($id)) {
