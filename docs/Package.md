@@ -1,4 +1,4 @@
-## Package
+# Package
 This is the central class, which will allow you to add multiple Containers, register Modules and use Properties to get more information about your Application.
 
 Aside from that, the `Package`-class will boot your Application on a specific point (like plugins_loaded) and grants access for other Applications via hook to register and extend Services via Modules.
@@ -59,7 +59,10 @@ Retrieve the current status of the Application. Following are available:
 - `Package::STATUS_BOOTED` - Application has successfully booted.
 - `Package::STATUS_FAILED_BOOT` - when Application did not boot properly.
 
-### Access from external
+
+
+## Access from external
+
 The recommended way to set up your Application is to provide a function in your Application namespace which returns an instance of Package. Here’s a short example of an “Acme”-Plugin:
 
 ```php
@@ -120,7 +123,67 @@ add_action(
 );
 ```
 
-### What happens on Package::boot()?
+
+
+## Connecting packages
+
+Every `Package` has a separate container, however sometimes it might be desirable access another package's services. For example from a plugin access one library services, or from a theme access a plugin's services.
+
+That can be done using the `Package::connect()` method.
+
+For example:
+
+```php
+// a theme functions.php
+
+$properties = Properties\ThemeProperties::new('/path/to/theme/dir/');
+$theme = Inpsyde\Modularity\Package::new($properties);
+
+$theme->connect(\Acme\plugin());
+$theme->boot();
+```
+
+To note:
+
+- `Package::connect()` must be called **before** boot. If called later, no connections happen and it returns `false`
+- The package to be connected might be already booted or not. In the second case the connection will happen, but before accessing its services it has to be booted, or an exception will happen.
+
+Package connection is a great way to create reusable libraries and services that can be used by many plugins. For example, it might be possible to have a *library* that has something like this:
+
+```php
+namespace Acme;
+
+function myLibrary(): Package {
+    static $lib;
+    if (!$lib) {
+        $properties = Properties\LibraryProperties::new('path/to/composer.json');
+        $lib = Inpsyde\Modularity\: Package::new($properties);
+        $lib->boot(new ModuleOne(), new ModuleTwo());
+    }
+    return $lib;
+}
+```
+
+This would be autoloaded by Composer, but not being a plugin will not be called by WordPress.
+
+However, *many* plugins in the same installation could do:
+
+```php
+/** @var Package $plugin */
+$plugin->connect(\Acme\myLibrary());
+```
+
+Thanks to that, all plugins will be able to access the library's services in the same way they access own modules' services.
+
+
+
+### Accessing connected packages' properties 
+
+In modules, we can access package properties calling `$container->get(Package::PROPERTIES)`. If we'd like to access any connected package properties, we could do that using a key whose format is: `sprintf('%s.%s', $connectedPackage->name(), Package::PROPERTIES)`.
+
+
+
+## What happens on Package::boot()?
 
 When booting your Application, following will happen inside:
 

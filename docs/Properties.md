@@ -1,4 +1,4 @@
-## Properties
+# Properties
 Properties containing additional information about your Application and can be built based on Themes, Plugins or Libraries. The Properties itself are immutable and only grant access to values after they were injected into the Package-class.
 
 Properties are added to the Package-class and automatically added as a Service to the primary Container.
@@ -50,7 +50,16 @@ A specific instance of your Properties will use the following data:
 | Properties::tags() | Tags |  | keywords |
 | Properties::template() | Template |  |  |
 
-### PluginProperties
+
+
+### Accessing connected packages' properties 
+
+When we have packages connected via `Package::connect()`,  to access connected packages' properties, we could do that using a container key whose format is: `sprintf('%s.%s', $connectedPackage->name(), Package::PROPERTIES)`.
+
+
+
+## PluginProperties
+
 Inside your Plugin you can use the following code to automatically generate Properties based on the [Plugins Header](https://developer.wordpress.org/reference/functions/get_plugin_data/):
 
 ```php
@@ -67,7 +76,10 @@ Additionally, PluginProperties will have the following public API:
 - `PluginProperties::isNetworkActive(): bool` - returns if the current Plugin is network-wide active.
 - `PluginProperties::isMuPlugin(): bool` - returns if the current Plugin is a must-use Plugin.
 
-### ThemeProperties
+
+
+## ThemeProperties
+
 To generate Properties for your Theme you need to provide the Theme directory or Theme name. Properties will be built based on the headers in style.css of your Theme:
 
 ```php
@@ -86,7 +98,10 @@ Additionally, ThemeProperties will have the following public API:
 - `ThemeProperties::isCurrentTheme(): bool` - returns true when this Theme is activated.
 - `ThemeProperties::parentThemeProperties(): ?ThemeProperties` - returns Properties of the parent theme if it is a child-Theme.
 
-### LibraryProperties
+
+
+## LibraryProperties
+
 For libraries, you can use the LibraryProperties which give you context based on your composer.json. You can boostrap your standalone-library like following:
 
 ```php

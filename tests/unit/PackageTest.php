@@ -457,4 +457,172 @@ class PackageTest extends TestCase
 
         static::assertSame($expectedStatus, $actualStatus);
     }
+
+    /**
+     * Test we can connect services across packages.
+     *
+     * @test
+     */
+    public function testPackageConnection(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        $package1->boot();
+
+        $connected = $package2->connect($package1);
+        $package2->boot();
+
+        static::assertTrue($connected);
+        static::assertSame(['package_1' => true], $package2->connectedPackages());
+        // retrieve a Package 1's service from Package 2's container.
+        static::assertInstanceOf(\ArrayObject::class, $package2->container()->get('service_1'));
+    }
+
+    /**
+     * Test we can not connect services when the package how call connect is booted.
+     *
+     * @test
+     */
+    public function testPackageConnectionFailsIfBooted(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        $package1->boot();
+        $package2->boot();
+
+        $connected = $package2->connect($package1);
+
+        static::assertFalse($connected);
+        static::assertSame(['package_1' => false], $package2->connectedPackages());
+    }
+
+    /**
+     * Test we can connect services even if target package is not booted yet.
+     *
+     * @test
+     */
+    public function testPackageConnectionWithProxyContainer(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        $connected = $package2->connect($package1);
+        $package2->boot();
+
+        static::assertTrue($connected);
+        static::assertSame(['package_1' => true], $package2->connectedPackages());
+
+        // We successfully connect before booting, but we need to boot to retrieve services
+        $package1->boot();
+        $container = $package2->container();
+
+        // retrieve a Package 1's service from Package 2's container.
+        $connectedService = $container->get('service_1');
+        // retrieve the Package 1's properties from Package 2's container.
+        $connectedProperties = $container->get('package_1.' . Package::PROPERTIES);
+
+        static::assertInstanceOf(\ArrayObject::class, $connectedService);
+        static::assertInstanceOf(Properties::class, $connectedProperties);
+        static::assertSame('package_1', $connectedProperties->baseName());
+    }
+
+    /**
+     * Test that connecting packages not booted, fails when accessing services
+     *
+     * @test
+     */
+    public function testPackageConnectionWithProxyContainerFailsIfNoBoot(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        $connected = $package2->connect($package1);
+        $package2->boot();
+
+        static::assertTrue($connected);
+        static::assertSame(['package_1' => true], $package2->connectedPackages());
+
+        // we got a "not found" exception because `PackageProxyContainer::has()` return false,
+        // because $package1 is not booted
+        $this->expectExceptionMessageMatches('/not found/i');
+        $package2->container()->get('service_1');
+    }
+
+    /**
+     * Test we can connect packages once.
+     *
+     * @test
+     */
+    public function testPackageCanOnlyBeConnectedOnce(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        $actionOk = $package2->hookName(Package::ACTION_PACKAGE_CONNECTED);
+        $actionFailed = $package2->hookName(Package::ACTION_FAILED_CONNECTION);
+
+        Monkey\Actions\expectDone($actionOk)->once();
+        Monkey\Actions\expectDone($actionFailed)->once();
+
+        $connected1 = $package2->connect($package1);
+        $connected2 = $package2->connect($package1);
+
+        static::assertTrue($connected1);
+        static::assertFalse($connected2);
+    }
+
+    /**
+     * Test we can not connect packages with themselves.
+     *
+     * @test
+     */
+    public function testPackageCanNotBeConnectedWithThemselves(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $action = $package1->hookName(Package::ACTION_FAILED_CONNECTION);
+        Monkey\Actions\expectDone($action)->never();
+
+        static::assertFalse($package1->connect($package1));
+    }
 }
