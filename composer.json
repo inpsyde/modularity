@@ -69,5 +69,11 @@
         "tests": "@php ./vendor/phpunit/phpunit/phpunit",
         "tests:codecov": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover coverage.xml",
         "tests:no-cov": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "composer/package-versions-deprecated": true
+        }
     }
 }
