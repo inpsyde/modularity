@@ -11,3 +11,6 @@ tmp/
 
 ## PHPStorm
 .idea/
+
+## DDEV
+.ddev
