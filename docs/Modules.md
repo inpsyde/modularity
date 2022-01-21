@@ -161,3 +161,53 @@ class ModuleFour implements ExecutableModule
     }
 }
 ```
+### Service/Factory overrides
+When the same Service id is registered more than once by multiple modules, the latter will override the former.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Inpsyde\Modularity\Module\ServiceModule;
+use Inpsyde\Modularity\Module\ModuleClassNameIdTrait;
+use Psr\Container\ContainerInterface;
+
+class ModuleWhichProvidesServices implements ServiceModule
+{
+    use ModuleClassNameIdTrait;
+
+    public function services() : array
+    {
+        return [
+            ServiceOne::class => static function(ContainerInterface $container): ServiceOne {
+                return new ServiceOne();
+            } 
+        ];
+    }
+}
+
+class ModuleWhichOverridesServices implements ServiceModule
+{
+    use ModuleClassNameIdTrait;
+
+    public function services() : array
+    {
+        return [
+            ServiceOne::class => static function(ContainerInterface $container): ServiceOne {
+                return new class extends ServiceOne{
+                    /*  */
+                };
+            } 
+        ];
+    }
+}
+```
+
+*For module developers* this opens up some possibilities, like the ability to inject Mocks in the container, or work around 
+scenarios where the use of extensions would result in an unneeded and/or wasteful constructor call of the now-obsolete
+original.
+
+*For package maintainers* this is something to watch out for when consuming Modules from multiple sources. 
+However unlikely it may be, there is a risk of _unintentional_ overrides resulting in unexpected behaviour.
+
