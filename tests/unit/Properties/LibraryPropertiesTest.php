@@ -26,7 +26,8 @@ class LibraryPropertiesTest extends TestCase
     public function testForLibrary(): void
     {
         $inputName = 'vendor/test';
-        $expectedName = "vendor-test";
+        $expectedBaseName = "vendor-test";
+        $expectedName = "Vendor Test";
         $composerJsonData = [
             "name" => $inputName,
         ];
@@ -40,7 +41,8 @@ class LibraryPropertiesTest extends TestCase
 
         $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
-        static::assertSame($expectedName, $testee->baseName());
+        static::assertSame($expectedBaseName, $testee->baseName());
+        static::assertSame($expectedName, $testee->name());
     }
 
     /**
