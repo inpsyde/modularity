@@ -104,10 +104,6 @@ class LibraryProperties extends BaseProperties
         $basePath = dirname($composerJsonFile);
 
         $packageNamePieces = explode('/', $composerName, 2);
-        if (empty($packageNamePieces[1])) {
-            return [$basePath, $composerName, $composerName];
-        }
-
         $basename = implode('-', $packageNamePieces);
         // "inpsyde/foo-bar-baz" => "Inpsyde Foo Bar Baz"
         $name = mb_convert_case(

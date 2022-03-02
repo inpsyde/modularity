@@ -73,9 +73,10 @@ class LibraryPropertiesTest extends TestCase
      */
     public function testForLibraryWithoutVendor(): void
     {
-        $expectedName = "properties-test";
+        $expectedBaseName = "properties-test";
+        $expectedName = "Properties Test";
         $composerJsonData = [
-            "name" => $expectedName,
+            "name" => $expectedBaseName,
         ];
 
         $structure = [
@@ -87,7 +88,8 @@ class LibraryPropertiesTest extends TestCase
 
         $testee = LibraryProperties::new($root->url() . '/json/composer.json');
 
-        static::assertSame($expectedName, $testee->baseName());
+        static::assertSame($expectedBaseName, $testee->baseName());
+        static::assertSame($expectedName, $testee->name());
     }
 
     /**
