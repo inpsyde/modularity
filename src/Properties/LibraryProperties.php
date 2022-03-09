@@ -79,8 +79,11 @@ class LibraryProperties extends BaseProperties
             $properties[self::PROP_VERSION] = $version;
         }
 
-        $baseName = static::buildBaseName((string) $composerJsonData['name']);
+        [$baseName, $name] = static::buildNames($composerJsonData);
         $basePath = dirname($composerJsonFile);
+        if (empty($properties[self::PROP_NAME])) {
+            $properties[self::PROP_NAME] = $name;
+        }
 
         return new self(
             $baseName,
@@ -91,15 +94,22 @@ class LibraryProperties extends BaseProperties
     }
 
     /**
-     * @param string $packageName
+     * @param array $composerJsonData
      *
-     * @return string
+     * @return array{string, string}
      */
-    private static function buildBaseName(string $packageName): string
+    private static function buildNames(array $composerJsonData): array
     {
-        $packageNamePieces = explode('/', $packageName, 2);
+        $composerName = (string) ($composerJsonData['name'] ?? '');
+        $packageNamePieces = explode('/', $composerName, 2);
+        $basename = implode('-', $packageNamePieces);
+        // "inpsyde/foo-bar-baz" => "Inpsyde Foo Bar Baz"
+        $name = mb_convert_case(
+            str_replace(['-', '_', '.'], ' ', implode(' ', $packageNamePieces)),
+            MB_CASE_TITLE
+        );
 
-        return implode('-', $packageNamePieces);
+        return [$basename, $name];
     }
 
     /**
