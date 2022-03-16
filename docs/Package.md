@@ -73,7 +73,7 @@ declare(strict_types=1);
 /*
  * Plugin Name:       Acme
  * Author:            Inpsyde GmbH
- * Author URI:        https://inpsyde.com
+ * Author URI:        https://inpsyde.com/
  * Version:           1.0.0
  * Text Domain:       acme
  */

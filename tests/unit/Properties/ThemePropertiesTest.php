@@ -19,7 +19,7 @@ class ThemePropertiesTest extends TestCase
     {
         $expectedDescription = 'the description';
         $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://www.inpsyde.com';
+        $expectedAuthorUri = 'https://inpsyde.com/';
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';

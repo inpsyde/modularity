@@ -18,7 +18,7 @@ class PluginPropertiesTest extends TestCase
     {
         $expectedDescription = 'the description';
         $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://www.inpsyde.com';
+        $expectedAuthorUri = 'https://inpsyde.com/';
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';
@@ -119,7 +119,7 @@ class PluginPropertiesTest extends TestCase
         $expectedBaseName = 'plugin-name';
         $expectedBasePath = '/path/to/plugin/';
         $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://www.inpsyde.com';
+        $expectedAuthorUri = 'https://inpsyde.com/';
 
         $pluginData = array_merge(
             [
