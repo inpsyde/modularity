@@ -157,7 +157,7 @@ function myLibrary(): Package {
     static $lib;
     if (!$lib) {
         $properties = Properties\LibraryProperties::new('path/to/composer.json');
-        $lib = Inpsyde\Modularity\: Package::new($properties);
+        $lib = Inpsyde\Modularity\Package::new($properties);
         $lib->boot(new ModuleOne(), new ModuleTwo());
     }
     return $lib;
