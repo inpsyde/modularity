@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity;
 
-use Inpsyde\Modularity\Container\ContainerConfigurator;
+use Inpsyde\Modularity\Container\ContainerCompiler;
+use Inpsyde\Modularity\Container\ReadOnlyContainerCompiler;
 use Inpsyde\Modularity\Container\PackageProxyContainer;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\ExecutableModule;
@@ -171,9 +172,14 @@ class Package
     private $properties;
 
     /**
-     * @var ContainerConfigurator
+     * @var ContainerCompiler
      */
-    private $containerConfigurator;
+    private $containerCompiler;
+
+    /**
+     * @var ContainerInterface|null
+     */
+    private $container = null;
 
     /**
      * @param Properties $properties
@@ -181,21 +187,35 @@ class Package
      *
      * @return Package
      */
-    public static function new(Properties $properties, ContainerInterface  ...$containers): Package
+    public static function new(Properties $properties, ContainerInterface ...$containers): Package
     {
-        return new self($properties, ...$containers);
+        return new self($properties, new ReadOnlyContainerCompiler(...$containers));
     }
 
     /**
      * @param Properties $properties
-     * @param ContainerInterface[] $containers
+     * @param ContainerCompiler $containerCompiler
+     *
+     * @return Package
      */
-    private function __construct(Properties $properties, ContainerInterface ...$containers)
+    public static function newWithCompiler(
+        Properties $properties,
+        ContainerCompiler $containerCompiler
+    ): Package {
+
+        return new self($properties, $containerCompiler);
+    }
+
+    /**
+     * @param Properties $properties
+     * @param ContainerCompiler $containerCompiler
+     */
+    private function __construct(Properties $properties, ContainerCompiler $containerCompiler)
     {
         $this->properties = $properties;
 
-        $this->containerConfigurator = new ContainerConfigurator($containers);
-        $this->containerConfigurator->addService(
+        $this->containerCompiler = $containerCompiler;
+        $this->containerCompiler->addService(
             self::PROPERTIES,
             static function () use ($properties) {
                 return $properties;
@@ -273,7 +293,7 @@ class Package
 
         // We put connected package's properties in this package's container, so that in modules
         // "run" method we can access them if we need to.
-        $this->containerConfigurator->addService(
+        $this->containerCompiler->addService(
             sprintf('%s.%s', $package->name(), self::PROPERTIES),
             static function () use ($package): Properties {
                 return $package->properties();
@@ -286,7 +306,7 @@ class Package
             ? $package->container()
             : new PackageProxyContainer($package);
 
-        $this->containerConfigurator->addContainer($container);
+        $this->containerCompiler->addContainer($container);
 
         do_action(
             $this->hookName(self::ACTION_PACKAGE_CONNECTED),
@@ -358,15 +378,15 @@ class Package
         switch ($status) {
             case self::MODULE_REGISTERED:
                 $services = $module instanceof ServiceModule ? $module->services() : null;
-                $addCallback = [$this->containerConfigurator, 'addService'];
+                $addCallback = [$this->containerCompiler, 'addService'];
                 break;
             case self::MODULE_REGISTERED_FACTORIES:
                 $services = $module instanceof FactoryModule ? $module->factories() : null;
-                $addCallback = [$this->containerConfigurator, 'addFactory'];
+                $addCallback = [$this->containerCompiler, 'addFactory'];
                 break;
             case self::MODULE_EXTENDED:
                 $services = $module instanceof ExtendingModule ? $module->extensions() : null;
-                $addCallback = [$this->containerConfigurator, 'addExtension'];
+                $addCallback = [$this->containerCompiler, 'addExtension'];
                 break;
         }
 
@@ -507,9 +527,12 @@ class Package
      */
     public function container(): ContainerInterface
     {
-        $this->assertStatus(self::STATUS_INITIALIZED, 'access Container', '>=');
+        if (!$this->container) {
+            $this->assertStatus(self::STATUS_INITIALIZED, 'access Container', '>=');
+            $this->container = $this->containerCompiler->compile();
+        }
 
-        return $this->containerConfigurator->createReadOnlyContainer();
+        return $this->container;
     }
 
     /**

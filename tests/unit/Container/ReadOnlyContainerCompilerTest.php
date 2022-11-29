@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\Container\ContainerConfigurator;
+use Inpsyde\Modularity\Container\ReadOnlyContainerCompiler;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
-class ContainerConfiguratorTest extends TestCase
+class ReadOnlyContainerCompilerTest extends TestCase
 {
     /**
      * @test
      */
     public function testBasic(): void
     {
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
 
-        static::assertInstanceOf(ContainerConfigurator::class, $testee);
         static::assertFalse($testee->hasService('something'));
         static::assertFalse($testee->hasExtension('something'));
-        static::assertInstanceOf(ContainerInterface::class, $testee->createReadOnlyContainer());
+        static::assertInstanceOf(ContainerInterface::class, $testee->compile());
     }
 
     /**
@@ -32,7 +31,7 @@ class ContainerConfiguratorTest extends TestCase
         $expectedValue = new class {
         };
 
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
 
         static::assertFalse($testee->hasService($expectedKey));
 
@@ -55,7 +54,7 @@ class ContainerConfiguratorTest extends TestCase
         $expectedValue = new class {
         };
 
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
 
         static::assertFalse($testee->hasService($expectedKey));
 
@@ -76,7 +75,7 @@ class ContainerConfiguratorTest extends TestCase
     {
         $expectedKey = 'key';
 
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
         $testee->addService(
             $expectedKey,
             function () {
@@ -89,7 +88,7 @@ class ContainerConfiguratorTest extends TestCase
                 return new \DateTimeImmutable();
             }
         );
-        $container = $testee->createReadOnlyContainer();
+        $container = $testee->compile();
         $result = $container->get($expectedKey);
 
         self::assertInstanceOf(\DateTimeImmutable::class, $result);
@@ -102,7 +101,7 @@ class ContainerConfiguratorTest extends TestCase
     {
         $expectedKey = 'key';
 
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
         $testee->addFactory(
             $expectedKey,
             function () {
@@ -115,7 +114,7 @@ class ContainerConfiguratorTest extends TestCase
                 return new \DateTimeImmutable();
             }
         );
-        $container = $testee->createReadOnlyContainer();
+        $container = $testee->compile();
         $result = $container->get($expectedKey);
 
         self::assertInstanceOf(\DateTimeImmutable::class, $result);
@@ -128,7 +127,7 @@ class ContainerConfiguratorTest extends TestCase
     {
         $expectedKey = 'key';
 
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
         $testee->addService(
             $expectedKey,
             function () {
@@ -141,7 +140,7 @@ class ContainerConfiguratorTest extends TestCase
                 return new \DateTimeImmutable();
             }
         );
-        $container = $testee->createReadOnlyContainer();
+        $container = $testee->compile();
         $result = $container->get($expectedKey);
 
         self::assertInstanceOf(\DateTimeImmutable::class, $result);
@@ -163,7 +162,7 @@ class ContainerConfiguratorTest extends TestCase
     {
         $expectedKey = 'key';
 
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
         $testee->addFactory(
             $expectedKey,
             function () {
@@ -176,7 +175,7 @@ class ContainerConfiguratorTest extends TestCase
                 return new \DateTimeImmutable();
             }
         );
-        $container = $testee->createReadOnlyContainer();
+        $container = $testee->compile();
         $result = $container->get($expectedKey);
 
         self::assertInstanceOf(\DateTimeImmutable::class, $result);
@@ -195,7 +194,7 @@ class ContainerConfiguratorTest extends TestCase
      */
     public function testHasServiceNotFound(): void
     {
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
         static::assertFalse($testee->hasService('unknown-service'));
     }
 
@@ -232,8 +231,7 @@ class ContainerConfiguratorTest extends TestCase
             }
         };
 
-        $testee = new ContainerConfigurator();
-        $testee->addContainer($childContainer);
+        $testee = new ReadOnlyContainerCompiler($childContainer);
 
         static::assertTrue($testee->hasService($expectedKey));
     }
@@ -243,7 +241,7 @@ class ContainerConfiguratorTest extends TestCase
      */
     public function testAddExtension(): void
     {
-        $testee = new ContainerConfigurator();
+        $testee = new ReadOnlyContainerCompiler();
 
         $expectedKey = 'key';
         $expected = 'expectedValue';
@@ -285,7 +283,7 @@ class ContainerConfiguratorTest extends TestCase
 
         static::assertTrue($testee->hasService($expectedKey));
         static::assertTrue($testee->hasExtension($expectedKey));
-        static::assertSame($expectedExtendedValue, $testee->createReadOnlyContainer()->get($expectedKey));
+        static::assertSame($expectedExtendedValue, $testee->compile()->get($expectedKey));
     }
 
     /**
@@ -315,11 +313,11 @@ class ContainerConfiguratorTest extends TestCase
             }
         };
 
-        $testee = new ContainerConfigurator([$childContainer]);
+        $testee = new ReadOnlyContainerCompiler($childContainer);
 
         static::assertTrue($testee->hasService($expectedId));
 
-        $readOnlyContainer = $testee->createReadOnlyContainer();
+        $readOnlyContainer = $testee->compile();
         static::assertSame($expectedValue, $readOnlyContainer->get($expectedId));
     }
 }

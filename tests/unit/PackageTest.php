@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Tests\Unit;
 
 use Brain\Monkey;
+use Inpsyde\Modularity\Container\ReadOnlyContainerCompiler;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\ServiceModule;
@@ -624,5 +625,60 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($action)->never();
 
         static::assertFalse($package1->connect($package1));
+    }
+
+    /**
+     * Test we can not connect packages with themselves.
+     *
+     * @test
+     */
+    public function testCustomContainerCompiler(): void
+    {
+        $customContainer = new class implements ContainerInterface
+        {
+            public function has(string $id): bool
+            {
+                return true;
+            }
+
+            public function get(string $id)
+            {
+                return (object)compact('id');
+            }
+        };
+
+        // The module does not register any service
+        $module = $this->mockModule('module', ExecutableModule::class);
+        $module->expects('run')->once()->andReturnUsing(
+            static function (ContainerInterface $container) use ($customContainer): bool {
+                // let's ensure container passed to the services is the one we compiled.
+                static::assertSame($container, $customContainer);
+
+                return true;
+            }
+        );
+
+        $compiler = new class ($customContainer) extends ReadOnlyContainerCompiler
+        {
+            private $container;
+
+            public function __construct(ContainerInterface $container)
+            {
+                $this->container = $container;
+            }
+
+            public function compile(): ContainerInterface
+            {
+                return $this->container;
+            }
+        };
+
+        $package = Package::newWithCompiler($this->mockProperties('package'), $compiler)
+            ->addModule($module);
+
+        static::assertTrue($package->boot());
+
+        // We are able to get a service from the custom container
+        static::assertSame($package->container()->get('foo')->id, 'foo');
     }
 }
