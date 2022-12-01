@@ -19,9 +19,9 @@ class ContainerConfigurator
     private $factoryIds = [];
 
     /**
-     * @var array<string, array<callable(mixed $service, ContainerInterface $container):mixed>>
+     * @var ServiceExtensions
      */
-    private $extensions = [];
+    private $extensions;
 
     /**
      * @var ContainerInterface[]
@@ -38,9 +38,10 @@ class ContainerConfigurator
      *
      * @param ContainerInterface[] $containers
      */
-    public function __construct(array $containers = [])
+    public function __construct(array $containers = [], ?ServiceExtensions $extensions = null)
     {
         array_map([$this, 'addContainer'], $containers);
+        $this->extensions = $extensions ?? new ServiceExtensions();
     }
 
     /**
@@ -115,11 +116,7 @@ class ContainerConfigurator
      */
     public function addExtension(string $id, callable $extender): void
     {
-        if (!isset($this->extensions[$id])) {
-            $this->extensions[$id] = [];
-        }
-
-        $this->extensions[$id][] = $extender;
+        $this->extensions->add($id, $extender);
     }
 
     /**
@@ -129,7 +126,7 @@ class ContainerConfigurator
      */
     public function hasExtension(string $id): bool
     {
-        return isset($this->extensions[$id]);
+        return $this->extensions->has($id);
     }
 
     /**

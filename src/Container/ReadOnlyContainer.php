@@ -20,7 +20,7 @@ class ReadOnlyContainer implements ContainerInterface
     private $factoryIds;
 
     /**
-     * @var array<string, array<callable(mixed, ContainerInterface $container):mixed>>
+     * @var ServiceExtensions
      */
     private $extensions;
 
@@ -41,13 +41,13 @@ class ReadOnlyContainer implements ContainerInterface
      *
      * @param array<string, callable(ContainerInterface $container):mixed> $services
      * @param array<string, bool> $factoryIds
-     * @param array<string, array<callable(mixed, ContainerInterface $container):mixed>> $extensions
+     * @param ServiceExtensions $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
         array $services,
         array $factoryIds,
-        array $extensions,
+        ServiceExtensions $extensions,
         array $containers
     ) {
         $this->services = $services;
@@ -69,7 +69,7 @@ class ReadOnlyContainer implements ContainerInterface
 
         if (array_key_exists($id, $this->services)) {
             $service = $this->services[$id]($this);
-            $resolved = $this->resolveExtensions($id, $service);
+            $resolved = $this->extensions->resolve($service, $id, $this);
 
             if (!isset($this->factoryIds[$id])) {
                 $this->resolvedServices[$id] = $resolved;
@@ -83,7 +83,7 @@ class ReadOnlyContainer implements ContainerInterface
             if ($container->has($id)) {
                 $service = $container->get($id);
 
-                return $this->resolveExtensions($id, $service);
+                return $this->extensions->resolve($service, $id, $this);
             }
         }
 
@@ -115,24 +115,5 @@ class ReadOnlyContainer implements ContainerInterface
         }
 
         return false;
-    }
-
-    /**
-     * @param string $id
-     * @param mixed $service
-     *
-     * @return mixed
-     */
-    private function resolveExtensions(string $id, $service)
-    {
-        if (!isset($this->extensions[$id])) {
-            return $service;
-        }
-
-        foreach ($this->extensions[$id] as $extender) {
-            $service = $extender($service, $this);
-        }
-
-        return $service;
     }
 }

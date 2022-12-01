@@ -101,6 +101,110 @@ class ModuleWhichProvidesExtensions implements ExtendingModule
 }
 ```
 
+### Extending by type
+
+Sometimes it is desirable to extend a service by its type. Extending modules can do that as well:
+
+```php
+use Inpsyde\Modularity\Container\ServiceExtensions;
+use Inpsyde\Modularity\Module\{ExtendingModule, ModuleClassNameIdTrait};
+use Psr\Log\{LoggerInterface, LoggerAwareInterface};
+
+class LoggerAwareExtensionModule implements ExtendingModule
+{
+    use ModuleClassNameIdTrait;
+
+    public function extensions() : array 
+    {
+        return [
+            '@instanceof<LoggerAwareInterface>' => static function(LoggerAwareInterface $service, ContainerInterface $c): ExtendedService
+            {
+                if ($c->has(LoggerInterface::class)) {
+                    $service->setLogger($c->get(LoggerInterface::class));
+                }
+                return $service;
+            }
+        ];
+    }
+}
+```
+
+`@instanceof<LoggerAwareInterface>` is a special syntax that instructs the container to apply the
+extension to anything implementing `LoggerAwareInterface`.
+
+#### Types and subtypes
+
+The `@instanceof<T>` syntax also work with class names, targeting the given class or any of its 
+sub types.
+
+For example, assuming the following objects:
+
+```php
+interface Something {}
+class SomethingGood implements Something {}
+class SomethingAwesome extends SomethingGood {}
+```
+
+and the following module: 
+
+```php
+class SomethingExtensionsModule implements ExtendingModule
+{
+    use ModuleClassNameIdTrait;
+
+    public function extensions() : array 
+    {
+        return [
+            '@instanceof<Something>' => fn(Something $something) => $something,
+            '@instanceof<SomethingGood>' => fn(SomethingGood $something) => $something,
+            '@instanceof<SomethingAwesome>' => fn(SomethingAwesome $something) => $something,
+        ];
+    }
+}
+```
+
+A service in the container of type `SomethingAwesome` would go through all the 3 extensions.
+
+Note how extending callbacks can always safely declare the parameter type using in the signature
+the type they have in `@instanceof<T>`.
+
+#### Precedence
+
+The precedence of extensions-by-type resolution goes as follows:
+
+1. Extensions added to exact class
+2. Extensions added to any parent class
+3. Extensions added to any implemented interface
+
+Inside each of the three "groups", extensions are processed in _FIFO_ mode: the first added are the
+first processed.
+
+Because the precedence rules, in the `SomethingExtensionsModule` example above, the extensions
+processing order will be the the inverse of the addition order.
+
+#### Only for objects
+
+Extensions-by-type only work for objects. Any usage of `@instanceof<T>` syntax with a string that is
+a class/interface name will be ignored.
+That means it is not possible to extend by type scalar/array services nor pseudo-types like 
+`iterable` or `callable`.
+
+#### Possibly recursive
+
+Extensions by type might be recursive. For example, an extension for type `A` that returns an 
+instance of `B` will prevent further extensions to type `A` to execute (unless `B` is a child of `A`)
+and will trigger execution of extensions for type `B`.
+**Infinite recursion is prevented**. So if extensions for `A` return `B` and extensions for `B`
+return `A` that's where it stops, returning an `A` instance.
+
+#### Use carefully
+
+**Please note**: extensions-by-type have a performance impact especially when type extensions are 
+used to return a different type, because of possible recursions.
+As a reference, it was measured that resolving 10000 objects in the container, each having 9 
+extensions-by-type callbacks, on a very fast server, on PHP 8, for one concurrent user, takes 
+between 80 and 90 milliseconds.
+
 ## ExecutableModule
 If there is functionality that needs to be executed, you can make the Module executable like following:
 

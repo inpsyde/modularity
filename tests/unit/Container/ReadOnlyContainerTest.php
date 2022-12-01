@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Tests\Unit\Container;
 
 use Inpsyde\Modularity\Container\ReadOnlyContainer as Container;
+use Inpsyde\Modularity\Container\ServiceExtensions;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -105,7 +106,7 @@ class ReadOnlyContainerTest extends TestCase
             }
         };
 
-        $testee = $this->createContainer([], [], [], [$childContainer]);
+        $testee = $this->createContainer([], [], [$childContainer]);
 
         // check in child Container
         static::assertTrue($testee->has($expectedServiceKey));
@@ -113,35 +114,6 @@ class ReadOnlyContainerTest extends TestCase
         static::assertSame($expectedValue, $testee->get($expectedServiceKey));
         // check in resolved Services
         static::assertTrue($testee->has($expectedServiceKey));
-    }
-
-    /**
-     * @test
-     */
-    public function testExtensions(): void
-    {
-        $expectedServiceKey = 'service';
-        $expectedInitialService = new \stdClass();
-        $extendedService = new \stdClass();
-
-        $services = [
-            $expectedServiceKey => function () use ($expectedInitialService) {
-                return $expectedInitialService;
-            },
-        ];
-        $extensions = [
-            $expectedServiceKey => [
-                function ($initialService) use ($expectedInitialService, $extendedService) {
-                    static::assertSame($expectedInitialService, $initialService);
-
-                    return $extendedService;
-                },
-            ],
-        ];
-
-        $testee = $this->createContainer($services, [], $extensions);
-
-        static::assertSame($extendedService, $testee->get($expectedServiceKey));
     }
 
     /**
@@ -194,7 +166,6 @@ class ReadOnlyContainerTest extends TestCase
     /**
      * @param array $services
      * @param array $factoryIds
-     * @param array $extensions
      * @param array $containers
      *
      * @return Container
@@ -202,9 +173,9 @@ class ReadOnlyContainerTest extends TestCase
     private function createContainer(
         array $services = [],
         array $factoryIds = [],
-        array $extensions = [],
         array $containers = []
     ): Container {
-        return new Container($services, $factoryIds, $extensions, $containers);
+
+        return new Container($services, $factoryIds, new ServiceExtensions(), $containers);
     }
 }
