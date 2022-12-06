@@ -239,7 +239,7 @@ class Package
      */
     public function connect(Package $package): bool
     {
-        if (($package === $this)) {
+        if ($package === $this) {
             return false;
         }
 
