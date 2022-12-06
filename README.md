@@ -21,7 +21,7 @@ $ composer require inpsyde/modularity
 
 * PHP 7.2+
 
-When installed for development, via Composer, the package also requires:
+When installed for development via Composer, the package also requires:
 
 * inpsyde/php-coding-standards
 * roots/wordpress
