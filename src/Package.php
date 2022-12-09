@@ -410,23 +410,23 @@ class Package
 
     /**
      * @param string $moduleId
-     * @param string $type
+     * @param string $status
      * @param list<string>|null $serviceIds
      *
      * @return  void
      */
-    private function moduleProgress(string $moduleId, string $type, ?array $serviceIds = null)
+    private function moduleProgress(string $moduleId, string $status, ?array $serviceIds = null)
     {
-        isset($this->moduleStatus[$type]) or $this->moduleStatus[$type] = [];
-        $this->moduleStatus[$type][] = $moduleId;
+        isset($this->moduleStatus[$status]) or $this->moduleStatus[$status] = [];
+        $this->moduleStatus[$status][] = $moduleId;
 
         if (!$serviceIds || !$this->properties->isDebug()) {
-            $this->moduleStatus[self::MODULES_ALL][] = "{$moduleId} {$type}";
+            $this->moduleStatus[self::MODULES_ALL][] = "{$moduleId} {$status}";
 
             return;
         }
 
-        $description = sprintf('%s %s (%s)', $moduleId, $type, implode(', ', $serviceIds));
+        $description = sprintf('%s %s (%s)', $moduleId, $status, implode(', ', $serviceIds));
         $this->moduleStatus[self::MODULES_ALL][] = $description;
     }
 
