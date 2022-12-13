@@ -140,7 +140,7 @@ class Package
      *
      * @var int
      */
-    private $status = self::STATUS_IDLE;
+    protected $status = self::STATUS_IDLE;
 
     /**
      * Contains the progress of all modules.
@@ -149,7 +149,7 @@ class Package
      *
      * @var array<string, list<string>>
      */
-    private $moduleStatus = [self::MODULES_ALL => []];
+    protected $moduleStatus = [self::MODULES_ALL => []];
 
     /**
      * Hashmap of where keys are names of connected packages, and values are boolean, true
@@ -169,12 +169,12 @@ class Package
     /**
      * @var Properties
      */
-    private $properties;
+    protected $properties;
 
     /**
      * @var ContainerCompiler
      */
-    private $containerCompiler;
+    protected $containerCompiler;
 
     /**
      * @var ContainerInterface|null
@@ -210,7 +210,7 @@ class Package
      * @param Properties $properties
      * @param ContainerCompiler $containerCompiler
      */
-    private function __construct(Properties $properties, ContainerCompiler $containerCompiler)
+    protected function __construct(Properties $properties, ContainerCompiler $containerCompiler)
     {
         $this->properties = $properties;
 
