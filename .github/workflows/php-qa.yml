@@ -1,15 +1,28 @@
-name: Testing
+name: PHP-QA
 
 on: [ push ]
 
 jobs:
-  build:
-
+  lint-php:
+    uses: inpsyde/reusable-workflows/.github/workflows/lint-php.yml@main
+    with:
+      PHP_MATRIX: >-
+        ["7.4", "8.0", "8.1", "8.2"]
+  coding-standards-analysis-php:
+    needs: lint-php
+    uses: inpsyde/reusable-workflows/.github/workflows/coding-standards-php.yml@main
+    with:
+      PHPCS_ARGS: '--report=summary'
+  static-code-analysis-php:
+    needs: lint-php
+    uses: inpsyde/reusable-workflows/.github/workflows/static-analysis-php.yml@main
+  tests-unit-php:
+    needs: [ coding-standards-analysis-php, static-code-analysis-php ]
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip')"
     strategy:
       matrix:
-        php-versions: [ '7.2', '7.3', '7.4', '8.0' ]
+        php-versions: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2' ]
     steps:
       - uses: actions/checkout@v1
 
