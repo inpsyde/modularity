@@ -1,0 +1,62 @@
+name: PHP unit tests
+
+on: ['pull_requests', 'push', 'workflow_dispatch']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests-unit-php:
+    runs-on: ubuntu-latest
+
+    env:
+      USE_COVERAGE: 'no'
+
+    strategy:
+      matrix:
+        php-versions: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2' ]
+        dependency-versions: [ 'lowest', 'highest' ]
+        container-versions: [ '^1', '^2' ]
+        exclude:
+          - php-versions: '7.2'
+            container-version: '^1'
+          - php-versions: '7.3'
+            container-version: '^1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use coverage?
+        if: ${{ (matrix.php-versions == '8.0') && (matrix.dependency-versions == 'highest') }}
+        run: echo "USE_COVERAGE=yes" >> $GITHUB_ENV
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+          coverage: ${{ ((env.USE_COVERAGE == 'yes') && 'xdebug') || 'none' }}
+
+      - name: Setup dependencies for PSR-11 target version
+        run: |
+          composer remove brain/monkey inpsyde/php-coding-standards inpsyde/wp-stubs-versions mikey179/vfsstream vimeo/psalm --dev --no-install
+          composer require "psr/container:${{ matrix.container-versions }}" --no-install
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          dependency-versions: ${{ matrix.dependency-versions }}
+
+      - name: Run unit tests
+        run: composer tests:${{ ((env.USE_COVERAGE == 'yes') && 'codecov') || 'no-cov' }}
+
+      - name: Update coverage
+        if: ${{ env.USE_COVERAGE == 'yes' }}
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          verbose: true
