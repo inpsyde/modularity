@@ -9,6 +9,7 @@ concurrency:
 jobs:
   tests-unit-php:
     runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch') || (!contains(github.event.head_commit.message, 'skip tests')) }}
 
     env:
       USE_COVERAGE: 'no'
@@ -29,7 +30,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Use coverage?
-        if: ${{ (matrix.php-versions == '8.0') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
+        if: ${{ (matrix.php-versions == '7.4') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
         run: echo "USE_COVERAGE=yes" >> $GITHUB_ENV
 
       - name: Setup PHP
