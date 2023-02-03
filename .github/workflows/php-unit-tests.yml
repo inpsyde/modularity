@@ -21,9 +21,9 @@ jobs:
         container-versions: [ '^1.1.0', '^2' ]
         exclude:
           - php-versions: '7.2'
-            container-versions: '^1'
+            container-versions: '^1.1.0'
           - php-versions: '7.3'
-            container-versions: '^1'
+            container-versions: '^1.1.0'
 
     steps:
       - name: Checkout
