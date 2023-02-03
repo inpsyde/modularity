@@ -1,6 +1,6 @@
 name: PHP unit tests
 
-on: ['pull_requests', 'push', 'workflow_dispatch']
+on: ['pull_request', 'push', 'workflow_dispatch']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
