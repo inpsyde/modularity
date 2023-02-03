@@ -34,7 +34,7 @@ class PackageProxyContainer implements ContainerInterface
      *
      * @throws \Exception
      */
-    public function get($id)
+    public function get(string $id)
     {
         assert(is_string($id));
         $this->assertPackageBooted($id);
@@ -48,7 +48,7 @@ class PackageProxyContainer implements ContainerInterface
      *
      * @throws \Exception
      */
-    public function has($id)
+    public function has(string $id): bool
     {
         assert(is_string($id));
 

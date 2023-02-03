@@ -94,12 +94,12 @@ class ReadOnlyContainerTest extends TestCase
                 $this->data[$key] = $value;
             }
 
-            public function get($id)
+            public function get(string $id)
             {
                 return $this->data[$id];
             }
 
-            public function has($id)
+            public function has(string $id): bool
             {
                 return isset($this->data[$id]);
             }

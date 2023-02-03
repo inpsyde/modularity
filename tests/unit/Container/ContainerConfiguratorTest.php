@@ -217,7 +217,7 @@ class ContainerConfiguratorTest extends TestCase
                 };
             }
 
-            public function get($id)
+            public function get(string $id)
             {
                 if (!$this->has($id)) {
                     return null;
@@ -226,7 +226,7 @@ class ContainerConfiguratorTest extends TestCase
                 return $this->data[$id]();
             }
 
-            public function has($id)
+            public function has(string $id): bool
             {
                 return array_key_exists($id, $this->data);
             }
@@ -304,12 +304,12 @@ class ContainerConfiguratorTest extends TestCase
                 $this->values[$expectedId] = $expectedValue;
             }
 
-            public function get($id)
+            public function get(string $id)
             {
                 return $this->values[$id];
             }
 
-            public function has($id)
+            public function has(string $id): bool
             {
                 return isset($this->values[$id]);
             }
