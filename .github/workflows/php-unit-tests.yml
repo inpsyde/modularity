@@ -19,11 +19,6 @@ jobs:
         php-versions: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2' ]
         dependency-versions: [ 'lowest', 'highest' ]
         container-versions: [ '^1.1.0', '^2' ]
-        exclude:
-          - php-versions: '7.2'
-            container-versions: '^1.1.0'
-          - php-versions: '7.3'
-            container-versions: '^1.1.0'
 
     steps:
       - name: Checkout
