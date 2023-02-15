@@ -56,7 +56,7 @@ class ThemePropertiesTest extends TestCase
             $themeStub->expects('get')->with($key)->andReturn($return);
         }
         $themeStub->expects('get_stylesheet')->andReturn($expectedBaseName);
-        $themeStub->expects('get_template_directory')->andReturn($expectedBasePath);
+        $themeStub->expects('get_stylesheet_directory')->andReturn($expectedBasePath);
         $themeStub->expects('get_stylesheet_directory_uri')->andReturn($expectedBaseUrl);
 
         Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
@@ -109,7 +109,7 @@ class ThemePropertiesTest extends TestCase
         $themeStub->shouldReceive('get')->zeroOrMoreTimes()->andReturnArg(0);
 
         $themeStub->expects('get_stylesheet')->andReturn($expectedBaseName);
-        $themeStub->expects('get_template_directory')->andReturn($expectedBasePath);
+        $themeStub->expects('get_stylesheet_directory')->andReturn($expectedBasePath);
         $themeStub->expects('get_stylesheet_directory_uri')->andReturn($expectedBaseUrl);
 
         Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
