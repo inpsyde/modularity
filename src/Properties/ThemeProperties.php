@@ -72,7 +72,7 @@ class ThemeProperties extends BaseProperties
         }
 
         $baseName = $theme->get_stylesheet();
-        $basePath = $theme->get_template_directory();
+        $basePath = $theme->get_stylesheet_directory();
         $baseUrl = (string) trailingslashit($theme->get_stylesheet_directory_uri());
 
         parent::__construct(
