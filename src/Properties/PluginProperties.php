@@ -42,7 +42,7 @@ class PluginProperties extends BaseProperties
     /**
      * @var string
      */
-    private $pluginFile;
+    private $pluginMainFile;
 
     /**
      * @var bool|null
@@ -90,7 +90,7 @@ class PluginProperties extends BaseProperties
         }
         $properties = array_merge($properties, $pluginData);
 
-        $this->pluginFile = $pluginMainFile;
+        $this->pluginMainFile = wp_normalize_path($pluginMainFile);
 
         $baseName = plugin_basename($pluginMainFile);
         $basePath = plugin_dir_path($pluginMainFile);
@@ -102,6 +102,14 @@ class PluginProperties extends BaseProperties
             $baseUrl,
             $properties
         );
+    }
+
+    /**
+     * @return string
+     */
+    public function pluginMainFile(): string
+    {
+        return $this->pluginMainFile;
     }
 
     /**
@@ -123,7 +131,7 @@ class PluginProperties extends BaseProperties
             if (!function_exists('is_plugin_active')) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
-            $this->isActive = is_plugin_active($this->pluginFile);
+            $this->isActive = is_plugin_active($this->pluginMainFile);
         }
 
         return $this->isActive;
@@ -138,7 +146,7 @@ class PluginProperties extends BaseProperties
             if (!function_exists('is_plugin_active_for_network')) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
-            $this->isNetworkActive = is_plugin_active_for_network($this->pluginFile);
+            $this->isNetworkActive = is_plugin_active_for_network($this->pluginMainFile);
         }
 
         return $this->isNetworkActive;
@@ -155,7 +163,7 @@ class PluginProperties extends BaseProperties
              * @psalm-suppress MixedArgument
              */
             $muPluginDir = wp_normalize_path(WPMU_PLUGIN_DIR);
-            $this->isMu = strpos($this->pluginFile, $muPluginDir) === 0;
+            $this->isMu = strpos($this->pluginMainFile, $muPluginDir) === 0;
         }
 
         return $this->isMu;
