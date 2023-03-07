@@ -91,7 +91,10 @@ class PluginPropertiesTest extends TestCase
 
         $testee = PluginProperties::new($pluginMainFile);
 
-        Functions\expect('is_plugin_active')->andReturn(true);
+        Functions\expect('is_plugin_active')
+            ->andReturnUsing(static function (string $baseName) use ($expectedBaseName): bool {
+                return $baseName === $expectedBaseName;
+            });
 
         static::assertTrue($testee->isActive());
     }
@@ -111,7 +114,10 @@ class PluginPropertiesTest extends TestCase
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        Functions\expect('is_plugin_active_for_network')->andReturn(true);
+        Functions\expect('is_plugin_active_for_network')
+            ->andReturnUsing(static function (string $baseName) use ($expectedBaseName): bool {
+                return $baseName === $expectedBaseName;
+            });
 
         $testee = PluginProperties::new($pluginMainFile);
         static::assertTrue($testee->isNetworkActive());

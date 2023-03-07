@@ -45,6 +45,11 @@ class PluginProperties extends BaseProperties
     private $pluginMainFile;
 
     /**
+     * @var string
+     */
+    private $pluginBaseName;
+
+    /**
      * @var bool|null
      */
     protected $isMu;
@@ -92,12 +97,12 @@ class PluginProperties extends BaseProperties
 
         $this->pluginMainFile = wp_normalize_path($pluginMainFile);
 
-        $baseName = plugin_basename($pluginMainFile);
+        $this->pluginBaseName = plugin_basename($pluginMainFile);
         $basePath = plugin_dir_path($pluginMainFile);
         $baseUrl = plugins_url('/', $pluginMainFile);
 
         parent::__construct(
-            $baseName,
+            $this->pluginBaseName,
             $basePath,
             $baseUrl,
             $properties
@@ -131,7 +136,7 @@ class PluginProperties extends BaseProperties
             if (!function_exists('is_plugin_active')) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
-            $this->isActive = is_plugin_active($this->pluginMainFile);
+            $this->isActive = is_plugin_active($this->pluginBaseName);
         }
 
         return $this->isActive;
@@ -146,7 +151,7 @@ class PluginProperties extends BaseProperties
             if (!function_exists('is_plugin_active_for_network')) {
                 require_once ABSPATH . 'wp-admin/includes/plugin.php';
             }
-            $this->isNetworkActive = is_plugin_active_for_network($this->pluginMainFile);
+            $this->isNetworkActive = is_plugin_active_for_network($this->pluginBaseName);
         }
 
         return $this->isNetworkActive;
