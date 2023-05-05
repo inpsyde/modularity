@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Tests\Unit\Container;
 
 use Inpsyde\Modularity\Container\ReadOnlyContainer as Container;
+use Inpsyde\Modularity\Exception\NotFoundException;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
@@ -26,7 +27,7 @@ class ReadOnlyContainerTest extends TestCase
      */
     public function testGetUnknown(): void
     {
-        static::expectException(\Exception::class);
+        static::expectException(NotFoundException::class);
 
         $testee = $this->createContainer();
         $testee->get('unknown');

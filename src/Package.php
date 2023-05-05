@@ -12,6 +12,7 @@ use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
+use Inpsyde\Modularity\Exception\StatusException;
 use Psr\Container\ContainerInterface;
 
 class Package
@@ -543,13 +544,13 @@ class Package
      * @param string $action
      * @param string $operator
      *
-     * @throws \Exception
+     * @throws StatusException
      * @psalm-suppress ArgumentTypeCoercion
      */
     private function assertStatus(int $status, string $action, string $operator = '=='): void
     {
         if (!version_compare((string) $this->status, (string) $status, $operator)) {
-            throw new \Exception(sprintf("Can't %s at this point of application.", $action));
+            throw new StatusException("Can't $action at this point of application.");
         }
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Properties;
 
+use Inpsyde\Modularity\Exception\FileNotFoundException;
+
 /**
  * Class LibraryProperties
  *
@@ -31,13 +33,13 @@ class LibraryProperties extends BaseProperties
      *
      * @return LibraryProperties
      *
-     * @throws \Exception
+     * @throws FileNotFoundException
      * @psalm-suppress MixedArrayAccess
      */
     public static function new(string $composerJsonFile, ?string $baseUrl = null): LibraryProperties
     {
         if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
-            throw new \Exception("File {$composerJsonFile} does not exist or is not readable.");
+            throw new FileNotFoundException("File {$composerJsonFile} does not exist or is not readable.");
         }
 
         $content = (string) file_get_contents($composerJsonFile);
