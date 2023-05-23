@@ -102,7 +102,7 @@ add_action(
 );
 ```
 
-By providing the `Acme\plugin()` function, you’ll enable externa code to hook into your application:
+By providing the `Acme\plugin()` function, you’ll enable external code to hook into your application:
 
 ```php
 <?php
@@ -129,7 +129,7 @@ add_action(
 
 Sometimes, especially in unit tests, it might be desirable to obtain services as defined for the
 production code, but without calling any `ExecutableModule::run()`, which usually contains
-WP-dependant code, and so requires heavy mocking.
+WP-dependant code, and therefore requires heavy mocking.
 
 For example, assuming a common `plugin()` function like the following:
 
@@ -157,7 +157,7 @@ static::assertTrue($myService->isValid());
 
 The `Package::boot()` method can be called on already built package.
 
-The following, is for example a valid unit test code:
+For example, the following is a valid unit test code:
 
 ```php
 $plugin = plugin()->build();
@@ -185,7 +185,7 @@ add_action(
 );
 ```
 
-That is now deprecated, to allow a better separation of the "building" and "booting" steps.
+This is now deprecated to allow a better separation of the "building" and "booting" steps.
 
 While it still works (and it will work up to version 2.0), it will emit a deprecation notice.
 

@@ -643,7 +643,7 @@ class Package
     }
 
     /**
-     * Similar to WP's `_deprecated_argument()`, but executes regardless WP_DEBUG and without
+     * Similar to WP's `_deprecated_argument()`, but executes regardless of WP_DEBUG and without
      * translated message (so without attempting loading translation files).
      *
      * @param string $message
