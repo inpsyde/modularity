@@ -13,22 +13,37 @@ use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Error\Deprecated;
 use PHPUnit\Framework\TestCase as FrameworkTestCase;
 
 abstract class TestCase extends FrameworkTestCase
 {
     use MockeryPHPUnitIntegration;
 
+    /**
+     * @var int|null
+     */
+    private $currentErrorReporting = null;
+
+    /**
+     * @return void
+     */
     protected function setUp(): void
     {
         parent::setUp();
         Monkey\setUp();
     }
 
+    /**
+     * @return void
+     */
     protected function tearDown(): void
     {
         Monkey\tearDown();
         parent::tearDown();
+        if (is_int($this->currentErrorReporting)) {
+            error_reporting($this->currentErrorReporting);
+        }
     }
 
     /**
@@ -94,5 +109,30 @@ abstract class TestCase extends FrameworkTestCase
         }
 
         return $services;
+    }
+
+    /**
+     * @return void
+     */
+    protected function ignoreDeprecations(): void
+    {
+        $this->currentErrorReporting = error_reporting();
+        error_reporting($this->currentErrorReporting & ~\E_DEPRECATED & ~\E_USER_DEPRECATED);
+    }
+
+    /**
+     * @return void
+     */
+    protected function convertDeprecationsToExceptions(): void
+    {
+        $this->currentErrorReporting = error_reporting();
+        error_reporting($this->currentErrorReporting | \E_DEPRECATED | \E_USER_DEPRECATED);
+
+        set_error_handler(
+            static function (int $code, string $msg, ?string $file = null, ?int $line = null): void {
+                throw new Deprecated($msg, $code, $file ?? '', $line ?? 0);
+            },
+            \E_DEPRECATED | \E_USER_DEPRECATED
+        );
     }
 }

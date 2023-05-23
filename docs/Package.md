@@ -56,6 +56,8 @@ Retrieve the current status of the Application. Following are available:
 
 - `Package::STATUS_IDLE` - before Application is booted.
 - `Package::STATUS_INITIALIZED` - after first init action is triggered.
+- `Package::STATUS_MODULES_ADDED` - after all modules have been added.
+- `Package::STATUS_READY` - after the "ready" action has been fired.
 - `Package::STATUS_BOOTED` - Application has successfully booted.
 - `Package::STATUS_FAILED_BOOT` - when Application did not boot properly.
 
@@ -100,7 +102,7 @@ add_action(
 );
 ```
 
-By providing the `Acme\plugin()`-function, you’ll enable externals to hook into your Application:
+By providing the `Acme\plugin()` function, you’ll enable externa code to hook into your application:
 
 ```php
 <?php
@@ -123,6 +125,98 @@ add_action(
 );
 ```
 
+## Building the package
+
+Sometimes, especially in unit tests, it might be desirable to obtain services as defined for the
+production code, but without calling any `ExecutableModule::run()`, which usually contains
+WP-dependant code, and so requires heavy mocking.
+
+For example, assuming a common `plugin()` function like the following:
+
+```php
+function plugin(): Modularity\Package {
+    static $package;
+    if (!$package) {
+        $properties = Modularity\Properties\PluginProperties::new(__FILE__);
+        $package = Modularity\Package::new($properties)
+            ->addModule(new ModuleOne())
+            ->addModule(new ModuleTwo())
+    }
+    return $package;
+}
+```
+
+In unit test it will be possible (as of v1.7+) to do something like the following:
+
+```php
+$myService = plugin()->build()->container()->get(MyService::class);
+static::assertTrue($myService->isValid());
+```
+
+### Booting a built container
+
+The `Package::boot()` method can be called on already built package.
+
+The following, is for example a valid unit test code:
+
+```php
+$plugin = plugin()->build();
+$myService = $plugin->container()->get(MyService::class);
+
+static::assertTrue($myService->isValid());
+static::assertFalse($myService->isBooted());
+
+$plugin->boot();
+
+static::assertTrue($myService->isBooted());
+```
+
+### Deprecated boot parameters
+
+Before Modularity v1.7.0, it was an accepted practice to pass default modules to `Package::boot()`,
+as in:
+
+```php
+add_action(
+	'plugins_loaded',
+	static function(): void {
+		plugin()->boot(new ModuleOne(), new ModuleTwo());
+	}
+);
+```
+
+That is now deprecated, to allow a better separation of the "building" and "booting" steps.
+
+While it still works (and it will work up to version 2.0), it will emit a deprecation notice.
+
+The replacement is using `Package::addModule()` or the v1.7+ `Package::build()`:
+
+```php
+// Option 1:
+plugin()->addModule(new ModuleOne())->addModule(new ModuleTwo())->boot();
+
+// Option 2 (v1.7+ only):
+plugin()->build(new ModuleOne(), new ModuleTwo())->boot();
+```
+
+There's only one case in which calling `Package::boot()` with default modules will throw an 
+exception (besides triggering a deprecated notice), that is when a passed modules was not added
+before (neither via `Package::addModule()` nor `Package::build()`) and an instance of the container
+was already obtained from the package.
+
+For example, this will throw an exception:
+
+```php
+$plugin = plugin()->build();
+
+// Now that container is built, passing modules to `boot()` will raise an exception, because we
+// can't add new modules to an already "compiled" container being that read-only.
+$container = $plugin->container();
+
+$plugin->boot(new ModuleOne());
+```
+
+Either calling `$plugin->boot()` _before_ `container()`, or passing `new ModuleOne()` to the `build()` call, will prevent the exception to be thrown, but the deprecation will still be emitted.
 
 
 ## Connecting packages

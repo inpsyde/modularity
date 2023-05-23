@@ -129,6 +129,8 @@ class Package
      */
     public const STATUS_IDLE = 2;
     public const STATUS_INITIALIZED = 4;
+    public const STATUS_MODULES_ADDED = 5;
+    public const STATUS_READY = 7;
     public const STATUS_BOOTED = 8;
     public const STATUS_FAILED = -8;
 
@@ -176,6 +178,16 @@ class Package
     private $containerConfigurator;
 
     /**
+     * @var bool
+     */
+    private $built = false;
+
+    /**
+     * @var bool
+     */
+    private $hasContainer = false;
+
+    /**
      * @param Properties $properties
      * @param ContainerInterface[] $containers
      *
@@ -211,7 +223,7 @@ class Package
      */
     public function addModule(Module $module): Package
     {
-        $this->assertStatus(self::STATUS_IDLE, 'access Container');
+        $this->assertStatus(self::STATUS_IDLE, sprintf('add module %s', $module->id()));
 
         $registeredServices = $this->addModuleServices($module, self::MODULE_REGISTERED);
         $registeredFactories = $this->addModuleServices($module, self::MODULE_REGISTERED_FACTORIES);
@@ -301,6 +313,33 @@ class Package
     /**
      * @param Module ...$defaultModules
      *
+     * @return static
+     */
+    public function build(Module ...$defaultModules): Package
+    {
+        // Don't allow building the application multiple times.
+        $this->assertStatus(self::STATUS_IDLE, 'build package');
+
+        // Add default modules to the application.
+        array_map([$this, 'addModule'], $defaultModules);
+
+        do_action(
+            $this->hookName(self::ACTION_INIT),
+            $this
+        );
+        // Changing the status here ensures we can not call this method again, and also we can not
+        // add new modules, because both this and `addModule()` methods check for idle status.
+        // For backward compatibility, adding new modules via `boot()` will still be possible, even
+        // if deprecated, at the condition that the container was not yet accessed at that point.
+        $this->progress(self::STATUS_INITIALIZED);
+
+        $this->built = true;
+
+        return $this;
+    }
+
+    /**
+     * @param Module ...$defaultModules Deprecated, use `build()` or `addModule()`
      * @return bool
      *
      * @throws \Throwable
@@ -308,28 +347,24 @@ class Package
     public function boot(Module ...$defaultModules): bool
     {
         try {
-            // don't allow to boot the application multiple times.
-            $this->assertStatus(self::STATUS_IDLE, 'execute boot');
+            // Call build() if not called yet, and ensure any new module passed here is added
+            // as well, throwing if the container was already built.
+            $this->doBuild(...$defaultModules);
 
-            // Add default Modules to the Application.
-            array_map([$this, 'addModule'], $defaultModules);
+            // Don't allow booting the application multiple times.
+            $this->assertStatus(self::STATUS_MODULES_ADDED, 'boot application', '<');
+            $this->assertStatus(self::STATUS_FAILED, 'boot application', '!=');
 
-            do_action(
-                $this->hookName(self::ACTION_INIT),
-                $this
-            );
-            // we want to lock adding new Modules and Containers now
-            // to process everything and be able to compile the container.
-            $this->progress(self::STATUS_INITIALIZED);
+            $this->progress(self::STATUS_MODULES_ADDED);
 
-            if (count($this->executables) > 0) {
-                $this->doExecute();
-            }
+            $this->doExecute();
 
             do_action(
                 $this->hookName(self::ACTION_READY),
                 $this
             );
+
+            $this->progress(self::STATUS_READY);
         } catch (\Throwable $throwable) {
             $this->progress(self::STATUS_FAILED);
             do_action($this->hookName(self::ACTION_FAILED_BOOT), $throwable);
@@ -344,6 +379,59 @@ class Package
         $this->progress(self::STATUS_BOOTED);
 
         return true;
+    }
+
+    /**
+     * @param Module ...$defaultModules
+     * @return void
+     */
+    private function doBuild(Module ...$defaultModules): void
+    {
+        if ($defaultModules) {
+            $this->deprecatedArgument(
+                sprintf(
+                    'Passing default modules to %1$s::boot() is deprecated since version 1.7.0.'
+                    . ' Please add modules via %1$s::build() or %1$s::addModule().',
+                    __CLASS__
+                ),
+                __METHOD__,
+                '1.7.0'
+            );
+        }
+
+        if (!$this->built) {
+            $this->build(...$defaultModules);
+
+            return;
+        }
+
+        if (
+            !$defaultModules
+            || ($this->status >= self::STATUS_MODULES_ADDED)
+            || ($this->status === self::STATUS_FAILED)
+        ) {
+            // if we don't have default modules, there's nothing to do, and if the status is beyond
+            // "modules added" or is failed, we do nothing as well and let `boot()` throw.
+            return;
+        }
+
+        $backup = $this->status;
+
+        try {
+            // simulate idle status to prevent `addModule()` from throwing
+            // only if we don't have a container yet
+            $this->hasContainer or $this->status = self::STATUS_IDLE;
+
+            foreach ($defaultModules as $defaultModule) {
+                // If a module was added by `build()` or `addModule()` we can skip it, a
+                // deprecation was trigger to make it noticeable without breakage
+                if (!$this->moduleIs($defaultModule->id(), self::MODULE_ADDED)) {
+                    $this->addModule($defaultModule);
+                }
+            }
+        } finally {
+            $this->status = $backup;
+        }
     }
 
     /**
@@ -507,7 +595,8 @@ class Package
      */
     public function container(): ContainerInterface
     {
-        $this->assertStatus(self::STATUS_INITIALIZED, 'access Container', '>=');
+        $this->assertStatus(self::STATUS_INITIALIZED, 'obtain the container instance', '>=');
+        $this->hasContainer = true;
 
         return $this->containerConfigurator->createReadOnlyContainer();
     }
@@ -550,6 +639,25 @@ class Package
     {
         if (!version_compare((string) $this->status, (string) $status, $operator)) {
             throw new \Exception(sprintf("Can't %s at this point of application.", $action));
+        }
+    }
+
+    /**
+     * Similar to WP's `_deprecated_argument()`, but executes regardless WP_DEBUG and without
+     * translated message (so without attempting loading translation files).
+     *
+     * @param string $message
+     * @param string $function
+     * @param string $version
+     *
+     * @return void
+     */
+    private function deprecatedArgument(string $message, string $function, string $version): void
+    {
+        do_action('deprecated_argument_run', $function, $message, $version);
+
+        if (apply_filters('deprecated_argument_trigger_error', true)) {
+            trigger_error($message, \E_USER_DEPRECATED);
         }
     }
 }
