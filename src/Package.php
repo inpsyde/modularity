@@ -359,12 +359,12 @@ class Package
 
             $this->doExecute();
 
+            $this->progress(self::STATUS_READY);
+
             do_action(
                 $this->hookName(self::ACTION_READY),
                 $this
             );
-
-            $this->progress(self::STATUS_READY);
         } catch (\Throwable $throwable) {
             $this->progress(self::STATUS_FAILED);
             do_action($this->hookName(self::ACTION_FAILED_BOOT), $throwable);
