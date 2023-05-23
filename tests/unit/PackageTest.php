@@ -114,7 +114,7 @@ class PackageTest extends TestCase
         $serviceId = 'service-id';
 
         $module = $this->mockModule($moduleId, ServiceModule::class);
-        $module->shouldReceive('services')->andReturn($this->stubServices($serviceId));
+        $module->expects('services')->andReturn($this->stubServices($serviceId));
 
         $package = Package::new($this->mockProperties())->addModule($module);
 
@@ -136,7 +136,7 @@ class PackageTest extends TestCase
         $factoryId = 'factory-id';
 
         $module = $this->mockModule($moduleId, FactoryModule::class);
-        $module->shouldReceive('factories')->andReturn($this->stubServices($factoryId));
+        $module->expects('factories')->andReturn($this->stubServices($factoryId));
 
         $package = Package::new($this->mockProperties())->addModule($module);
 
@@ -158,7 +158,7 @@ class PackageTest extends TestCase
         $extensionId = 'extension-id';
 
         $module = $this->mockModule($moduleId, ExtendingModule::class);
-        $module->shouldReceive('extensions')->andReturn($this->stubServices($extensionId));
+        $module->expects('extensions')->andReturn($this->stubServices($extensionId));
 
         $package = Package::new($this->mockProperties())->addModule($module);
 
@@ -181,8 +181,8 @@ class PackageTest extends TestCase
         $serviceId = 'service-id';
 
         $module = $this->mockModule($moduleId, ServiceModule::class, ExtendingModule::class);
-        $module->shouldReceive('services')->andReturn($this->stubServices($serviceId));
-        $module->shouldReceive('extensions')->andReturn($this->stubServices($serviceId));
+        $module->expects('services')->andReturn($this->stubServices($serviceId));
+        $module->expects('extensions')->andReturn($this->stubServices($serviceId));
 
         $package = Package::new($this->mockProperties())->addModule($module);
 
@@ -206,7 +206,7 @@ class PackageTest extends TestCase
         $exception = new \Exception("Catch me if you can!");
 
         $module = $this->mockModule('id', ExecutableModule::class);
-        $module->shouldReceive('run')->andThrow($exception);
+        $module->expects('run')->andThrow($exception);
 
         $package = Package::new($this->mockProperties('basename', false))
             ->addModule($module);
@@ -228,7 +228,7 @@ class PackageTest extends TestCase
         $exception = new \Exception("Catch me if you can!");
 
         $module = $this->mockModule('id', ExecutableModule::class);
-        $module->shouldReceive('run')->andThrow($exception);
+        $module->expects('run')->andThrow($exception);
 
         $package = Package::new($this->mockProperties('basename', true))
             ->addModule($module);
@@ -247,7 +247,7 @@ class PackageTest extends TestCase
     {
         $moduleId = 'executable-module';
         $module = $this->mockModule($moduleId, ExecutableModule::class);
-        $module->shouldReceive('run')->andReturn(true);
+        $module->expects('run')->andReturn(true);
 
         $package = Package::new($this->mockProperties())->addModule($module);
 
@@ -266,7 +266,7 @@ class PackageTest extends TestCase
     {
         $moduleId = 'executable-module';
         $module = $this->mockModule($moduleId, ExecutableModule::class);
-        $module->shouldReceive('run')->andReturn(false);
+        $module->expects('run')->andReturn(false);
 
         $package = Package::new($this->mockProperties())->addModule($module);
 
@@ -305,13 +305,13 @@ class PackageTest extends TestCase
         $emptyExtensionsModule = $this->mockModule('empty_extensions', ExtendingModule::class);
 
         $servicesModule = $this->mockModule('service', ServiceModule::class);
-        $servicesModule->shouldReceive('services')->andReturn($this->stubServices('S1', 'S2'));
+        $servicesModule->expects('services')->andReturn($this->stubServices('S1', 'S2'));
 
         $factoriesModule = $this->mockModule('factory', FactoryModule::class);
-        $factoriesModule->shouldReceive('factories')->andReturn($this->stubServices('F'));
+        $factoriesModule->expects('factories')->andReturn($this->stubServices('F'));
 
         $extendingModule = $this->mockModule('extension', ExtendingModule::class);
-        $extendingModule->shouldReceive('extensions')->andReturn($this->stubServices('E'));
+        $extendingModule->expects('extensions')->andReturn($this->stubServices('E'));
 
         $multiModule = $this->mockModule(
             'multi',
@@ -319,9 +319,9 @@ class PackageTest extends TestCase
             ExtendingModule::class,
             FactoryModule::class
         );
-        $multiModule->shouldReceive('services')->andReturn($this->stubServices('MS1'));
-        $multiModule->shouldReceive('factories')->andReturn($this->stubServices('MF1', 'MF2'));
-        $multiModule->shouldReceive('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
+        $multiModule->expects('services')->andReturn($this->stubServices('MS1'));
+        $multiModule->expects('factories')->andReturn($this->stubServices('MF1', 'MF2'));
+        $multiModule->expects('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
 
         $package = Package::new($this->mockProperties('name', true))
             ->addModule($emptyServicesModule)
@@ -397,13 +397,13 @@ class PackageTest extends TestCase
         $emptyExtensionsModule = $this->mockModule('empty_extensions', ExtendingModule::class);
 
         $servicesModule = $this->mockModule('service', ServiceModule::class);
-        $servicesModule->shouldReceive('services')->andReturn($this->stubServices('S1', 'S2'));
+        $servicesModule->expects('services')->andReturn($this->stubServices('S1', 'S2'));
 
         $factoriesModule = $this->mockModule('factory', FactoryModule::class);
-        $factoriesModule->shouldReceive('factories')->andReturn($this->stubServices('F'));
+        $factoriesModule->expects('factories')->andReturn($this->stubServices('F'));
 
         $extendingModule = $this->mockModule('extension', ExtendingModule::class);
-        $extendingModule->shouldReceive('extensions')->andReturn($this->stubServices('E'));
+        $extendingModule->expects('extensions')->andReturn($this->stubServices('E'));
 
         $multiModule = $this->mockModule(
             'multi',
@@ -411,9 +411,9 @@ class PackageTest extends TestCase
             ExtendingModule::class,
             FactoryModule::class
         );
-        $multiModule->shouldReceive('services')->andReturn($this->stubServices('MS1'));
-        $multiModule->shouldReceive('factories')->andReturn($this->stubServices('MF1', 'MF2'));
-        $multiModule->shouldReceive('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
+        $multiModule->expects('services')->andReturn($this->stubServices('MS1'));
+        $multiModule->expects('factories')->andReturn($this->stubServices('MF1', 'MF2'));
+        $multiModule->expects('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
 
         $package = Package::new($this->mockProperties('name', false))
             ->addModule($emptyServicesModule)
@@ -484,12 +484,12 @@ class PackageTest extends TestCase
     public function testPackageConnection(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
         $package1 = Package::new($this->mockProperties('package_1', false))
             ->addModule($module1);
 
         $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
@@ -512,12 +512,12 @@ class PackageTest extends TestCase
     public function testPackageConnectionFailsIfBooted(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
         $package1 = Package::new($this->mockProperties('package_1', false))
             ->addModule($module1);
 
         $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
@@ -538,12 +538,12 @@ class PackageTest extends TestCase
     public function testPackageConnectionWithProxyContainer(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
         $package1 = Package::new($this->mockProperties('package_1', false))
             ->addModule($module1);
 
         $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
@@ -575,12 +575,12 @@ class PackageTest extends TestCase
     public function testPackageConnectionWithProxyContainerFailsIfNoBoot(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
         $package1 = Package::new($this->mockProperties('package_1', false))
             ->addModule($module1);
 
         $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
@@ -604,12 +604,12 @@ class PackageTest extends TestCase
     public function testPackageCanOnlyBeConnectedOnce(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
         $package1 = Package::new($this->mockProperties('package_1', false))
             ->addModule($module1);
 
         $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->shouldReceive('services')->andReturn($this->stubServices('service_2'));
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
@@ -634,7 +634,7 @@ class PackageTest extends TestCase
     public function testPackageCanNotBeConnectedWithThemselves(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->shouldReceive('services')->andReturn($this->stubServices('service_1'));
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
         $package1 = Package::new($this->mockProperties('package_1', false))
             ->addModule($module1);
 

@@ -58,8 +58,8 @@ abstract class TestCase extends FrameworkTestCase
     ): Properties {
 
         $stub = \Mockery::mock(Properties::class);
-        $stub->shouldReceive('basename')->andReturn($basename);
-        $stub->shouldReceive('isDebug')->andReturn($isDebug);
+        $stub->allows('basename')->andReturn($basename);
+        $stub->allows('isDebug')->andReturn($isDebug);
 
         return $stub;
     }
@@ -74,22 +74,22 @@ abstract class TestCase extends FrameworkTestCase
         $interfaces or $interfaces[] = Module::class;
 
         $stub = \Mockery::mock(...$interfaces);
-        $stub->shouldReceive('id')->andReturn($id);
+        $stub->allows('id')->andReturn($id);
 
         if (in_array(ServiceModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('services')->byDefault()->andReturn([]);
+            $stub->allows('services')->byDefault()->andReturn([]);
         }
 
         if (in_array(FactoryModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('factories')->byDefault()->andReturn([]);
+            $stub->allows('factories')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExtendingModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('extensions')->byDefault()->andReturn([]);
+            $stub->allows('extensions')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExecutableModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('run')->byDefault()->andReturn(false);
+            $stub->allows('run')->byDefault()->andReturn(false);
         }
 
         return $stub;
