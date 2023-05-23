@@ -105,8 +105,8 @@ class ThemePropertiesTest extends TestCase
 
         $themeStub = \Mockery::mock(\WP_Theme::class);
 
+        $themeStub->allows('get')->andReturnArg(0)->byDefault();
         $themeStub->expects('get')->with('Template')->andReturn($expectedTemplate);
-        $themeStub->expects('get')->zeroOrMoreTimes()->andReturnArg(0);
 
         $themeStub->expects('get_stylesheet')->andReturn($expectedBaseName);
         $themeStub->expects('get_stylesheet_directory')->andReturn($expectedBasePath);
