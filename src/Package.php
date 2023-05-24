@@ -72,7 +72,22 @@ class Package
     public const ACTION_READY = 'ready';
 
     /**
-     * Custom action which is triggered when application failed to boot.
+     * Custom action which is triggered when a failure happens during the building stage.
+     *
+     * @example
+     * <code>
+     * $package = Package::new();
+     *
+     * add_action(
+     *      $package->hookName(Package::ACTION_FAILED_BUILD),
+     *      $callback
+     * );
+     * </code>
+     */
+    public const ACTION_FAILED_BUILD = 'failed-build';
+
+    /**
+     * Custom action which is triggered when a failure happens during the booting stage.
      *
      * @example
      * <code>
@@ -311,35 +326,34 @@ class Package
     }
 
     /**
-     * @param Module ...$defaultModules
-     *
      * @return static
      */
-    public function build(Module ...$defaultModules): Package
+    public function build(): Package
     {
-        // Don't allow building the application multiple times.
-        $this->assertStatus(self::STATUS_IDLE, 'build package');
+        try {
+            // Don't allow building the application multiple times.
+            $this->assertStatus(self::STATUS_IDLE, 'build package');
 
-        // Add default modules to the application.
-        array_map([$this, 'addModule'], $defaultModules);
-
-        do_action(
-            $this->hookName(self::ACTION_INIT),
-            $this
-        );
-        // Changing the status here ensures we can not call this method again, and also we can not
-        // add new modules, because both this and `addModule()` methods check for idle status.
-        // For backward compatibility, adding new modules via `boot()` will still be possible, even
-        // if deprecated, at the condition that the container was not yet accessed at that point.
-        $this->progress(self::STATUS_INITIALIZED);
-
-        $this->built = true;
+            do_action(
+                $this->hookName(self::ACTION_INIT),
+                $this
+            );
+            // Changing the status here ensures we can not call this method again, and also we can not
+            // add new modules, because both this and `addModule()` methods check for idle status.
+            // For backward compatibility, adding new modules via `boot()` will still be possible, even
+            // if deprecated, at the condition that the container was not yet accessed at that point.
+            $this->progress(self::STATUS_INITIALIZED);
+        } catch (\Throwable $throwable) {
+            $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
+        } finally {
+            $this->built = true;
+        }
 
         return $this;
     }
 
     /**
-     * @param Module ...$defaultModules Deprecated, use `build()` or `addModule()`
+     * @param Module ...$defaultModules Deprecated, use `addModule()` to add default modules.
      * @return bool
      *
      * @throws \Throwable
@@ -366,12 +380,7 @@ class Package
                 $this
             );
         } catch (\Throwable $throwable) {
-            $this->progress(self::STATUS_FAILED);
-            do_action($this->hookName(self::ACTION_FAILED_BOOT), $throwable);
-
-            if ($this->properties->isDebug()) {
-                throw $throwable;
-            }
+            $this->handleFailure($throwable, self::ACTION_FAILED_BOOT);
 
             return false;
         }
@@ -391,7 +400,7 @@ class Package
             $this->deprecatedArgument(
                 sprintf(
                     'Passing default modules to %1$s::boot() is deprecated since version 1.7.0.'
-                    . ' Please add modules via %1$s::build() or %1$s::addModule().',
+                    . ' Please add modules via %1$s::addModule().',
                     __CLASS__
                 ),
                 __METHOD__,
@@ -400,7 +409,8 @@ class Package
         }
 
         if (!$this->built) {
-            $this->build(...$defaultModules);
+            array_map([$this, 'addModule'], $defaultModules);
+            $this->build();
 
             return;
         }
@@ -625,6 +635,23 @@ class Package
     public function statusIs(int $status): bool
     {
         return $this->status === $status;
+    }
+
+    /**
+     * @param \Throwable $throwable
+     * @param Package::ACTION_FAILED_* $action
+     * @return void
+     * @throws \Throwable
+     */
+    private function handleFailure(\Throwable $throwable, string $action): void
+    {
+        $this->progress(self::STATUS_FAILED);
+        $hook = $this->hookName($action);
+        did_action($hook) or do_action($hook, $throwable);
+
+        if ($this->properties->isDebug()) {
+            throw $throwable;
+        }
     }
 
     /**
