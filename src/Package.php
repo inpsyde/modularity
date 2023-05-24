@@ -203,6 +203,11 @@ class Package
     private $hasContainer = false;
 
     /**
+     * @var \Throwable|null
+     */
+    private $lastError = null;
+
+    /**
      * @param Properties $properties
      * @param ContainerInterface[] $containers
      *
@@ -238,23 +243,36 @@ class Package
      */
     public function addModule(Module $module): Package
     {
-        $this->assertStatus(self::STATUS_IDLE, sprintf('add module %s', $module->id()));
+        try {
+            $this->assertStatus(self::STATUS_IDLE, sprintf('add module %s', $module->id()));
 
-        $registeredServices = $this->addModuleServices($module, self::MODULE_REGISTERED);
-        $registeredFactories = $this->addModuleServices($module, self::MODULE_REGISTERED_FACTORIES);
-        $extended = $this->addModuleServices($module, self::MODULE_EXTENDED);
-        $isExecutable = $module instanceof ExecutableModule;
+            $registeredServices = $this->addModuleServices(
+                $module,
+                self::MODULE_REGISTERED
+            );
+            $registeredFactories = $this->addModuleServices(
+                $module,
+                self::MODULE_REGISTERED_FACTORIES
+            );
+            $extended = $this->addModuleServices(
+                $module,
+                self::MODULE_EXTENDED
+            );
+            $isExecutable = $module instanceof ExecutableModule;
 
-        // ExecutableModules are collected and executed on Package::boot()
-        // when the Container is being compiled.
-        if ($isExecutable) {
-            /** @var ExecutableModule $module */
-            $this->executables[] = $module;
+            // ExecutableModules are collected and executed on Package::boot()
+            // when the Container is being compiled.
+            if ($isExecutable) {
+                /** @var ExecutableModule $module */
+                $this->executables[] = $module;
+            }
+
+            $added = $registeredServices || $registeredFactories || $extended || $isExecutable;
+            $status = $added ? self::MODULE_ADDED : self::MODULE_NOT_ADDED;
+            $this->moduleProgress($module->id(), $status);
+        } catch (\Throwable $throwable) {
+            $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
         }
-
-        $added = $registeredServices || $registeredFactories || $extended || $isExecutable;
-        $status = $added ? self::MODULE_ADDED : self::MODULE_NOT_ADDED;
-        $this->moduleProgress($module->id(), $status);
 
         return $this;
     }
@@ -266,63 +284,69 @@ class Package
      */
     public function connect(Package $package): bool
     {
-        if ($package === $this) {
-            return false;
-        }
-
-        $packageName = $package->name();
-        $errorData = ['package' => $packageName, 'status' => $this->status];
-
-        // Don't connect, if already connected
-        if (array_key_exists($packageName, $this->connectedPackages)) {
-            do_action(
-                $this->hookName(self::ACTION_FAILED_CONNECTION),
-                $packageName,
-                new \WP_Error('already_connected', 'already connected', $errorData)
-            );
-
-            return false;
-        }
-
-        // Don't connect, if already booted or boot failed
-        if (in_array($this->status, [self::STATUS_BOOTED, self::STATUS_FAILED], true)) {
-            $this->connectedPackages[$packageName] = false;
-            do_action(
-                $this->hookName(self::ACTION_FAILED_CONNECTION),
-                $packageName,
-                new \WP_Error('no_connect_status', 'no connect status', $errorData)
-            );
-
-            return false;
-        }
-
-        $this->connectedPackages[$packageName] = true;
-
-        // We put connected package's properties in this package's container, so that in modules
-        // "run" method we can access them if we need to.
-        $this->containerConfigurator->addService(
-            sprintf('%s.%s', $package->name(), self::PROPERTIES),
-            static function () use ($package): Properties {
-                return $package->properties();
+        try {
+            if ($package === $this) {
+                return false;
             }
-        );
 
-        // If the other package is booted, we can obtain a container, otherwise
-        // we build a proxy container
-        $container = $package->statusIs(self::STATUS_BOOTED)
-            ? $package->container()
-            : new PackageProxyContainer($package);
+            $packageName = $package->name();
+            $errorData = ['package' => $packageName, 'status' => $this->status];
 
-        $this->containerConfigurator->addContainer($container);
+            // Don't connect, if already connected
+            if (array_key_exists($packageName, $this->connectedPackages)) {
+                do_action(
+                    $this->hookName(self::ACTION_FAILED_CONNECTION),
+                    $packageName,
+                    new \WP_Error('already_connected', 'already connected', $errorData)
+                );
 
-        do_action(
-            $this->hookName(self::ACTION_PACKAGE_CONNECTED),
-            $packageName,
-            $this->status,
-            $container instanceof PackageProxyContainer
-        );
+                return false;
+            }
 
-        return true;
+            // Don't connect, if already booted or boot failed
+            if (in_array($this->status, [self::STATUS_BOOTED, self::STATUS_FAILED], true)) {
+                $this->connectedPackages[$packageName] = false;
+                do_action(
+                    $this->hookName(self::ACTION_FAILED_CONNECTION),
+                    $packageName,
+                    new \WP_Error('no_connect_status', 'no connect status', $errorData)
+                );
+
+                return false;
+            }
+
+            $this->connectedPackages[$packageName] = true;
+
+            // We put connected package's properties in this package's container, so that in modules
+            // "run" method we can access them if we need to.
+            $this->containerConfigurator->addService(
+                sprintf('%s.%s', $package->name(), self::PROPERTIES),
+                static function () use ($package): Properties {
+                    return $package->properties();
+                }
+            );
+
+            // If the other package is booted, we can obtain a container, otherwise
+            // we build a proxy container
+            $container = $package->statusIs(self::STATUS_BOOTED)
+                ? $package->container()
+                : new PackageProxyContainer($package);
+
+            $this->containerConfigurator->addContainer($container);
+
+            do_action(
+                $this->hookName(self::ACTION_PACKAGE_CONNECTED),
+                $packageName,
+                $this->status,
+                $container instanceof PackageProxyContainer
+            );
+
+            return true;
+        } catch (\Throwable $throwable) {
+            $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
+
+            return false;
+        }
     }
 
     /**
@@ -652,6 +676,8 @@ class Package
         if ($this->properties->isDebug()) {
             throw $throwable;
         }
+
+        $this->lastError = $throwable;
     }
 
     /**
@@ -665,7 +691,11 @@ class Package
     private function assertStatus(int $status, string $action, string $operator = '=='): void
     {
         if (!version_compare((string) $this->status, (string) $status, $operator)) {
-            throw new \Exception(sprintf("Can't %s at this point of application.", $action));
+            throw new \Exception(
+                sprintf("Can't %s at this point of application.", $action),
+                0,
+                $this->lastError
+            );
         }
     }
 

@@ -196,51 +196,6 @@ class PackageTest extends TestCase
     }
 
     /**
-     * Test if on Properties::isDebug() === false no Exception is thrown
-     * and Boostrap::boot() returns false.
-     *
-     * @test
-     */
-    public function testBootWithThrowingModuleAndDebugFalse(): void
-    {
-        $exception = new \Exception("Catch me if you can!");
-
-        $module = $this->mockModule('id', ExecutableModule::class);
-        $module->expects('run')->andThrow($exception);
-
-        $package = Package::new($this->mockProperties('basename', false))
-            ->addModule($module);
-
-        $failedHook = $package->hookName(Package::ACTION_FAILED_BOOT);
-        Monkey\Actions\expectDone($failedHook)->once()->with($exception);
-
-        static::assertFalse($package->boot());
-        static::assertTrue($package->statusIs(Package::STATUS_FAILED));
-    }
-
-    /**
-     * Test if on Properties::isDebug() === true an Exception is thrown.
-     *
-     * @test
-     */
-    public function testBootWithThrowingModuleAndDebugTrue(): void
-    {
-        $exception = new \Exception("Catch me if you can!");
-
-        $module = $this->mockModule('id', ExecutableModule::class);
-        $module->expects('run')->andThrow($exception);
-
-        $package = Package::new($this->mockProperties('basename', true))
-            ->addModule($module);
-
-        $failedHook = $package->hookName(Package::ACTION_FAILED_BOOT);
-        Monkey\Actions\expectDone($failedHook)->once()->with($exception);
-
-        $this->expectExceptionObject($exception);
-        $package->boot();
-    }
-
-    /**
      * @test
      */
     public function testBootWithExecutableModule(): void
@@ -324,6 +279,8 @@ class PackageTest extends TestCase
         $multiModule->expects('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
 
         $package = Package::new($this->mockProperties('name', true))
+            ->addModule($emptyModule)
+            ->addModule($extendingModule)
             ->addModule($emptyServicesModule)
             ->addModule($emptyFactoriesModule)
             ->addModule($emptyExtensionsModule)
@@ -331,30 +288,30 @@ class PackageTest extends TestCase
             ->addModule($multiModule)
             ->addModule($factoriesModule);
 
-        static::assertTrue($package->build($emptyModule, $extendingModule)->boot());
+        static::assertTrue($package->build()->boot());
 
         $expectedStatus = [
             Package::MODULES_ALL => [
-                'empty_services ' . Package::MODULE_NOT_ADDED,
-                'empty_factories ' . Package::MODULE_NOT_ADDED,
-                'empty_extensions ' . Package::MODULE_NOT_ADDED,
-                'service ' . Package::MODULE_REGISTERED . ' (S1, S2)',
-                'service ' . Package::MODULE_ADDED,
-                'multi ' . Package::MODULE_REGISTERED . ' (MS1)',
-                'multi ' . Package::MODULE_REGISTERED_FACTORIES . ' (MF1, MF2)',
-                'multi ' . Package::MODULE_EXTENDED . ' (ME1, ME2)',
-                'multi ' . Package::MODULE_ADDED,
-                'factory ' . Package::MODULE_REGISTERED_FACTORIES . ' (F)',
-                'factory ' . Package::MODULE_ADDED,
-                'empty ' . Package::MODULE_NOT_ADDED,
-                'extension ' . Package::MODULE_EXTENDED . ' (E)',
-                'extension ' . Package::MODULE_ADDED,
+                'empty not-added',
+                'extension extended (E)',
+                'extension added',
+                'empty_services not-added',
+                'empty_factories not-added',
+                'empty_extensions not-added',
+                'service registered (S1, S2)',
+                'service added',
+                'multi registered (MS1)',
+                'multi registered-factories (MF1, MF2)',
+                'multi extended (ME1, ME2)',
+                'multi added',
+                'factory registered-factories (F)',
+                'factory added',
             ],
             Package::MODULE_NOT_ADDED => [
+                'empty',
                 'empty_services',
                 'empty_factories',
                 'empty_extensions',
-                'empty',
             ],
             Package::MODULE_REGISTERED => [
                 'service',
@@ -365,14 +322,14 @@ class PackageTest extends TestCase
                 'factory',
             ],
             Package::MODULE_EXTENDED => [
-                'multi',
                 'extension',
+                'multi',
             ],
             Package::MODULE_ADDED => [
+                'extension',
                 'service',
                 'multi',
                 'factory',
-                'extension',
             ],
         ];
 
@@ -416,6 +373,8 @@ class PackageTest extends TestCase
         $multiModule->expects('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
 
         $package = Package::new($this->mockProperties('name', false))
+            ->addModule($emptyModule)
+            ->addModule($extendingModule)
             ->addModule($emptyServicesModule)
             ->addModule($emptyFactoriesModule)
             ->addModule($emptyExtensionsModule)
@@ -423,10 +382,13 @@ class PackageTest extends TestCase
             ->addModule($multiModule)
             ->addModule($factoriesModule);
 
-        static::assertTrue($package->build($emptyModule, $extendingModule)->boot());
+        static::assertTrue($package->build()->boot());
 
         $expectedStatus = [
             Package::MODULES_ALL => [
+                'empty ' . Package::MODULE_NOT_ADDED,
+                'extension ' . Package::MODULE_EXTENDED,
+                'extension ' . Package::MODULE_ADDED,
                 'empty_services ' . Package::MODULE_NOT_ADDED,
                 'empty_factories ' . Package::MODULE_NOT_ADDED,
                 'empty_extensions ' . Package::MODULE_NOT_ADDED,
@@ -438,15 +400,12 @@ class PackageTest extends TestCase
                 'multi ' . Package::MODULE_ADDED,
                 'factory ' . Package::MODULE_REGISTERED_FACTORIES,
                 'factory ' . Package::MODULE_ADDED,
-                'empty ' . Package::MODULE_NOT_ADDED,
-                'extension ' . Package::MODULE_EXTENDED,
-                'extension ' . Package::MODULE_ADDED,
             ],
             Package::MODULE_NOT_ADDED => [
+                'empty',
                 'empty_services',
                 'empty_factories',
                 'empty_extensions',
-                'empty',
             ],
             Package::MODULE_REGISTERED => [
                 'service',
@@ -457,14 +416,14 @@ class PackageTest extends TestCase
                 'factory',
             ],
             Package::MODULE_EXTENDED => [
-                'multi',
                 'extension',
+                'multi',
             ],
             Package::MODULE_ADDED => [
+                'extension',
                 'service',
                 'multi',
                 'factory',
-                'extension',
             ],
         ];
 
@@ -709,51 +668,7 @@ class PackageTest extends TestCase
     /**
      * @test
      */
-    public function testBuildPassingModulesToBuild(): void
-    {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->expects('services')->andReturn($this->stubServices('service_1'));
-
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->expects('services')->andReturn($this->stubServices('service_2'));
-
-        $container = Package::new($this->mockProperties())
-            ->addModule($module1)
-            ->build($module2)
-            ->container();
-
-        static::assertSame('service_1', $container->get('service_1')['id']);
-        static::assertSame('service_2', $container->get('service_2')['id']);
-    }
-
-    /**
-     * @test
-     */
-    public function testBuildPassingSameModulesToBuildAndBoot(): void
-    {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
-        $module1->expects('services')->andReturn($this->stubServices('service_1'));
-
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
-        $module2->expects('services')->andReturn($this->stubServices('service_2'));
-
-        $package = Package::new($this->mockProperties('test', true))
-            ->addModule($module1)
-            ->build($module2);
-
-        $this->ignoreDeprecations();
-        $package->boot($module2);
-
-        $container = $package->container();
-
-        static::assertSame('service_1', $container->get('service_1')['id']);
-        static::assertSame('service_2', $container->get('service_2')['id']);
-    }
-
-    /**
-     * @test
-     */
-    public function testBuildPassingDifferentModulesToBuildAndBoot(): void
+    public function testBuildPassingModulesToBoot(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
@@ -766,7 +681,8 @@ class PackageTest extends TestCase
 
         $package = Package::new($this->mockProperties('test', true))
             ->addModule($module1)
-            ->build($module2);
+            ->addModule($module2)
+            ->build();
 
         $this->ignoreDeprecations();
         $package->boot($module2, $module3);
@@ -794,7 +710,8 @@ class PackageTest extends TestCase
 
         $package = Package::new($this->mockProperties('test', true))
             ->addModule($module1)
-            ->build($module2);
+            ->addModule($module2)
+            ->build();
 
         $container = $package->container();
 
@@ -804,5 +721,216 @@ class PackageTest extends TestCase
         $this->expectExceptionMessageMatches('/add module module_3/i');
         $this->ignoreDeprecations();
         $package->boot($module2, $module3);
+    }
+
+    /**
+     * When an exception happen inside `Package::boot()` and debug is off, we expect the exception
+     * to be caught, an "boot failed" action to be failed, and the Package to be in errored status.
+     *
+     * @test
+     */
+    public function testFailureFlowWithFailureOnBootDebugModeOff(): void
+    {
+        $exception = new \Exception('Test');
+
+        $module = $this->mockModule('id', ExecutableModule::class);
+        $module->expects('run')->andThrow($exception);
+
+        $package = Package::new($this->mockProperties())->addModule($module);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
+            ->once()
+            ->with($exception);
+
+        static::assertFalse($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+    }
+
+    /**
+     * When an exception happen inside `Package::boot()` and debug is of, we expect it to bubble up.
+     *
+     * @test
+     */
+    public function testFailureFlowWithFailureOnBootDebugModeOn(): void
+    {
+        $exception = new \Exception('Test');
+
+        $module = $this->mockModule('id', ExecutableModule::class);
+        $module->expects('run')->andThrow($exception);
+
+        $package = Package::new($this->mockProperties('basename', true))->addModule($module);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
+            ->once()
+            ->with($exception);
+
+        $this->expectExceptionObject($exception);
+        $package->boot();
+    }
+
+    /**
+     * When multiple calls to `Package::addPackage()` throw an exception, and debug is off, we
+     * expect none of them to bubble up, and the first to cause the "build failed" action.
+     * We also expect the Package to be in errored status.
+     * We expect all other `Package::addPackage()` exceptions to do not fire action hook.@psalm-allow-private-mutation
+     * We expect Package::build()` to fail without doing anything. Finally, when `Package::boot()`
+     * is called, we expect the action "boot failed" to be called, and the passed exception to have
+     * an exception hierarchy with all the thrown exceptions.
+     *
+     * @test
+     */
+    public function testFailureFlowWithFailureOnAddModuleDebugModeOff(): void
+    {
+        $exception = new \Exception('Test 1');
+
+        $module1 = $this->mockModule('one', ServiceModule::class);
+        $module1->expects('services')->andThrow($exception);
+
+        $module2 = $this->mockModule('two', ServiceModule::class);
+        $module2->expects('services')->never();
+
+        $package = Package::new($this->mockProperties());
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertSame($exception, $throwable);
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertRegExp('/boot application/i', $throwable->getMessage());
+                    $previous = $throwable->getPrevious();
+                    self::assertRegExp('/build package/i', $previous->getMessage());
+                    $previous = $previous->getPrevious();
+                    self::assertRegExp('/add module two/i', $previous->getMessage());
+                    self::assertSame($exception, $previous->getPrevious());
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        static::assertFalse($package->addModule($module1)->addModule($module2)->build()->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+    }
+
+    /**
+     * The same as the test above, but this time we call `Package::boot()` directly, instead of
+     * `$package->build()->boot()`, but the expectations are identical.
+     *
+     * @test
+     */
+    public function testFailureFlowWithFailureOnAddModuleWithoutBuildDebugModeOff(): void
+    {
+        $exception = new \Exception('Test 1');
+
+        $module1 = $this->mockModule('one', ServiceModule::class);
+        $module1->expects('services')->andThrow($exception);
+
+        $module2 = $this->mockModule('two', ServiceModule::class);
+        $module2->expects('services')->never();
+
+        $package = Package::new($this->mockProperties());
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertSame($exception, $throwable);
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertRegExp('/boot application/i', $throwable->getMessage());
+                    $previous = $throwable->getPrevious();
+                    self::assertRegExp('/build package/i', $previous->getMessage());
+                    $previous = $previous->getPrevious();
+                    self::assertRegExp('/add module two/i', $previous->getMessage());
+                    self::assertSame($exception, $previous->getPrevious());
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        static::assertFalse($package->addModule($module1)->addModule($module2)->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+    }
+
+    /**
+     * When `Package::build()` throws an exception, and debug is off, we expect it to be caught, the
+     * "build failed" action to be fired, and the Package to be in errored status. When after that
+     * `Package::boot()` is called we expect the action "boot failed" to be called passing an
+     * exception whose "previous" is the exception thrown by `Package::build()`.
+     *
+     * @test
+     */
+    public function testFailureFlowWithFailureOnBuildDebugModeOff(): void
+    {
+        $exception = new \Exception('Test');
+
+        $package = Package::new($this->mockProperties());
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->andThrow($exception);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertSame($exception, $throwable);
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertRegExp('/boot application/i', $throwable->getMessage());
+                    self::assertSame($exception, $throwable->getPrevious());
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        static::assertFalse($package->build()->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+    }
+
+    /**
+     * When `Package::build()` throws an exception, and debug is on, we expect it to bubble up.
+     *
+     * @test
+     */
+    public function testFailureFlowWithFailureOnBuildDebugModeOn(): void
+    {
+        $exception = new \Exception('Test');
+
+        $package = Package::new($this->mockProperties('basename', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->andThrow($exception);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                static function (\Throwable $throwable) use ($exception, $package): void {
+                    self::assertSame($exception, $throwable);
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
+
+        $this->expectExceptionObject($exception);
+        $package->build()->boot();
     }
 }
