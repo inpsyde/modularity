@@ -43,6 +43,29 @@ class BasePropertiesTest extends TestCase
         static::assertSame(null, $testee->requiresWp());
     }
 
+    /**
+     * @dataProvider baseNameDataProvider
+     */
+    public function testBaseNameSanitization(string $baseName, string $sanitizedBaseName): void
+    {
+        $testee = $this->createBaseProperties(
+            $baseName,
+            ''
+        );
+
+        static::assertSame($sanitizedBaseName, $testee->baseName());
+    }
+
+    public function baseNameDataProvider(): iterable
+    {
+        yield 'empty' => ['', ''];
+        yield 'word' => ['foo', 'foo'];
+        yield 'words' => ['foo bar', 'foo bar'];
+        yield 'relative path to package' => ['path/package-dir/package.php', 'package-dir'];
+        yield 'absolute path' => ['/abs/path/package-dir/package.php', 'package-dir'];
+        yield 'single file' => ['package.php', 'package'];
+    }
+
     private function createBaseProperties(
         string $baseName,
         string $basePath,
