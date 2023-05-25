@@ -37,7 +37,7 @@ At any point of the flow, by holding an instance of the `Package` is possible to
 
 ## Booting stage
 
-1. When the booting stage begins, the `Package` status moves to **P`ackage::STATUS_MODULES_ADDED`**.
+1. When the booting stage begins, the `Package` status moves to **`Package::STATUS_MODULES_ADDED`**.
 2. A read-only PSR-11 container is created. It can lazily resolve the dependency tree defined in the previous stage.
 3. **All executables modules run**. That is when all the application behavior happens. Note: Because the container is "lazy", only the consumed services are resolved. The `Package` never executes factory callbacks for services "registered" in the previous stage but not used in this stage.
 4. The `Package` status moves to **`Package::STATUS_READY`**.
