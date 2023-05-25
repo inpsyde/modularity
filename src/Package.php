@@ -442,7 +442,7 @@ class Package
         if (
             !$defaultModules
             || ($this->status >= self::STATUS_MODULES_ADDED)
-            || ($this->status === self::STATUS_FAILED)
+            || ($this->statusIs(self::STATUS_FAILED))
         ) {
             // if we don't have default modules, there's nothing to do, and if the status is beyond
             // "modules added" or is failed, we do nothing as well and let `boot()` throw.
