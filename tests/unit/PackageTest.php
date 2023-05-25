@@ -240,11 +240,41 @@ class PackageTest extends TestCase
         $module1 = $this->mockModule('module_1', ServiceModule::class);
         $module1->allows('services')->andReturn($this->stubServices('service_1'));
 
-        $this->convertDeprecationsToExceptions();
-        $this->expectDeprecation();
-        $this->expectExceptionMessageMatches('/boot().+?deprecated.+?1\.7/i');
+        $package = Package::new($this->mockProperties('test', true));
 
-        Package::new($this->mockProperties('test', true))->boot($module1);
+        $this->convertDeprecationsToExceptions();
+        try {
+            $count = 0;
+            $package->boot($module1);
+        } catch (\Throwable $throwable) {
+            $count++;
+            $this->assertThrowableMessageMatches($throwable, 'boot().+?deprecated.+?1\.7');
+        } finally {
+            static::assertSame(1, $count);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function testAddModuleFailsAfterBuild(): void
+    {
+        $package = Package::new($this->mockProperties('test', true))->build();
+
+        $this->expectExceptionMessageMatches("/add module.+?status.+?at end of building stage/i");
+
+        $package->addModule($this->mockModule());
+    }
+
+    /**
+     * @test
+     */
+    public function testPropertiesCanBeRetrievedFromContainer(): void
+    {
+        $expected = $this->mockProperties();
+        $actual = Package::new($expected)->build()->container()->get(Package::PROPERTIES);
+
+        static::assertSame($expected, $actual);
     }
 
     /**
@@ -452,6 +482,10 @@ class PackageTest extends TestCase
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once()
+            ->with($package1->name(), Package::STATUS_IDLE, false);
+
         $package1->boot();
 
         $connected = $package2->connect($package1);
@@ -468,7 +502,7 @@ class PackageTest extends TestCase
      *
      * @test
      */
-    public function testPackageConnectionFailsIfBooted(): void
+    public function testPackageConnectionFailsIfBootedWithDebugOff(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
@@ -483,10 +517,58 @@ class PackageTest extends TestCase
         $package1->boot();
         $package2->boot();
 
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+            ->once()
+            ->with($package1->name(), \Mockery::type(\WP_Error::class));
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable): void {
+                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?booted');
+                }
+            );
+
         $connected = $package2->connect($package1);
 
         static::assertFalse($connected);
         static::assertSame(['package_1' => false], $package2->connectedPackages());
+    }
+
+    /**
+     * Test we can not connect services when the package how call connect is booted.
+     *
+     * @test
+     */
+    public function testPackageConnectionFailsIfBootedWithDebugOn(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', true))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', true))
+            ->addModule($module2);
+
+        $package1->boot();
+        $package2->boot();
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+            ->once()
+            ->with($package1->name(), \Mockery::type(\WP_Error::class));
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable) {
+                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?booted');
+                }
+            );
+
+        $this->expectExceptionMessageMatches('/failed connect.+?booted/i');
+        $package2->connect($package1);
     }
 
     /**
@@ -560,7 +642,7 @@ class PackageTest extends TestCase
      *
      * @test
      */
-    public function testPackageCanOnlyBeConnectedOnce(): void
+    public function testPackageCanOnlyBeConnectedOnceDebugOff(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
@@ -572,17 +654,67 @@ class PackageTest extends TestCase
         $package2 = Package::new($this->mockProperties('package_2', false))
             ->addModule($module2);
 
-        $actionOk = $package2->hookName(Package::ACTION_PACKAGE_CONNECTED);
-        $actionFailed = $package2->hookName(Package::ACTION_FAILED_CONNECTION);
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once();
 
-        Monkey\Actions\expectDone($actionOk)->once();
-        Monkey\Actions\expectDone($actionFailed)->once();
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+            ->once()
+            ->with($package1->name(), \Mockery::type(\WP_Error::class));
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable): void {
+                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?already');
+                }
+            );
 
         $connected1 = $package2->connect($package1);
+
+        static::assertTrue($package2->isPackageConnected($package1->name()));
+
         $connected2 = $package2->connect($package1);
 
         static::assertTrue($connected1);
         static::assertFalse($connected2);
+    }
+
+    /**
+     * Test we can connect packages once.
+     *
+     * @test
+     */
+    public function testPackageCanOnlyBeConnectedOnceDebugOn(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', true))
+            ->addModule($module2);
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once();
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+            ->once()
+            ->with($package1->name(), \Mockery::type(\WP_Error::class));
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable) {
+                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?already');
+                }
+            );
+
+        static::assertTrue($package2->connect($package1));
+
+        static::expectExceptionMessageMatches('/failed connect.+?already/i');
+        $package2->connect($package1);
     }
 
     /**
@@ -594,7 +726,7 @@ class PackageTest extends TestCase
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->mockProperties('package_1', true))
             ->addModule($module1);
 
         $action = $package1->hookName(Package::ACTION_FAILED_CONNECTION);
@@ -795,7 +927,7 @@ class PackageTest extends TestCase
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertSame($exception, $throwable);
+                    static::assertSame($exception, $throwable);
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -803,13 +935,13 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
             ->once()
             ->whenHappen(
-                static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertRegExp('/boot application/i', $throwable->getMessage());
+                function (\Throwable $throwable) use ($exception, $package): void {
+                    $this->assertThrowableMessageMatches($throwable, 'boot application');
                     $previous = $throwable->getPrevious();
-                    self::assertRegExp('/build package/i', $previous->getMessage());
+                    $this->assertThrowableMessageMatches($previous, 'build package');
                     $previous = $previous->getPrevious();
-                    self::assertRegExp('/add module two/i', $previous->getMessage());
-                    self::assertSame($exception, $previous->getPrevious());
+                    $this->assertThrowableMessageMatches($previous, 'add module two');
+                    static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -836,11 +968,14 @@ class PackageTest extends TestCase
 
         $package = Package::new($this->mockProperties());
 
+        $connected = Package::new($this->mockProperties());
+        $connected->boot();
+
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertSame($exception, $throwable);
+                    static::assertSame($exception, $throwable);
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -848,18 +983,23 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
             ->once()
             ->whenHappen(
-                static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertRegExp('/boot application/i', $throwable->getMessage());
+                function (\Throwable $throwable) use ($exception, $package): void {
+                    $this->assertThrowableMessageMatches($throwable, 'boot application');
                     $previous = $throwable->getPrevious();
-                    self::assertRegExp('/build package/i', $previous->getMessage());
+                    $this->assertThrowableMessageMatches($previous, 'build package');
                     $previous = $previous->getPrevious();
-                    self::assertRegExp('/add module two/i', $previous->getMessage());
-                    self::assertSame($exception, $previous->getPrevious());
+                    $this->assertThrowableMessageMatches($previous, 'failed connect.+?errored');
+                    $previous = $previous->getPrevious();
+                    $this->assertThrowableMessageMatches($previous, 'add module two');
+                    static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
 
-        static::assertFalse($package->addModule($module1)->addModule($module2)->boot());
+        $package = $package->addModule($module1)->addModule($module2);
+
+        static::assertFalse($package->connect($connected));
+        static::assertFalse($package->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
     }
 
@@ -885,7 +1025,7 @@ class PackageTest extends TestCase
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertSame($exception, $throwable);
+                    static::assertSame($exception, $throwable);
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -893,9 +1033,9 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
             ->once()
             ->whenHappen(
-                static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertRegExp('/boot application/i', $throwable->getMessage());
-                    self::assertSame($exception, $throwable->getPrevious());
+                function (\Throwable $throwable) use ($exception, $package): void {
+                    $this->assertThrowableMessageMatches($throwable, 'boot application');
+                    static::assertSame($exception, $throwable->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -923,7 +1063,7 @@ class PackageTest extends TestCase
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
-                    self::assertSame($exception, $throwable);
+                    static::assertSame($exception, $throwable);
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );

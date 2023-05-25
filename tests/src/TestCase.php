@@ -135,4 +135,14 @@ abstract class TestCase extends FrameworkTestCase
             \E_DEPRECATED | \E_USER_DEPRECATED
         );
     }
+
+    /**
+     * @param \Throwable $throwable
+     * @param string $pattern
+     * @return void
+     */
+    protected function assertThrowableMessageMatches(\Throwable $throwable, string $pattern): void
+    {
+        static::assertSame(1, preg_match("/{$pattern}/i", $throwable->getMessage()));
+    }
 }

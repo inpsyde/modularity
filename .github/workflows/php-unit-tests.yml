@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Use coverage?
-        if: ${{ (matrix.php-versions == '7.4') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
+        if: ${{ (matrix.php-versions == '8.0') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
         run: echo "USE_COVERAGE=yes" >> $GITHUB_ENV
 
       - name: Setup PHP
@@ -46,7 +46,9 @@ jobs:
           dependency-versions: ${{ matrix.dependency-versions }}
 
       - name: Run unit tests
-        run: composer tests:${{ ((env.USE_COVERAGE == 'yes') && 'codecov') || 'no-cov' }}
+        run:
+          ./vendor/bin/phpunit --atleast-version 9 && ./vendor/bin/phpunit --migrate-configuration || echo 'Config does not need updates.'
+          ./vendor/bin/phpunit ${{ ((env.USE_COVERAGE == 'yes') && '--coverage-clover coverage.xml') || '--no-coverage' }}
 
       - name: Update coverage
         if: ${{ env.USE_COVERAGE == 'yes' }}

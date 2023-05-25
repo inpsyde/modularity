@@ -291,28 +291,32 @@ class Package
 
             $packageName = $package->name();
             $errorData = ['package' => $packageName, 'status' => $this->status];
+            $errorMessage = "Failed connecting package {$packageName}";
 
             // Don't connect, if already connected
             if (array_key_exists($packageName, $this->connectedPackages)) {
+                $error = "{$errorMessage} because it was already connected.";
                 do_action(
                     $this->hookName(self::ACTION_FAILED_CONNECTION),
                     $packageName,
-                    new \WP_Error('already_connected', 'already connected', $errorData)
+                    new \WP_Error('already_connected', $error, $errorData)
                 );
 
-                return false;
+                throw new \Exception($error, 0, $this->lastError);
             }
 
             // Don't connect, if already booted or boot failed
-            if (in_array($this->status, [self::STATUS_BOOTED, self::STATUS_FAILED], true)) {
-                $this->connectedPackages[$packageName] = false;
+            $failed = $this->statusIs(self::STATUS_FAILED);
+            if ($failed || $this->statusIs(self::STATUS_BOOTED)) {
+                $status = $failed ? 'errored' : 'booted';
+                $error = "{$errorMessage} to a {$status} package.";
                 do_action(
                     $this->hookName(self::ACTION_FAILED_CONNECTION),
                     $packageName,
-                    new \WP_Error('no_connect_status', 'no connect status', $errorData)
+                    new \WP_Error("no_connect_on_{$status}", $error, $errorData)
                 );
 
-                return false;
+                throw new \Exception($error, 0, $this->lastError);
             }
 
             $this->connectedPackages[$packageName] = true;
@@ -343,6 +347,9 @@ class Package
 
             return true;
         } catch (\Throwable $throwable) {
+            if (isset($packageName)) {
+                $this->connectedPackages[$packageName] = false;
+            }
             $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
 
             return false;
