@@ -166,9 +166,11 @@ class LibraryPropertiesTest extends TestCase
      */
     public function testPhpDevRequireParsing(string $requirement, ?string $expected): void
     {
+        $which = random_int(1, 10) > 5 ? 'require-dev' : 'require';
+
         $composerJsonData = [
             'name' => 'inpsyde/some-package_name',
-            'require-dev' => [
+            $which => [
                 'php' => $requirement,
             ],
         ];
@@ -269,6 +271,7 @@ class LibraryPropertiesTest extends TestCase
             ['dev-src#abcde as 7.0.5-dev || >= 7.1 < 7.2.3', '7.0.5'],
 
             // things we don't accept
+            [' || ', null],
             ['<= 8', null],
             ['<8', null],
             ['dev-master', null],

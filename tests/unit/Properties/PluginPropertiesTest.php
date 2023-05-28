@@ -25,11 +25,13 @@ class PluginPropertiesTest extends TestCase
         $expectedUri = 'http://github.com/inpsyde/modularity';
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
-        $expecteWpVersion = "5.3";
+        $expectedWpVersion = "5.3";
         $expectedNetwork = true;
 
-        $expectedBaseName = 'plugin-name';
-        $expectedBasePath = '/path/to/plugin/';
+        $expectedPluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
+        $expectedBaseName = 'plugin-dir/plugin-name.php';
+        $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
+        $expectedSanitizedBaseName = 'plugin-dir';
 
         Functions\expect('get_plugin_data')
             ->andReturn(
@@ -42,17 +44,18 @@ class PluginPropertiesTest extends TestCase
                     'TextDomain' => $expectedTextDomain,
                     'PluginURI' => $expectedUri,
                     'Version' => $expectedVersion,
-                    'RequiresWP' => $expecteWpVersion,
+                    'RequiresWP' => $expectedWpVersion,
                     'RequiresPHP' => $expectedPhpVersion,
                     'Network' => $expectedNetwork,
                 ]
             );
 
         Functions\when('plugins_url')->returnArg(1);
+        Functions\when('wp_normalize_path')->returnArg(1);
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::new($expectedBasePath);
+        $testee = PluginProperties::new($expectedPluginMainFile);
 
         static::assertInstanceOf(Properties::class, $testee);
         static::assertSame($expectedDescription, $testee->description());
@@ -63,10 +66,12 @@ class PluginPropertiesTest extends TestCase
         static::assertSame($expectedTextDomain, $testee->textDomain());
         static::assertSame($expectedUri, $testee->uri());
         static::assertSame($expectedVersion, $testee->version());
-        static::assertSame($expecteWpVersion, $testee->requiresWp());
+        static::assertSame($expectedWpVersion, $testee->requiresWp());
         static::assertSame($expectedPhpVersion, $testee->requiresPhp());
+        static::assertSame($expectedSanitizedBaseName, $testee->baseName());
         // Custom to Plugins
         static::assertSame($expectedNetwork, $testee->network());
+        static::assertSame($expectedPluginMainFile, $testee->pluginMainFile());
     }
 
     /**
@@ -74,17 +79,22 @@ class PluginPropertiesTest extends TestCase
      */
     public function testIsActive(): void
     {
-        $expectedBaseName = 'plugin-name';
-        $expectedBasePath = '/path/to/plugin/';
+        $pluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
+        $expectedBaseName = 'plugin-dir/plugin-name.php';
+        $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
 
         Functions\when('get_plugin_data')->justReturn([]);
         Functions\when('plugins_url')->returnArg(1);
+        Functions\when('wp_normalize_path')->returnArg(1);
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::new($expectedBasePath);
+        $testee = PluginProperties::new($pluginMainFile);
 
-        Functions\expect('is_plugin_active')->andReturn(true);
+        Functions\expect('is_plugin_active')
+            ->andReturnUsing(static function (string $baseName) use ($expectedBaseName): bool {
+                return $baseName === $expectedBaseName;
+            });
 
         static::assertTrue($testee->isActive());
     }
@@ -94,17 +104,22 @@ class PluginPropertiesTest extends TestCase
      */
     public function testIsNetworkActive(): void
     {
-        $expectedBaseName = 'plugin-name';
-        $expectedBasePath = '/path/to/plugin/';
+        $pluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
+        $expectedBaseName = 'plugin-dir/plugin-name.php';
+        $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
 
         Functions\expect('get_plugin_data')->andReturn([]);
         Functions\when('plugins_url')->returnArg(1);
+        Functions\when('wp_normalize_path')->returnArg(1);
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        Functions\expect('is_plugin_active_for_network')->andReturn(true);
+        Functions\expect('is_plugin_active_for_network')
+            ->andReturnUsing(static function (string $baseName) use ($expectedBaseName): bool {
+                return $baseName === $expectedBaseName;
+            });
 
-        $testee = PluginProperties::new($expectedBasePath);
+        $testee = PluginProperties::new($pluginMainFile);
         static::assertTrue($testee->isNetworkActive());
     }
 
@@ -116,8 +131,11 @@ class PluginPropertiesTest extends TestCase
      */
     public function testCustomPluginHeaders(array $customHeaders): void
     {
-        $expectedBaseName = 'plugin-name';
-        $expectedBasePath = '/path/to/plugin/';
+        $pluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
+        $expectedBaseName = 'plugin-dir/plugin-name.php';
+        $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
+        $expectedSanitizedBaseName = 'plugin-dir';
+
         $expectedAuthor = 'Inpsyde GmbH';
         $expectedAuthorUri = 'https://inpsyde.com/';
 
@@ -132,13 +150,14 @@ class PluginPropertiesTest extends TestCase
 
         Functions\expect('get_plugin_data')->andReturn($pluginData);
         Functions\when('plugins_url')->returnArg(1);
+        Functions\when('wp_normalize_path')->returnArg(1);
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::new($expectedBasePath);
+        $testee = PluginProperties::new($pluginMainFile);
 
         // Check if PluginProperties do behave as normal
-        static::assertSame($expectedBaseName, $testee->baseName());
+        static::assertSame($expectedSanitizedBaseName, $testee->baseName());
         static::assertSame($expectedBasePath, $testee->basePath());
 
         // Test default Headers
@@ -192,20 +211,20 @@ class PluginPropertiesTest extends TestCase
      *
      * @dataProvider provideIsMuPluginData
      */
-    public function testIsMuPlugin(string $pluginPath, string $muPluginDir, bool $expected): void
+    public function testIsMuPlugin(string $pluginMainFile, string $muPluginDir, bool $expected): void
     {
-        $expectedBaseName = 'plugin-name';
+        $expectedBaseName = 'the-plugin/index.php';
 
         Functions\expect('get_plugin_data')->andReturn([]);
         Functions\when('plugins_url')->returnArg(1);
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
-        Functions\expect('plugin_dir_path')->andReturn($pluginPath);
+        Functions\when('plugin_dir_path')->returnArg(1);
 
         Functions\expect('wp_normalize_path')->andReturnFirstArg();
 
         define('WPMU_PLUGIN_DIR', $muPluginDir);
 
-        $testee = PluginProperties::new($pluginPath);
+        $testee = PluginProperties::new($pluginMainFile);
         static::assertSame($expected, $testee->isMuPlugin());
     }
 
@@ -216,12 +235,12 @@ class PluginPropertiesTest extends TestCase
     {
         return [
             'is not mu-plugin' => [
-                '/wp-content/plugins/the-plugin/',
+                '/wp-content/plugins/the-plugin/index.php',
                 '/wp-content/mu-plugins/',
                 false,
             ],
             'is mu-plugin' => [
-                '/wp-content/mu-plugins/the-plugin/',
+                '/wp-content/mu-plugins/the-plugin/index.php',
                 '/wp-content/mu-plugins/',
                 true,
             ],

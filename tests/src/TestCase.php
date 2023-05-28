@@ -13,22 +13,37 @@ use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Error\Deprecated;
 use PHPUnit\Framework\TestCase as FrameworkTestCase;
 
 abstract class TestCase extends FrameworkTestCase
 {
     use MockeryPHPUnitIntegration;
 
+    /**
+     * @var int|null
+     */
+    private $currentErrorReporting = null;
+
+    /**
+     * @return void
+     */
     protected function setUp(): void
     {
         parent::setUp();
         Monkey\setUp();
     }
 
+    /**
+     * @return void
+     */
     protected function tearDown(): void
     {
         Monkey\tearDown();
         parent::tearDown();
+        if (is_int($this->currentErrorReporting)) {
+            error_reporting($this->currentErrorReporting);
+        }
     }
 
     /**
@@ -43,8 +58,8 @@ abstract class TestCase extends FrameworkTestCase
     ): Properties {
 
         $stub = \Mockery::mock(Properties::class);
-        $stub->shouldReceive('basename')->andReturn($basename);
-        $stub->shouldReceive('isDebug')->andReturn($isDebug);
+        $stub->allows('basename')->andReturn($basename);
+        $stub->allows('isDebug')->andReturn($isDebug);
 
         return $stub;
     }
@@ -59,22 +74,22 @@ abstract class TestCase extends FrameworkTestCase
         $interfaces or $interfaces[] = Module::class;
 
         $stub = \Mockery::mock(...$interfaces);
-        $stub->shouldReceive('id')->andReturn($id);
+        $stub->allows('id')->andReturn($id);
 
         if (in_array(ServiceModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('services')->byDefault()->andReturn([]);
+            $stub->allows('services')->byDefault()->andReturn([]);
         }
 
         if (in_array(FactoryModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('factories')->byDefault()->andReturn([]);
+            $stub->allows('factories')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExtendingModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('extensions')->byDefault()->andReturn([]);
+            $stub->allows('extensions')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExecutableModule::class, $interfaces, true) ) {
-            $stub->shouldReceive('run')->byDefault()->andReturn(false);
+            $stub->allows('run')->byDefault()->andReturn(false);
         }
 
         return $stub;
@@ -94,5 +109,40 @@ abstract class TestCase extends FrameworkTestCase
         }
 
         return $services;
+    }
+
+    /**
+     * @return void
+     */
+    protected function ignoreDeprecations(): void
+    {
+        $this->currentErrorReporting = error_reporting();
+        error_reporting($this->currentErrorReporting & ~\E_DEPRECATED & ~\E_USER_DEPRECATED);
+    }
+
+    /**
+     * @return void
+     */
+    protected function convertDeprecationsToExceptions(): void
+    {
+        $this->currentErrorReporting = error_reporting();
+        error_reporting($this->currentErrorReporting | \E_DEPRECATED | \E_USER_DEPRECATED);
+
+        set_error_handler(
+            static function (int $code, string $msg, ?string $file = null, ?int $line = null): void {
+                throw new Deprecated($msg, $code, $file ?? '', $line ?? 0);
+            },
+            \E_DEPRECATED | \E_USER_DEPRECATED
+        );
+    }
+
+    /**
+     * @param \Throwable $throwable
+     * @param string $pattern
+     * @return void
+     */
+    protected function assertThrowableMessageMatches(\Throwable $throwable, string $pattern): void
+    {
+        static::assertSame(1, preg_match("/{$pattern}/i", $throwable->getMessage()));
     }
 }

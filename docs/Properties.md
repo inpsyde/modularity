@@ -71,6 +71,7 @@ $properties = Properties\PluginProperties::new('/path/to/plugin-main-file.php');
 
 Additionally, PluginProperties will have the following public API:
 
+- `PluginProperties::pluginMainFile(): string` - returns the Plugin main file.
 - `PluginProperties::network(): bool` - returns if the Plugin is only network-wide usable.
 - `PluginProperties::isActive(): bool` - returns if the current Plugin is active.
 - `PluginProperties::isNetworkActive(): bool` - returns if the current Plugin is network-wide active.

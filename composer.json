@@ -30,7 +30,7 @@
         "brain/monkey": "^2.6.1",
         "inpsyde/php-coding-standards": "^1",
         "mikey179/vfsstream": "^v1.6.10",
-        "phpunit/phpunit": "^8.5.21",
+        "phpunit/phpunit": "^8.5.21 || ^9.6.7",
         "vimeo/psalm": "^4.13.1",
         "php-stubs/wordpress-stubs": ">=5.8@stable",
         "johnpbloch/wordpress-core": ">=5.8"
@@ -62,7 +62,6 @@
             "@psalm"
         ],
         "tests": "@php ./vendor/phpunit/phpunit/phpunit",
-        "tests:codecov": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover coverage.xml",
         "tests:no-cov": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage"
     },
     "config": {
