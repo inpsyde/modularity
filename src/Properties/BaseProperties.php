@@ -185,7 +185,7 @@ class BaseProperties implements Properties
 
     /**
      * @param string $key
-     * @param null $default
+     * @param mixed $default
      * @return mixed
      */
     public function get(string $key, $default = null)

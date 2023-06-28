@@ -67,8 +67,7 @@ class ThemeProperties extends BaseProperties
         $properties = Properties::DEFAULT_PROPERTIES;
 
         foreach (self::HEADERS as $key => $themeKey) {
-            /** @psalm-suppress DocblockTypeContradiction */
-            $properties[$key] = $theme->get($themeKey) ?? '';
+            $properties[$key] = $theme->get($themeKey) ?: '';
         }
 
         $baseName = $theme->get_stylesheet();
