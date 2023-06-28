@@ -26,7 +26,7 @@ class ThemePropertiesTest extends TestCase
         $expectedUri = 'http://github.com/inpsyde/modularity';
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
-        $expecteWpVersion = "5.3";
+        $expectedWpVersion = "5.3";
         $expectedStatus = 'publish';
         $expectedTags = ['foo', 'bar'];
 
@@ -43,7 +43,7 @@ class ThemePropertiesTest extends TestCase
             'Text Domain' => $expectedTextDomain,
             'Theme URI' => $expectedUri,
             'Version' => $expectedVersion,
-            'Requires at least' => $expecteWpVersion,
+            'Requires at least' => $expectedWpVersion,
             'Requires PHP' => $expectedPhpVersion,
             'Status' => $expectedStatus,
             'Tags' => $expectedTags,
@@ -78,7 +78,7 @@ class ThemePropertiesTest extends TestCase
         static::assertSame($expectedTextDomain, $testee->textDomain());
         static::assertSame($expectedUri, $testee->uri());
         static::assertSame($expectedVersion, $testee->version());
-        static::assertSame($expecteWpVersion, $testee->requiresWp());
+        static::assertSame($expectedWpVersion, $testee->requiresWp());
         static::assertSame($expectedPhpVersion, $testee->requiresPhp());
 
         // specific methods for Themes.
