@@ -9,9 +9,12 @@ concurrency:
 jobs:
   lint-php:
     if: ${{ (github.event_name == 'workflow_dispatch') || (!contains(github.event.head_commit.message, 'skip lint')) }}
+    strategy:
+      matrix:
+        php: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2"]
     uses: inpsyde/reusable-workflows/.github/workflows/lint-php.yml@main
     with:
-      PHP_MATRIX: '["7.2", "7.3", "7.4", "8.0", "8.1", "8.2"]'
+      PHP_VERSION: ${{ matrix.php }}
 
   coding-standards-analysis-php:
     if: ${{ (github.event_name == 'workflow_dispatch') || (!contains(github.event.head_commit.message, 'skip cs')) }}
