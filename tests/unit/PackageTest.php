@@ -850,7 +850,7 @@ class PackageTest extends TestCase
         static::assertSame('service_1', $container->get('service_1')['id']);
         static::assertSame('service_2', $container->get('service_2')['id']);
 
-        $this->expectExceptionMessageMatches('/add module module_3/i');
+        $this->expectExceptionMessageMatches("/can't add module module_3/i");
         $this->ignoreDeprecations();
         $package->boot($module2, $module3);
     }
