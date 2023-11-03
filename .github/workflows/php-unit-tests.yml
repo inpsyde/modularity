@@ -46,7 +46,7 @@ jobs:
           dependency-versions: ${{ matrix.dependency-versions }}
 
       - name: Run unit tests
-        run:
+        run: |
           ./vendor/bin/phpunit --atleast-version 9 && ./vendor/bin/phpunit --migrate-configuration || echo 'Config does not need updates.'
           ./vendor/bin/phpunit ${{ ((env.USE_COVERAGE == 'yes') && '--coverage-clover coverage.xml') || '--no-coverage' }}
 
