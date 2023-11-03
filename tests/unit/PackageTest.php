@@ -261,7 +261,7 @@ class PackageTest extends TestCase
     {
         $package = Package::new($this->mockProperties('test', true))->build();
 
-        $this->expectExceptionMessageMatches("/add module.+?status.+?at end of building stage/i");
+        $this->expectExceptionMessageMatches("/can't add module/i");
 
         $package->addModule($this->mockModule());
     }
