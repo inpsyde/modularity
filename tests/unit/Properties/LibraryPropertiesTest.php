@@ -107,7 +107,7 @@ class LibraryPropertiesTest extends TestCase
         $expectedUri = 'http://github.com/inpsyde/modularity';
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
-        $expecteWpVersion = "5.3";
+        $expectedWpVersion = "5.3";
         $expectedKeywords = ["expected", "keywords"];
 
         $composerJsonData = [
@@ -130,7 +130,7 @@ class LibraryPropertiesTest extends TestCase
                     "textDomain" => $expectedTextDomain,
                     "uri" => $expectedUri,
                     "version" => $expectedVersion,
-                    "requiresWp" => $expecteWpVersion,
+                    "requiresWp" => $expectedWpVersion,
                 ],
             ],
         ];
@@ -155,7 +155,7 @@ class LibraryPropertiesTest extends TestCase
         static::assertSame($expectedTextDomain, $testee->textDomain());
         static::assertSame($expectedUri, $testee->uri());
         static::assertSame($expectedVersion, $testee->version());
-        static::assertSame($expecteWpVersion, $testee->requiresWp());
+        static::assertSame($expectedWpVersion, $testee->requiresWp());
         static::assertSame($expectedPhpVersion, $testee->requiresPhp());
     }
 

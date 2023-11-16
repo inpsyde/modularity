@@ -103,7 +103,7 @@ Additionally, ThemeProperties will have the following public API:
 
 ## LibraryProperties
 
-For libraries, you can use the LibraryProperties which give you context based on your composer.json. You can boostrap your standalone-library like following:
+For libraries, you can use the LibraryProperties which give you context based on your composer.json. You can bootstrap your standalone-library like following:
 
 ```php
 use Inpsyde\Modularity\Properties;
