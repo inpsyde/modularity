@@ -36,15 +36,15 @@ class ThemePropertiesTest extends TestCase
 
         $values = [
             'Author' => $expectedAuthor,
-            'Author URI' => $expectedAuthorUri,
+            'AuthorURI' => $expectedAuthorUri,
             'Description' => $expectedDescription,
-            'Domain Path' => $expectedDomainPath,
-            'Theme Name' => $expectedName,
-            'Text Domain' => $expectedTextDomain,
-            'Theme URI' => $expectedUri,
+            'DomainPath' => $expectedDomainPath,
+            'Name' => $expectedName,
+            'TextDomain' => $expectedTextDomain,
+            'ThemeURI' => $expectedUri,
             'Version' => $expectedVersion,
-            'Requires at least' => $expectedWpVersion,
-            'Requires PHP' => $expectedPhpVersion,
+            'RequiresWP' => $expectedWpVersion,
+            'RequiresPHP' => $expectedPhpVersion,
             'Status' => $expectedStatus,
             'Tags' => $expectedTags,
             // No child-Theme.
