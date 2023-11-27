@@ -118,7 +118,7 @@ class Package
      * <code>
      * $package = Package::new();
      * $package->moduleIs(SomeModule::class, Package::MODULE_ADDED); // false
-     * $package->boot(new SomeModule());
+     * $package->addModule(new SomeModule());
      * $package->moduleIs(SomeModule::class, Package::MODULE_ADDED); // true
      * </code>
      */
