@@ -84,8 +84,10 @@ class PluginProperties extends BaseProperties
         if (!function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
-
-        $pluginData = get_plugin_data($pluginMainFile);
+        
+        // $markup = false, to avoid an incorrect early wptexturize call. Also we probably don't want HTML here anyway
+        // @see https://core.trac.wordpress.org/ticket/49965
+        $pluginData = get_plugin_data($pluginMainFile, false);
         $properties = Properties::DEFAULT_PROPERTIES;
 
         // Map pluginData to internal structure.
