@@ -86,6 +86,7 @@ class PluginProperties extends BaseProperties
         }
         
         // $markup = false, to avoid an incorrect early wptexturize call. Also we probably don't want HTML here anyway
+        // @see https://core.trac.wordpress.org/ticket/49965
         $pluginData = get_plugin_data($pluginMainFile, false);
         $properties = Properties::DEFAULT_PROPERTIES;
 
