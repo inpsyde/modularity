@@ -17,6 +17,7 @@ class PluginProperties extends BaseProperties
      * Custom properties for Plugins.
      */
     public const PROP_NETWORK = 'network';
+    public const PROP_REQUIRES_PLUGINS = 'requiresPlugins';
     /**
      * Available methods of Properties::__call()
      * from plugin headers.
@@ -37,6 +38,7 @@ class PluginProperties extends BaseProperties
 
         // additional headers
         self::PROP_NETWORK => 'Network',
+        self::PROP_REQUIRES_PLUGINS => 'RequiresPlugins',
     ];
 
     /**
@@ -84,7 +86,7 @@ class PluginProperties extends BaseProperties
         if (!function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
-        
+
         // $markup = false, to avoid an incorrect early wptexturize call. Also we probably don't want HTML here anyway
         // @see https://core.trac.wordpress.org/ticket/49965
         $pluginData = get_plugin_data($pluginMainFile, false);
@@ -127,6 +129,16 @@ class PluginProperties extends BaseProperties
     public function network(): bool
     {
         return (bool) $this->get(self::PROP_NETWORK, false);
+    }
+
+    /**
+     * @return array
+     */
+    public function requiresPlugins(): array
+    {
+        $value = $this->get(self::PROP_REQUIRES_PLUGINS);
+
+        return $value && is_string($value) ? explode(',', $value) : [];
     }
 
     /**

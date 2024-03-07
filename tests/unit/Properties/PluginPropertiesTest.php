@@ -75,6 +75,61 @@ class PluginPropertiesTest extends TestCase
     }
 
     /**
+     * @param string $requiresPlugins
+     * @param array $expected
+     *
+     * @test
+     *
+     * @runInSeparateProcess
+     *
+     * @dataProvider provideRequiresPluginsData
+     */
+    public function testRequiresPlugins(string $requiresPlugins, array $expected): void
+    {
+        $pluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
+        $expectedBaseName = 'plugin-dir/plugin-name.php';
+
+        Functions\expect('get_plugin_data')->andReturn([
+            'RequiresPlugins' => $requiresPlugins,
+        ]);
+        Functions\when('plugins_url')->returnArg(1);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\when('plugin_dir_path')->returnArg(1);
+
+        Functions\expect('wp_normalize_path')->andReturnFirstArg();
+
+        $testee = PluginProperties::new($pluginMainFile);
+        static::assertEquals($expected, $testee->requiresPlugins());
+    }
+
+    /**
+     * @return array[]
+     */
+    public function provideRequiresPluginsData(): array
+    {
+        return [
+            'no dependencies' => [
+                '',
+                [],
+            ],
+            'one dependency' => [
+                'dependency',
+                [
+                    'dependency',
+                ],
+            ],
+            'multiple dependencies' => [
+                'dependency1,dependency2,dependency3',
+                [
+                    'dependency1',
+                    'dependency2',
+                    'dependency3',
+                ],
+            ],
+        ];
+    }
+
+    /**
      * @test
      */
     public function testIsActive(): void
