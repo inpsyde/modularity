@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Container;
 
 use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use Inpsyde\Modularity\Exception\NotFoundException;
 
 class ReadOnlyContainer implements ContainerInterface
 {
@@ -58,7 +58,7 @@ class ReadOnlyContainer implements ContainerInterface
 
     /**
      * @param string $id
-     *
+     * @throws NotFoundException
      * @return mixed
      */
     public function get(string $id)
@@ -87,10 +87,7 @@ class ReadOnlyContainer implements ContainerInterface
             }
         }
 
-        throw new class ("Service with ID {$id} not found.")
-            extends \Exception
-            implements NotFoundExceptionInterface {
-        };
+        throw new NotFoundException("Service with ID {$id} not found.");
     }
 
     /**
