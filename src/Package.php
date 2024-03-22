@@ -209,7 +209,7 @@ class Package
 
     /**
      * @param Properties $properties
-     * @param ContainerInterface[] $containers
+     * @param ContainerInterface ...$containers
      *
      * @return Package
      */
@@ -220,7 +220,7 @@ class Package
 
     /**
      * @param Properties $properties
-     * @param ContainerInterface[] $containers
+     * @param ContainerInterface ...$containers
      */
     private function __construct(Properties $properties, ContainerInterface ...$containers)
     {
@@ -499,21 +499,19 @@ class Package
                 break;
         }
 
-        if (!$services) {
+        if (!$services || !$addCallback) {
             return false;
         }
 
+        /** @var list<string> $ids */
         $ids = [];
         array_walk(
             $services,
             static function (callable $service, string $id) use ($addCallback, &$ids) {
-                /** @var callable(string, callable) $addCallback */
                 $addCallback($id, $service);
-                /** @var list<string> $ids */
                 $ids[] = $id;
             }
         );
-        /** @var list<string> $ids */
         $this->moduleProgress($module->id(), $status, $ids);
 
         return true;
