@@ -64,7 +64,7 @@ class BaseProperties implements Properties
     {
         substr_count($name, '/') and $name = dirname($name);
 
-        return strtolower(pathinfo($name, PATHINFO_FILENAME));
+        return strtolower(pathinfo($name, PATHINFO_BASENAME));
     }
 
     /**
