@@ -13,8 +13,8 @@ Themes or Libraries.
 
 ## Installation
 
-```
-$ composer require inpsyde/modularity
+```shell
+composer require inpsyde/modularity
 ```
 
 ## Minimum Requirements and Dependencies
@@ -36,6 +36,7 @@ When installed for development via Composer, the package also requires:
 2. [PSR-11 Container](docs/PSR-11-Container.md)
 3. [Modules](docs/Modules.md)
 4. [Properties](docs/Properties.md)
+5. [Application Flow](docs/Application-flow.md)
 
 ## License
 

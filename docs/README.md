@@ -16,8 +16,8 @@ inpsyde/modularity is a modular [PSR-11](https://github.com/php-fig/container) i
 
 ## Installation
 
-```
-$ composer require inpsyde/modularity
+```shell
+composer require inpsyde/modularity
 ```
 
 
@@ -38,4 +38,4 @@ When installed for development, via Composer, the package also requires:
 
 
 ## License
-This repository is a free software, and is released under the terms of the GNU General Public License version 2 or (at your option) any later version. See [LICENSE]((LICENSE) for complete license.
+This repository is a free software, and is released under the terms of the GNU General Public License version 2 or (at your option) any later version. See [LICENSE](https://github.com/inpsyde/modularity/blob/master/LICENSE) for complete license.

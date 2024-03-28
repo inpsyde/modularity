@@ -12,7 +12,7 @@ Inpsyde\Modularity\Package::new($properties)
     ->addModule(new ModuleWhichProvidesFactories())
     ->addModule(new ModuleWhichProviedsExtensions())
     ->addModule(new ModuleWhichIsExecuted())
-	->boot();
+    ->boot();
 ```
 
 Each Module implementation will extend the basic `Module`-interface which is required to define a `Module::id(): string`. This identifier will be re-used in Package-class to keep track of the current state of your Module and will allow easier debugging of your Application. To avoid defining this by hand, it is possible to use the following Trait: `Inpsyde\Modularity\Module\ModuleClassNameIdTrait`
@@ -161,6 +161,7 @@ class ModuleFour implements ExecutableModule
     }
 }
 ```
+
 ### Service/Factory overrides
 When the same Service id is registered more than once by multiple modules, the latter will override the former.
 
@@ -210,4 +211,3 @@ original.
 
 *For package maintainers* this is something to watch out for when consuming Modules from multiple sources. 
 However unlikely it may be, there is a risk of _unintentional_ overrides resulting in unexpected behaviour.
-
