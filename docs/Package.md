@@ -95,10 +95,10 @@ function plugin(): Modularity\Package {
 }
 
 add_action(
-	'plugins_loaded',
-	static function(): void {
-		plugin()->boot();
-	}
+    'plugins_loaded',
+    static function(): void {
+        plugin()->boot();
+    }
 );
 ```
 
@@ -178,10 +178,10 @@ as in:
 
 ```php
 add_action(
-	'plugins_loaded',
-	static function(): void {
-		plugin()->boot(new ModuleOne(), new ModuleTwo());
-	}
+    'plugins_loaded',
+    static function(): void {
+        plugin()->boot(new ModuleOne(), new ModuleTwo());
+    }
 );
 ```
 
