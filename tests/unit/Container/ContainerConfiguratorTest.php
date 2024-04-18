@@ -396,9 +396,10 @@ class ContainerConfiguratorTest extends TestCase
     {
         // We can't declare classes inside a class, but we can eval it.
         $php = <<<'PHP'
-        class A {}
-        class B extends A {}
-        PHP;
+class A {}
+class B extends A {}
+PHP;
+
         eval($php);
 
         $called = [];
@@ -454,12 +455,12 @@ class ContainerConfiguratorTest extends TestCase
 
         // We can't declare classes inside a class, but we can eval it.
         $php = <<<'PHP'
-        class A {}
-        class B extends A {}
-        class C {}
-        class D {};
-        class E extends D {};
-        PHP;
+class A {}
+class B extends A {}
+class C {}
+class D {};
+class E extends D {};
+PHP;
         eval($php);
 
         $configurator->addExtension(
