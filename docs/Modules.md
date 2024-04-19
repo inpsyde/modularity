@@ -180,7 +180,7 @@ Inside each of the three "groups", extensions are processed in _FIFO_ mode: the 
 first processed.
 
 Because the precedence rules, in the `SomethingExtensionsModule` example above, the extensions
-processing order will be the the inverse of the addition order.
+processing order will be the inverse of the addition order.
 
 #### Only for objects
 
