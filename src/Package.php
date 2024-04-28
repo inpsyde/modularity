@@ -305,10 +305,14 @@ class Package
                 throw new \Exception($error, 0, $this->lastError);
             }
 
-            // Don't connect, if already booted or boot failed
+            // Don't connect, if status is failed
             $failed = $this->statusIs(self::STATUS_FAILED);
-            if ($failed || $this->statusIs(self::STATUS_BOOTED)) {
-                $status = $failed ? 'errored' : 'booted';
+            // Don't allow connect if current package is already built
+            if ($failed
+                || $this->statusIs(self::STATUS_INITIALIZED) // built
+                || $this->statusIs(self::STATUS_BOOTED) // booted
+            ) {
+                $status = $failed ? 'errored' : 'built_or_booted';
                 $error = "{$errorMessage} to a {$status} package.";
                 do_action(
                     $this->hookName(self::ACTION_FAILED_CONNECTION),
@@ -330,14 +334,15 @@ class Package
                 }
             );
 
-            // If the other package is booted, we can obtain a container, otherwise
+            // If the other package is built or booted, we can obtain a container, otherwise
             // we build a proxy container
             $container = $package->statusIs(self::STATUS_BOOTED)
+                || $package->statusIs(self::STATUS_INITIALIZED)
+//                || $package->statusIs(self::STATUS_READY)
                 ? $package->container()
                 : new PackageProxyContainer($package);
 
             $this->containerConfigurator->addContainer($container);
-
             do_action(
                 $this->hookName(self::ACTION_PACKAGE_CONNECTED),
                 $packageName,
@@ -361,6 +366,9 @@ class Package
      */
     public function build(): Package
     {
+        if ($this->built) {
+            return $this;
+        }
         try {
             // Don't allow building the application multiple times.
             $this->assertStatus(self::STATUS_IDLE, 'build package');

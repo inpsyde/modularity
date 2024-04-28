@@ -36,6 +36,25 @@ class PackageTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function testBasicUsingBuild(): void
+    {
+        $expectedName = 'foo';
+        $propertiesStub = $this->mockProperties($expectedName);
+
+        $package = Package::new($propertiesStub);
+
+        static::assertTrue($package->statusIs(Package::STATUS_IDLE));
+        static::assertInstanceOf(Package::class, $package->build());
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
+        static::assertSame($expectedName, $package->name());
+        static::assertInstanceOf(Properties::class, $package->properties());
+        static::assertInstanceOf(ContainerInterface::class, $package->container());
+        static::assertEmpty($package->modulesStatus()[Package::MODULES_ALL]);
+    }
+
+    /**
      * @param string $suffix
      * @param string $baseName
      * @param string $expectedHookName
@@ -108,6 +127,32 @@ class PackageTest extends TestCase
     /**
      * @test
      */
+    public function testBuildWithEmptyModule(): void
+    {
+        $expectedId = 'my-module';
+
+        $moduleStub = $this->mockModule($expectedId);
+        $propertiesStub = $this->mockProperties('name', false);
+
+        $package = Package::new($propertiesStub)->addModule($moduleStub);
+
+        static::assertInstanceOf(Package::class, $package->build());
+        static::assertTrue($package->moduleIs($expectedId, Package::MODULE_NOT_ADDED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_EXTENDED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_ADDED));
+
+        // build again should keep the status of the package.
+        static::assertTrue($package->statusIs( Package::STATUS_INITIALIZED));
+        $package->build();
+        static::assertTrue($package->statusIs( Package::STATUS_INITIALIZED));
+
+    }
+
+    /**
+     * @test
+     */
     public function testBootWithServiceModule(): void
     {
         $moduleId = 'my-service-module';
@@ -130,6 +175,28 @@ class PackageTest extends TestCase
     /**
      * @test
      */
+    public function testBootWithServiceModuleUsingBuild(): void
+    {
+        $moduleId = 'my-service-module';
+        $serviceId = 'service-id';
+
+        $module = $this->mockModule($moduleId, ServiceModule::class);
+        $module->expects('services')->andReturn($this->stubServices($serviceId));
+
+        $package = Package::new($this->mockProperties())->addModule($module);
+
+        static::assertInstanceOf(Package::class, $package->build());
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($serviceId));
+    }
+
+    /**
+     * @test
+     */
     public function testBootWithFactoryModule(): void
     {
         $moduleId = 'my-factory-module';
@@ -141,6 +208,28 @@ class PackageTest extends TestCase
         $package = Package::new($this->mockProperties())->addModule($module);
 
         static::assertTrue($package->boot());
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($factoryId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBootWithFactoryModuleUsingBuild(): void
+    {
+        $moduleId = 'my-factory-module';
+        $factoryId = 'factory-id';
+
+        $module = $this->mockModule($moduleId, FactoryModule::class);
+        $module->expects('factories')->andReturn($this->stubServices($factoryId));
+
+        $package = Package::new($this->mockProperties())->addModule($module);
+
+        static::assertInstanceOf(Package::class, $package->build());
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
@@ -175,6 +264,29 @@ class PackageTest extends TestCase
     /**
      * @test
      */
+    public function testBuildWithExtendingModuleWithNonExistingService(): void
+    {
+        $moduleId = 'my-extension-module';
+        $extensionId = 'extension-id';
+
+        $module = $this->mockModule($moduleId, ExtendingModule::class);
+        $module->expects('extensions')->andReturn($this->stubServices($extensionId));
+
+        $package = Package::new($this->mockProperties())->addModule($module);
+
+        static::assertInstanceOf(Package::class, $package->build());
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        // false because extending a service not in container
+        static::assertFalse($package->container()->has($extensionId));
+    }
+
+    /**
+     * @test
+     */
     public function testBootWithExtendingModuleWithExistingService(): void
     {
         $moduleId = 'my-extension-module';
@@ -187,6 +299,29 @@ class PackageTest extends TestCase
         $package = Package::new($this->mockProperties())->addModule($module);
 
         static::assertTrue($package->boot());
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($serviceId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithExtendingModuleWithExistingService(): void
+    {
+        $moduleId = 'my-extension-module';
+        $serviceId = 'service-id';
+
+        $module = $this->mockModule($moduleId, ServiceModule::class, ExtendingModule::class);
+        $module->expects('services')->andReturn($this->stubServices($serviceId));
+        $module->expects('extensions')->andReturn($this->stubServices($serviceId));
+
+        $package = Package::new($this->mockProperties())->addModule($module);
+
+        static::assertInstanceOf(Package::class, $package->build());
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
@@ -498,6 +633,38 @@ class PackageTest extends TestCase
     }
 
     /**
+     * Test we can connect services across packages.
+     *
+     * @test
+     */
+    public function testPackageConnectionWhenOnePackageIsBuiltAndTheOtherDont(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once()
+            ->with($package1->name(), Package::STATUS_IDLE, false);
+
+        $package1->build();
+
+        $connected = $package2->connect($package1);
+        $package2->build();
+
+        static::assertTrue($connected);
+        static::assertSame(['package_1' => true], $package2->connectedPackages());
+        // retrieve a Package 1's service from Package 2's container.
+        static::assertInstanceOf(\ArrayObject::class, $package2->container()->get('service_1'));
+    }
+
+    /**
      * Test we can not connect services when the package how call connect is booted.
      *
      * @test
@@ -526,6 +693,44 @@ class PackageTest extends TestCase
             ->whenHappen(
                 function (\Throwable $throwable): void {
                     $this->assertThrowableMessageMatches($throwable, 'failed connect.+?booted');
+                }
+            );
+
+        $connected = $package2->connect($package1);
+
+        static::assertFalse($connected);
+        static::assertSame(['package_1' => false], $package2->connectedPackages());
+    }
+
+    /**
+     * Test we can not connect services when the package how call connect is built.
+     *
+     * @test
+     */
+    public function testPackageConnectionFailsIfBuiltWithDebugOff(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        $package1->build();
+        $package2->build();
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+            ->once()
+            ->with($package1->name(), \Mockery::type(\WP_Error::class));
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable): void {
+                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?built');
                 }
             );
 
