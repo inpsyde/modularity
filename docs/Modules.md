@@ -106,19 +106,19 @@ class ModuleWhichProvidesExtensions implements ExtendingModule
 Sometimes it is desirable to extend a service by its type. Extending modules can do that as well:
 
 ```php
-use Inpsyde\Modularity\Container\ServiceExtensions;
-use Inpsyde\Modularity\Module\{ExtendingModule, ModuleClassNameIdTrait};
+use Inpsyde\Modularity\Module\ExtendingModule;
 use Psr\Log\{LoggerInterface, LoggerAwareInterface};
 
 class LoggerAwareExtensionModule implements ExtendingModule
 {
-    use ModuleClassNameIdTrait;
-
     public function extensions() : array 
     {
         return [
-            '@instanceof<LoggerAwareInterface>' => static function(LoggerAwareInterface $service, ContainerInterface $c): ExtendedService
-            {
+            '@instanceof<Psr\Log\LoggerAwareInterface>' => static function(
+                LoggerAwareInterface $service,
+                ContainerInterface $c
+            ): ExtendedService {
+
                 if ($c->has(LoggerInterface::class)) {
                     $service->setLogger($c->get(LoggerInterface::class));
                 }
@@ -129,41 +129,36 @@ class LoggerAwareExtensionModule implements ExtendingModule
 }
 ```
 
-`@instanceof<LoggerAwareInterface>` is a special syntax that instructs the container to apply the
-extension to anything implementing `LoggerAwareInterface`.
-
 #### Types and subtypes
 
-The `@instanceof<T>` syntax also works with class names, targeting the given class or any of its 
-subtypes.
+The `@instanceof<T>` syntax works with class and interface names, targeting the given type and any 
+of its subtypes.
 
 For example, assuming the following objects:
 
 ```php
-interface Something {}
-class SomethingGood implements Something {}
-class SomethingAwesome extends SomethingGood {}
+interface Animal {}
+class Dog implements Animal {}
+class BullDog extends Dog {}
 ```
 
 and the following module: 
 
 ```php
-class SomethingExtensionsModule implements ExtendingModule
+class AnimalsExtensionModule implements ExtendingModule
 {
-    use ModuleClassNameIdTrait;
-
     public function extensions() : array 
     {
         return [
-            '@instanceof<Something>' => fn(Something $something) => $something,
-            '@instanceof<SomethingGood>' => fn(SomethingGood $something) => $something,
-            '@instanceof<SomethingAwesome>' => fn(SomethingAwesome $something) => $something,
+            '@instanceof<Animal>' => fn(Animal $animal) => $animal,
+            '@instanceof<Dog>' => fn(Dog $dog) => $dog,
+            '@instanceof<BullDog>' => fn(BullDog $bullDog) => $bullDog,
         ];
     }
 }
 ```
 
-A service in the container of type `SomethingAwesome` would go through all the 3 extensions.
+A service of type `BullDog` would go through all the 3 extensions.
 
 Note how extending callbacks can always safely declare the parameter type using in the signature
 the type they have in `@instanceof<T>`.
@@ -179,8 +174,28 @@ The precedence of extensions-by-type resolution goes as follows:
 Inside each of the three "groups", extensions are processed in _FIFO_ mode: the first added are the
 first processed.
 
-Because the precedence rules, in the `SomethingExtensionsModule` example above, the extensions
-processing order will be the inverse of the addition order.
+#### Name helper
+
+The syntax `"@instanceof<T>"` is an hardcoded string that might be error prone to type.
+
+The method `use Inpsyde\Modularity\Container\ServiceExtensions::typeId()` might be used to avoid 
+using hardcode strings. For example:
+
+```php
+use npsyde\Modularity\Container\ServiceExtensions;
+
+class AnimalsExtensionModule implements ExtendingModule
+{
+    public function extensions() : array 
+    {
+        return [
+            ServiceExtensions::typeId(Animal::class) => fn(Animal $animal) => $animal,
+            ServiceExtensions::typeId(Dog::class) => fn(Dog $dog) => $dog,
+            ServiceExtensions::typeId(BullDog::class) => fn(BullDog $bullDog) => $bullDog,
+        ];
+    }
+}
+```
 
 #### Only for objects
 
