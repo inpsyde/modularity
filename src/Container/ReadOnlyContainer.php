@@ -41,18 +41,18 @@ class ReadOnlyContainer implements ContainerInterface
      *
      * @param array<string, callable(ContainerInterface $container):mixed> $services
      * @param array<string, bool> $factoryIds
-     * @param ServiceExtensions $extensions
+     * @param ServiceExtensions|array $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
         array $services,
         array $factoryIds,
-        ServiceExtensions $extensions,
+        $extensions,
         array $containers
     ) {
         $this->services = $services;
         $this->factoryIds = $factoryIds;
-        $this->extensions = $extensions;
+        $this->extensions = $this->configureServiceExtensions($extensions);
         $this->containers = $containers;
     }
 
@@ -115,5 +115,45 @@ class ReadOnlyContainer implements ContainerInterface
         }
 
         return false;
+    }
+
+    /**
+     * Support extensions as array or ServiceExtensions instance for backward compatibility.
+     *
+     * With PHP 8+ we could use an actual union type, but when we bump to PHP 8 as min supported
+     * version, we will probably bump major version as well, so we can just get rid of support
+     * for array.
+     *
+     * @param mixed $extensions
+     * @return ServiceExtensions
+     */
+    private function configureServiceExtensions($extensions): ServiceExtensions
+    {
+        if ($extensions instanceof ServiceExtensions) {
+            return $extensions;
+        }
+
+        if (!is_array($extensions)) {
+            throw new \TypeError(
+                sprintf(
+                    '%s::%s(): Argument #3 ($extensions) must be of type %s|array, %s given',
+                    __CLASS__,
+                    '__construct',
+                    ServiceExtensions::class,
+                    gettype($extensions)
+                )
+            );
+        }
+
+        $servicesExtensions = new ServiceExtensions();
+        foreach ($extensions as $id => $callback) {
+            /**
+             * @var string $id
+             * @var callable(mixed,ContainerInterface):mixed $callback
+             */
+            $servicesExtensions->add($id, $callback);
+        }
+
+        return $servicesExtensions;
     }
 }

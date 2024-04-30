@@ -164,6 +164,37 @@ class ReadOnlyContainerTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function testServiceExtensionsBackwardCompatibility(): void
+    {
+        $service = static fn (): object => (object) ['count' => 0];
+
+        $extension = static function (object $thing): object {
+            $thing->count++;
+
+            return $thing;
+        };
+
+        $container = new Container(['thing' => $service], [], ['thing' => $extension], []);
+
+        $resolved = $container->get('thing');
+
+        static::assertInstanceOf(\stdClass::class, $resolved);
+        static::assertSame(1, $resolved->count);
+    }
+
+    /**
+     * @test
+     */
+    public function testServiceExtensionsBackwardCompatibilityBreaksOnWrongType(): void
+    {
+        $this->expectException(\TypeError::class);
+
+        new Container([], [], ServiceExtensions::class, []);
+    }
+
+    /**
      * @param array $services
      * @param array $factoryIds
      * @param array $containers
