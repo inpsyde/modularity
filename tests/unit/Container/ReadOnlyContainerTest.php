@@ -168,7 +168,9 @@ class ReadOnlyContainerTest extends TestCase
      */
     public function testServiceExtensionsBackwardCompatibility(): void
     {
-        $service = static fn (): object => (object) ['count' => 0];
+        $service = static function (): object {
+            return (object) ['count' => 0];
+        };
 
         $extension = static function (object $thing): object {
             $thing->count++;
