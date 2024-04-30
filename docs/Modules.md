@@ -134,8 +134,8 @@ extension to anything implementing `LoggerAwareInterface`.
 
 #### Types and subtypes
 
-The `@instanceof<T>` syntax also work with class names, targeting the given class or any of its 
-sub types.
+The `@instanceof<T>` syntax also works with class names, targeting the given class or any of its 
+subtypes.
 
 For example, assuming the following objects:
 
