@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Module;
 
+use Psr\Container\ContainerInterface;
+
+/**
+ * @psalm-type ExtendingService = callable(mixed $service, ContainerInterface $container):mixed
+ */
 interface ExtendingModule extends Module
 {
 
@@ -18,7 +23,7 @@ interface ExtendingModule extends Module
      * That is done by using as ID (array key in the `extensions` method) the target module ID
      * and the service ID.
      *
-     * @return array<string, callable(mixed $service, \Psr\Container\ContainerInterface $container):mixed>
+     * @return array<string, ExtendingService>
      */
     public function extensions(): array;
 }

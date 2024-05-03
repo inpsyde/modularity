@@ -3,13 +3,16 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Container;
 
-use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
+/**
+ * @psalm-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
+ * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ */
 class ContainerConfigurator
 {
     /**
-     * @var array<string, callable(ContainerInterface $container):mixed>
+     * @var array<string, Service>
      */
     private $services = [];
 
@@ -19,7 +22,7 @@ class ContainerConfigurator
     private $factoryIds = [];
 
     /**
-     * @var array<string, array<callable(mixed $service, ContainerInterface $container):mixed>>
+     * @var array<string, array<ExtendingService>>
      */
     private $extensions = [];
 
@@ -55,7 +58,7 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     * @param callable(ContainerInterface $container):mixed $factory
+     * @param Service $factory
      */
     public function addFactory(string $id, callable $factory): void
     {
@@ -67,7 +70,7 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     * @param callable(ContainerInterface $container):mixed $service
+     * @param Service $service
      *
      * @return void
      */
@@ -109,7 +112,7 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     * @param callable(mixed $service, ContainerInterface $container):mixed $extender
+     * @param ExtendingService $extender
      *
      * @return void
      */
