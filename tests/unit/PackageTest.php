@@ -703,7 +703,7 @@ class PackageTest extends TestCase
     }
 
     /**
-     * Test we can not connect services when the package how call connect is built.
+     * Test we can not connect services when the package that calls connect() is built.
      *
      * @test
      */
