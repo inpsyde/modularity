@@ -153,7 +153,7 @@ class ReadOnlyContainer implements ContainerInterface
         foreach ($extensions as $id => $callback) {
             /**
              * @var string $id
-             * @var callable(mixed,ContainerInterface):mixed $callback
+             * @var ExtendingService $callback
              */
             $servicesExtensions->add($id, $callback);
         }
