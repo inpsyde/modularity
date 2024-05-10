@@ -101,6 +101,125 @@ class ModuleWhichProvidesExtensions implements ExtendingModule
 }
 ```
 
+### Extending by type
+
+Sometimes it is desirable to extend a service by its type. Extending modules can do that as well:
+
+```php
+use Inpsyde\Modularity\Module\ExtendingModule;
+use Psr\Log\{LoggerInterface, LoggerAwareInterface};
+
+class LoggerAwareExtensionModule implements ExtendingModule
+{
+    public function extensions() : array 
+    {
+        return [
+            '@instanceof<Psr\Log\LoggerAwareInterface>' => static function(
+                LoggerAwareInterface $service,
+                ContainerInterface $c
+            ): ExtendedService {
+
+                if ($c->has(LoggerInterface::class)) {
+                    $service->setLogger($c->get(LoggerInterface::class));
+                }
+                return $service;
+            }
+        ];
+    }
+}
+```
+
+#### Types and subtypes
+
+The `@instanceof<T>` syntax works with class and interface names, targeting the given type and any 
+of its subtypes.
+
+For example, assuming the following objects:
+
+```php
+interface Animal {}
+class Dog implements Animal {}
+class BullDog extends Dog {}
+```
+
+and the following module: 
+
+```php
+class AnimalsExtensionModule implements ExtendingModule
+{
+    public function extensions() : array 
+    {
+        return [
+            '@instanceof<Animal>' => fn(Animal $animal) => $animal,
+            '@instanceof<Dog>' => fn(Dog $dog) => $dog,
+            '@instanceof<BullDog>' => fn(BullDog $bullDog) => $bullDog,
+        ];
+    }
+}
+```
+
+A service of type `BullDog` would go through all the 3 extensions.
+
+Note how extending callbacks can always safely declare the parameter type using in the signature
+the type they have in `@instanceof<T>`.
+
+#### Precedence
+
+The precedence of extensions-by-type resolution goes as follows:
+
+1. Extensions added to exact class
+2. Extensions added to any parent class
+3. Extensions added to any implemented interface
+
+Inside each of the three "groups", extensions are processed in _FIFO_ mode: the first added are the
+first processed.
+
+#### Name helper
+
+The syntax `"@instanceof<T>"` is an hardcoded string that might be error prone to type.
+
+The method `use Inpsyde\Modularity\Container\ServiceExtensions::typeId()` might be used to avoid 
+using hardcode strings. For example:
+
+```php
+use npsyde\Modularity\Container\ServiceExtensions;
+
+class AnimalsExtensionModule implements ExtendingModule
+{
+    public function extensions() : array 
+    {
+        return [
+            ServiceExtensions::typeId(Animal::class) => fn(Animal $animal) => $animal,
+            ServiceExtensions::typeId(Dog::class) => fn(Dog $dog) => $dog,
+            ServiceExtensions::typeId(BullDog::class) => fn(BullDog $bullDog) => $bullDog,
+        ];
+    }
+}
+```
+
+#### Only for objects
+
+Extensions-by-type only work for objects. Any usage of `@instanceof<T>` syntax with a string that is
+a class/interface name will be ignored.
+That means it is not possible to extend by type scalar/array services nor pseudo-types like 
+`iterable` or `callable`.
+
+#### Possibly recursive
+
+Extensions by type might be recursive. For example, an extension for type `A` that returns an 
+instance of `B` will prevent further extensions to type `A` to execute (unless `B` is a child of `A`)
+and will trigger execution of extensions for type `B`.
+**Infinite recursion is prevented**. So if extensions for `A` return `B` and extensions for `B`
+return `A` that's where it stops, returning an `A` instance.
+
+#### Use carefully
+
+**Please note**: extensions-by-type have a performance impact especially when type extensions are 
+used to return a different type, because of possible recursions.
+As a reference, it was measured that resolving 10000 objects in the container, each having 9 
+extensions-by-type callbacks, on a very fast server, on PHP 8, for one concurrent user, takes 
+between 80 and 90 milliseconds.
+
 ## ExecutableModule
 If there is functionality that needs to be executed, you can make the Module executable like following:
 

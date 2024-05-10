@@ -20,7 +20,7 @@ class ReadOnlyContainer implements ContainerInterface
     private $factoryIds;
 
     /**
-     * @var array<string, array<callable(mixed, ContainerInterface $container):mixed>>
+     * @var ServiceExtensions
      */
     private $extensions;
 
@@ -41,18 +41,18 @@ class ReadOnlyContainer implements ContainerInterface
      *
      * @param array<string, callable(ContainerInterface $container):mixed> $services
      * @param array<string, bool> $factoryIds
-     * @param array<string, array<callable(mixed, ContainerInterface $container):mixed>> $extensions
+     * @param ServiceExtensions|array $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
         array $services,
         array $factoryIds,
-        array $extensions,
+        $extensions,
         array $containers
     ) {
         $this->services = $services;
         $this->factoryIds = $factoryIds;
-        $this->extensions = $extensions;
+        $this->extensions = $this->configureServiceExtensions($extensions);
         $this->containers = $containers;
     }
 
@@ -69,7 +69,7 @@ class ReadOnlyContainer implements ContainerInterface
 
         if (array_key_exists($id, $this->services)) {
             $service = $this->services[$id]($this);
-            $resolved = $this->resolveExtensions($id, $service);
+            $resolved = $this->extensions->resolve($service, $id, $this);
 
             if (!isset($this->factoryIds[$id])) {
                 $this->resolvedServices[$id] = $resolved;
@@ -83,7 +83,7 @@ class ReadOnlyContainer implements ContainerInterface
             if ($container->has($id)) {
                 $service = $container->get($id);
 
-                return $this->resolveExtensions($id, $service);
+                return $this->extensions->resolve($service, $id, $this);
             }
         }
 
@@ -118,21 +118,42 @@ class ReadOnlyContainer implements ContainerInterface
     }
 
     /**
-     * @param string $id
-     * @param mixed $service
+     * Support extensions as array or ServiceExtensions instance for backward compatibility.
      *
-     * @return mixed
+     * With PHP 8+ we could use an actual union type, but when we bump to PHP 8 as min supported
+     * version, we will probably bump major version as well, so we can just get rid of support
+     * for array.
+     *
+     * @param mixed $extensions
+     * @return ServiceExtensions
      */
-    private function resolveExtensions(string $id, $service)
+    private function configureServiceExtensions($extensions): ServiceExtensions
     {
-        if (!isset($this->extensions[$id])) {
-            return $service;
+        if ($extensions instanceof ServiceExtensions) {
+            return $extensions;
         }
 
-        foreach ($this->extensions[$id] as $extender) {
-            $service = $extender($service, $this);
+        if (!is_array($extensions)) {
+            throw new \TypeError(
+                sprintf(
+                    '%s::%s(): Argument #3 ($extensions) must be of type %s|array, %s given',
+                    __CLASS__,
+                    '__construct',
+                    ServiceExtensions::class,
+                    gettype($extensions)
+                )
+            );
         }
 
-        return $service;
+        $servicesExtensions = new ServiceExtensions();
+        foreach ($extensions as $id => $callback) {
+            /**
+             * @var string $id
+             * @var callable(mixed,ContainerInterface):mixed $callback
+             */
+            $servicesExtensions->add($id, $callback);
+        }
+
+        return $servicesExtensions;
     }
 }
