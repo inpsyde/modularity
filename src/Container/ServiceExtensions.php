@@ -6,6 +6,9 @@ namespace Inpsyde\Modularity\Container;
 
 use Psr\Container\ContainerInterface as Container;
 
+/**
+ * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ */
 class ServiceExtensions
 {
     private const SERVICE_TYPE_NOT_CHANGED = 1;
@@ -13,7 +16,7 @@ class ServiceExtensions
     private const SERVICE_TYPE_NOT_OBJECT = 0;
 
     /**
-     * @var array<string, list<callable>>
+     * @var array<string, list<ExtendingService>>
      */
     protected $extensions = [];
 
@@ -28,7 +31,7 @@ class ServiceExtensions
 
     /**
      * @param string $extensionId
-     * @param callable $extender
+     * @param ExtendingService $extender
      * @return static
      */
     public function add(string $extensionId, callable $extender): ServiceExtensions
@@ -94,7 +97,7 @@ class ServiceExtensions
 
         $extendedClasses[] = $className;
 
-        /** @var array<class-string, list<callable>> $allCallbacks */
+        /** @var array<class-string, list<ExtendingService>> $allCallbacks */
         $allCallbacks = [];
 
         // 1st group of extensions: targeting exact class
@@ -147,7 +150,7 @@ class ServiceExtensions
      * @param class-string $type
      * @param object $service
      * @param Container $container
-     * @param array $extenders
+     * @param list<ExtendingService> $extenders
      * @return array{mixed, int}
      */
     private function extendByType(

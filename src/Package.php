@@ -14,6 +14,10 @@ use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Properties\Properties;
 use Psr\Container\ContainerInterface;
 
+/**
+ * @psalm-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
+ * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ */
 class Package
 {
     /**
@@ -507,7 +511,7 @@ class Package
         array_walk(
             $services,
             static function (callable $service, string $id) use ($addCallback, &$ids) {
-                /** @var callable(string, callable) $addCallback */
+                /** @var callable(string, Service|ExtendingService) $addCallback */
                 $addCallback($id, $service);
                 /** @var list<string> $ids */
                 $ids[] = $id;

@@ -7,10 +7,14 @@ namespace Inpsyde\Modularity\Container;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
+/**
+ * @psalm-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
+ * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ */
 class ReadOnlyContainer implements ContainerInterface
 {
     /**
-     * @var array<string, callable(\Psr\Container\ContainerInterface $container):mixed>
+     * @var array<string, Service>
      */
     private $services;
 
@@ -39,7 +43,7 @@ class ReadOnlyContainer implements ContainerInterface
     /**
      * ReadOnlyContainer constructor.
      *
-     * @param array<string, callable(ContainerInterface $container):mixed> $services
+     * @param array<string, Service> $services
      * @param array<string, bool> $factoryIds
      * @param ServiceExtensions|array $extensions
      * @param ContainerInterface[] $containers
@@ -149,7 +153,7 @@ class ReadOnlyContainer implements ContainerInterface
         foreach ($extensions as $id => $callback) {
             /**
              * @var string $id
-             * @var callable(mixed,ContainerInterface):mixed $callback
+             * @var ExtendingService $callback
              */
             $servicesExtensions->add($id, $callback);
         }
