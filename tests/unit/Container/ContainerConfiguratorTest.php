@@ -38,6 +38,7 @@ class ContainerConfiguratorTest extends TestCase
 
         $testee->addService(
             $expectedKey,
+            /** @return mixed */
             static function () use ($expectedValue) {
                 return $expectedValue;
             }
@@ -61,7 +62,8 @@ class ContainerConfiguratorTest extends TestCase
 
         $testee->addFactory(
             $expectedKey,
-            function () use ($expectedValue) {
+            /** @return mixed */
+            static function () use ($expectedValue) {
                 return $expectedValue;
             }
         );
@@ -72,20 +74,20 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testServiceOverride()
+    public function testServiceOverride(): void
     {
         $expectedKey = 'key';
 
         $testee = new ContainerConfigurator();
         $testee->addService(
             $expectedKey,
-            function () {
+            static function (): \DateTime {
                 return new \DateTime();
             }
         );
         $testee->addService(
             $expectedKey,
-            function () {
+            static function (): \DateTimeImmutable {
                 return new \DateTimeImmutable();
             }
         );
@@ -98,20 +100,20 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testFactoryOverride()
+    public function testFactoryOverride(): void
     {
         $expectedKey = 'key';
 
         $testee = new ContainerConfigurator();
         $testee->addFactory(
             $expectedKey,
-            function () {
+            static function (): \DateTime {
                 return new \DateTime();
             }
         );
         $testee->addFactory(
             $expectedKey,
-            function () {
+            static function (): \DateTimeImmutable {
                 return new \DateTimeImmutable();
             }
         );
@@ -124,20 +126,20 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      */
-    public function testFactoryOverridesService()
+    public function testFactoryOverridesService(): void
     {
         $expectedKey = 'key';
 
         $testee = new ContainerConfigurator();
         $testee->addService(
             $expectedKey,
-            function () {
+            static function (): \DateTime {
                 return new \DateTime();
             }
         );
         $testee->addFactory(
             $expectedKey,
-            function () {
+            static function (): \DateTimeImmutable {
                 return new \DateTimeImmutable();
             }
         );
@@ -153,26 +155,25 @@ class ContainerConfiguratorTest extends TestCase
             $secondResult,
             'Container should return new instances after overriding the initial service'
         );
-
     }
 
     /**
      * @test
      */
-    public function testServiceOverridesFactory()
+    public function testServiceOverridesFactory(): void
     {
         $expectedKey = 'key';
 
         $testee = new ContainerConfigurator();
         $testee->addFactory(
             $expectedKey,
-            function () {
+            static function (): \DateTime {
                 return new \DateTime();
             }
         );
         $testee->addService(
             $expectedKey,
-            function () {
+            static function (): \DateTimeImmutable {
                 return new \DateTimeImmutable();
             }
         );
@@ -205,32 +206,7 @@ class ContainerConfiguratorTest extends TestCase
     public function testHasServiceInChildContainer(): void
     {
         $expectedKey = 'key';
-        $expectedValue = new \stdClass();
-
-        $childContainer = new class($expectedKey, $expectedValue) implements ContainerInterface {
-            private $data = [];
-
-            public function __construct(string $key, object $value)
-            {
-                $this->data[$key] = function () use ($value) {
-                    return $value;
-                };
-            }
-
-            public function get(string $id)
-            {
-                if (!$this->has($id)) {
-                    return null;
-                }
-
-                return $this->data[$id]();
-            }
-
-            public function has(string $id): bool
-            {
-                return array_key_exists($id, $this->data);
-            }
-        };
+        $childContainer = $this->stubContainer($expectedKey);
 
         $testee = new ContainerConfigurator();
         $testee->addContainer($childContainer);
@@ -247,14 +223,18 @@ class ContainerConfiguratorTest extends TestCase
 
         $expectedKey = 'key';
         $expected = 'expectedValue';
-        $expectedOriginalValue = new class {
+
+        $expectedOriginalValue = new class
+        {
             public function __toString()
             {
                 return 'original';
             }
         };
-        $expectedExtendedValue = new class($expected) {
-            private $expected;
+
+        $expectedExtendedValue = new class ($expected)
+        {
+            private string $expected;
 
             public function __construct(string $expected)
             {
@@ -269,14 +249,22 @@ class ContainerConfiguratorTest extends TestCase
 
         $testee->addService(
             $expectedKey,
-            function () use ($expectedOriginalValue) {
+            /**
+             * @param mixed $previous
+             * @return mixed
+             */
+            static function () use ($expectedOriginalValue) {
                 return $expectedOriginalValue;
             }
         );
 
         $testee->addExtension(
             $expectedKey,
-            function ($previous) use ($expectedOriginalValue, $expectedExtendedValue) {
+            /**
+             * @param mixed $previous
+             * @return mixed
+             */
+            static function ($previous) use ($expectedOriginalValue, $expectedExtendedValue) {
                 static::assertSame($expectedOriginalValue, $previous);
 
                 return $expectedExtendedValue;
@@ -296,7 +284,7 @@ class ContainerConfiguratorTest extends TestCase
         $string = 'Test';
         $array = ['test' => 'Test'];
         $iterator = new \ArrayIterator($array);
-        $object = (object)$array;
+        $object = (object) $array;
         $int = 0;
 
         $configurator = new ContainerConfigurator();
@@ -319,7 +307,7 @@ class ContainerConfiguratorTest extends TestCase
 
         $configurator->addExtension(
             '@instanceof<ArrayIterator>',
-            function (\ArrayIterator $object): array {
+            static function (\ArrayIterator $object): array {
                 $array = $object->getArrayCopy();
                 $array['works'] = 'Works!';
 
@@ -329,42 +317,42 @@ class ContainerConfiguratorTest extends TestCase
 
         $configurator->addExtension(
             '@instanceof<string>',
-            function (): string {
+            static function (): string {
                 throw new \Error('Failed!');
             }
         );
         // Invalid code does not break resolution
         $configurator->addExtension(
             '@instanceof<This-Is-Not-Valid-Code!>',
-            function (): array {
+            static function (): array {
                 throw new \Error('Failed!');
             }
         );
         // Undefined classes are ignored
         $configurator->addExtension(
             '@instanceof<ThisCouldBeValidClassNameButItDoesNotExists>',
-            function (): array {
+            static function (): array {
                 throw new \Error('Failed!');
             }
         );
         // This is fine, but we don't expect it running because there are no stdClass in services
         $configurator->addExtension(
             '@instanceof<stdClass>',
-            function (\stdClass $object): \stdClass {
+            static function (\stdClass $object): \stdClass {
                 $array = get_object_vars($object);
                 $array['works'] = 'Works!';
-                return (object)$array;
+                return (object) $array;
             }
         );
         $configurator->addExtension(
             '@instanceof<bool>',
-            function (): bool {
+            static function (): bool {
                 throw new \Error('Failed!');
             }
         );
         $configurator->addExtension(
             '@instanceof<int>',
-            function (): int {
+            static function (): int {
                 throw new \Error('Failed!');
             }
         );
@@ -378,7 +366,7 @@ class ContainerConfiguratorTest extends TestCase
 
         static::assertSame(
             ['test' => 'Test', 'works' => 'Works!'],
-            (array)$container->get('object')
+            (array) $container->get('object')
         );
 
         static::assertSame('Test', $container->get('string'));
@@ -389,18 +377,15 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      * @runInSeparateProcess
-     *
-     * @noinspection PhpUndefinedClassInspection
      */
     public function testExtensionByTypeNoInfiniteRecursion(): void
     {
         // We can't declare classes inside a class, but we can eval it.
         $php = <<<'PHP'
-class A {}
-class B extends A {}
-PHP;
-
-        eval($php);
+        class A {}
+        class B extends A {}
+        PHP;
+        eval($php); // phpcs:ignore
 
         $called = [];
 
@@ -432,11 +417,11 @@ PHP;
      * @test
      * @runInSeparateProcess
      *
-     * @noinspection PhpUndefinedClassInspection
-     * @noinspection PhpIncompatibleReturnTypeInspection
+     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testExtensionByTypeNested(): void
     {
+        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         $logs = [];
         $log = static function (object $object, int ...$nums) use (&$logs): object {
             foreach ($nums as $num) {
@@ -449,77 +434,78 @@ PHP;
         };
 
         $configurator = new ContainerConfigurator();
-        $configurator->addService('test', function () {
+        $configurator->addService('test', static function (): \ArrayObject {
             return new \ArrayObject();
         });
 
         // We can't declare classes inside a class, but we can eval it.
         $php = <<<'PHP'
-class A {}
-class B extends A {}
-class C {}
-class D {};
-class E extends D {};
-PHP;
-        eval($php);
+        class A {}
+        class B extends A {}
+        class C {}
+        class D {};
+        class E extends D {};
+        PHP;
+        eval($php); // phpcs:ignore
 
         $configurator->addExtension(
-            '@instanceof<D>', static function (\D $o) use (&$log): \E {
+            '@instanceof<D>',
+            static function (\D $object) use (&$log): \E {
                 return $log(new \E(), 6, 9);
             }
         );
         $configurator->addExtension(
             '@instanceof<A>',
-            static function (\A $o) use (&$log): \A {
-                return $log($o, -1); // we never expect this to run
+            static function (\A $object) use (&$log): \A {
+                return $log($object, -1); // we never expect this to run
             }
         );
         $configurator->addExtension(
             '@instanceof<ArrayAccess>',
-            static function (\ArrayAccess $o) use (&$log): \ArrayAccess  {
-                return $log($o, 2);
+            static function (\ArrayAccess $object) use (&$log): \ArrayAccess {
+                return $log($object, 2);
             }
         );
         $configurator->addExtension(
             "@instanceof<B>",
-            static function (\B $o) use (&$log): \C {
+            static function (\B $object) use (&$log): \C {
                 return $log(new \C(), 4);
             }
         );
         $configurator->addExtension(
             'test',
-            static function (object $o) use ($log): object {
-                return $log($o, 0);
+            static function (object $object) use ($log): object {
+                return $log($object, 0);
             }
         );
         $configurator->addExtension(
             '@instanceof<ArrayObject>',
-            static function (\ArrayObject $o) use (&$log): \ArrayObject {
-                return $log($o, 1);
+            static function (\ArrayObject $object) use (&$log): \ArrayObject {
+                return $log($object, 1);
             }
         );
         $configurator->addExtension(
             '@instanceof<C>',
-            static function (\C $o) use (&$log): \D {
+            static function (\C $object) use (&$log): \D {
                 return $log(new \D(), 5);
             }
         );
         $configurator->addExtension(
             '@instanceof<ArrayAccess>',
-            static function (\ArrayAccess $o) use (&$log): \B {
+            static function (\ArrayAccess $object) use (&$log): \B {
                 return $log(new \B(), 3);
             }
         );
         $configurator->addExtension(
             "@instanceof<E>",
-            static function (\E $o) use (&$log): \E {
-                return $log($o, 8);
+            static function (\E $object) use (&$log): \E {
+                return $log($object, 8);
             }
         );
         $configurator->addExtension(
             "@instanceof<D>",
-            static function (\D $o) use (&$log): \D {
-                return $log($o, 7, 10);
+            static function (\D $object) use (&$log): \D {
+                return $log($object, 7, 10);
             }
         );
 
@@ -538,8 +524,9 @@ PHP;
         $expectedId = 'expected-id';
         $expectedValue = new \stdClass();
 
-        $childContainer = new class($expectedId, $expectedValue) implements ContainerInterface {
-            private $values;
+        $childContainer = new class ($expectedId, $expectedValue) implements ContainerInterface
+        {
+            private array $values = [];
 
             public function __construct(string $expectedId, object $expectedValue)
             {

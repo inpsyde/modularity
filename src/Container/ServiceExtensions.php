@@ -15,10 +15,8 @@ class ServiceExtensions
     private const SERVICE_TYPE_CHANGED = 2;
     private const SERVICE_TYPE_NOT_OBJECT = 0;
 
-    /**
-     * @var array<string, list<ExtendingService>>
-     */
-    protected $extensions = [];
+    /** @var array<string, list<ExtendingService>> */
+    protected array $extensions = [];
 
     /**
      * @param string $type
@@ -87,6 +85,9 @@ class ServiceExtensions
      * @param Container $container
      * @param array $extendedClasses
      * @return mixed
+     *
+     * phpcs:disable Generic.Metrics.CyclomaticComplexity
+     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
      */
     protected function resolveByType(
         string $className,
@@ -94,6 +95,8 @@ class ServiceExtensions
         Container $container,
         array $extendedClasses = []
     ) {
+        // phpcs:enable Generic.Metrics.CyclomaticComplexity
+        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
 
         $extendedClasses[] = $className;
 
@@ -102,20 +105,28 @@ class ServiceExtensions
 
         // 1st group of extensions: targeting exact class
         $byClass = $this->extensions[self::typeId($className)] ?? null;
-        $byClass and $allCallbacks[$className] = $byClass;
+        if (($byClass !== null) && ($byClass !== [])) {
+            $allCallbacks[$className] = $byClass;
+        }
 
         // 2nd group of extensions: targeting parent classes
-        /** @var class-string $parentName */
-        foreach (class_parents($service, false) ?: [] as $parentName) {
+        $parents = class_parents($service, false);
+        ($parents === false) and $parents = [];
+        foreach ($parents as $parentName) {
             $byParent = $this->extensions[self::typeId($parentName)] ?? null;
-            $byParent and $allCallbacks[$parentName] = $byParent;
+            if (($byParent !== null) && ($byParent !== [])) {
+                $allCallbacks[$parentName] = $byParent;
+            }
         }
 
         // 3rd group of extensions: targeting implemented interfaces
-        /** @var class-string $interfaceName */
-        foreach (class_implements($service, false) ?: [] as $interfaceName) {
+        $interfaces = class_implements($service, false);
+        ($interfaces === false) and $interfaces = [];
+        foreach ($interfaces as $interfaceName) {
             $byInterface = $this->extensions[self::typeId($interfaceName)] ?? null;
-            $byInterface and $allCallbacks[$interfaceName] = $byInterface;
+            if (($byInterface !== null) && ($byInterface !== [])) {
+                $allCallbacks[$interfaceName] = $byInterface;
+            }
         }
 
         $resultType = self::SERVICE_TYPE_NOT_CHANGED;
@@ -126,6 +137,7 @@ class ServiceExtensions
             if (($resultType === self::SERVICE_TYPE_CHANGED) && !is_a($service, $type)) {
                 continue;
             }
+            /** @var object $service */
             [$service, $resultType] = $this->extendByType($type, $service, $container, $extenders);
             if ($resultType === self::SERVICE_TYPE_NOT_OBJECT) {
                 // Service is not an object anymore, let's return it.
@@ -151,7 +163,7 @@ class ServiceExtensions
      * @param object $service
      * @param Container $container
      * @param list<ExtendingService> $extenders
-     * @return array{mixed, int}
+     * @return list{mixed, int}
      */
     private function extendByType(
         string $type,

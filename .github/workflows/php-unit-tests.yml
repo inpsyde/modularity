@@ -1,60 +1,71 @@
 name: PHP unit tests
 
-on: ['pull_request', 'push', 'workflow_dispatch']
+on:
+    push:
+        paths:
+            - '**workflows/php-unit-tests.yml'
+            - '**.php'
+            - '**phpunit.xml.dist'
+            - '**composer.json'
+    pull_request:
+        paths:
+            - '**workflows/php-unit-tests.yml'
+            - '**.php'
+            - '**phpunit.xml.dist'
+            - '**composer.json'
+    workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: "${{ github.workflow }}-${{ github.ref }}"
+    cancel-in-progress: true
 
 jobs:
-  tests-unit-php:
-    runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'workflow_dispatch') || (!contains(github.event.head_commit.message, 'skip tests')) }}
+    tests-unit-php:
+        runs-on: ubuntu-latest
+        if: ${{ (github.event_name == 'workflow_dispatch') || (!contains(github.event.head_commit.message, 'skip tests')) }}
 
-    env:
-      USE_COVERAGE: 'no'
+        env:
+            USE_COVERAGE: 'no'
 
-    strategy:
-      matrix:
-        php-versions: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2' ]
-        dependency-versions: [ 'lowest', 'highest' ]
-        container-versions: [ '^1.1.0', '^2' ]
+        strategy:
+            matrix:
+                php-versions: [ '7.4', '8.0', '8.1', '8.2', '8.3' ]
+                dependency-versions: [ 'lowest', 'highest' ]
+                container-versions: [ '^1.1.0', '^2' ]
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
 
-      - name: Use coverage?
-        if: ${{ (matrix.php-versions == '8.0') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
-        run: echo "USE_COVERAGE=yes" >> $GITHUB_ENV
+            -   name: Use coverage?
+                if: ${{ (matrix.php-versions == '8.2') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
+                run: echo "USE_COVERAGE=yes" >> $GITHUB_ENV
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-versions }}
-          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          coverage: ${{ ((env.USE_COVERAGE == 'yes') && 'xdebug') || 'none' }}
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-versions }}
+                    ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+                    coverage: ${{ ((env.USE_COVERAGE == 'yes') && 'xdebug') || 'none' }}
 
-      - name: Setup dependencies for PSR-11 target version
-        run: |
-          composer remove inpsyde/php-coding-standards inpsyde/wp-stubs-versions vimeo/psalm --dev --no-install
-          composer require "psr/container:${{ matrix.container-versions }}" --no-install
+            -   name: Setup dependencies for PSR-11 target version
+                run: |
+                    composer remove inpsyde/php-coding-standards inpsyde/wp-stubs-versions vimeo/psalm --dev --no-install
+                    composer require "psr/container:${{ matrix.container-versions }}" --no-install
 
-      - name: Install Composer dependencies
-        uses: ramsey/composer-install@v2
-        with:
-          dependency-versions: ${{ matrix.dependency-versions }}
+            -   name: Install Composer dependencies
+                uses: ramsey/composer-install@v3
+                with:
+                    dependency-versions: ${{ matrix.dependency-versions }}
 
-      - name: Run unit tests
-        run: |
-          ./vendor/bin/phpunit --atleast-version 9 && ./vendor/bin/phpunit --migrate-configuration || echo 'Config does not need updates.'
-          ./vendor/bin/phpunit ${{ ((env.USE_COVERAGE == 'yes') && '--coverage-clover coverage.xml') || '--no-coverage' }}
+            -   name: Run unit tests
+                run: /vendor/bin/phpunit ${{ ((env.USE_COVERAGE == 'yes') && '--coverage-clover coverage.xml') || '--no-coverage' }}
 
-      - name: Update coverage
-        if: ${{ env.USE_COVERAGE == 'yes' }}
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.xml
-          flags: unittests
-          verbose: true
+            -   name: Update coverage
+                if: ${{ env.USE_COVERAGE == 'yes' }}
+                uses: codecov/codecov-action@v4
+                with:
+                    token: ${{ secrets.CODECOV_TOKEN }}
+                    files: ./coverage.xml
+                    flags: unittests
+                    verbose: true

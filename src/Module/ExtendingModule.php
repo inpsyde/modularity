@@ -11,7 +11,6 @@ use Psr\Container\ContainerInterface;
  */
 interface ExtendingModule extends Module
 {
-
     /**
      * Return application services' extensions.
      *

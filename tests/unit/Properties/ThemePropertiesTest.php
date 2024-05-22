@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Tests\Unit\Properties;
 
 use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Properties\PluginProperties;
 use Inpsyde\Modularity\Properties\ThemeProperties;
 use Inpsyde\Modularity\Tests\TestCase;
-use \Brain\Monkey\Functions;
+use Brain\Monkey\Functions;
 
 class ThemePropertiesTest extends TestCase
 {
@@ -23,7 +22,7 @@ class ThemePropertiesTest extends TestCase
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';
-        $expectedUri = 'http://github.com/inpsyde/modularity';
+        $expectedUri = 'https://github.com/inpsyde/modularity';
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
         $expectedWpVersion = "5.3";
@@ -62,34 +61,34 @@ class ThemePropertiesTest extends TestCase
         Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
         Functions\expect('get_stylesheet')->andReturn($expectedBaseName);
 
-        $testee = ThemeProperties::new($expectedBasePath);
+        $properties = ThemeProperties::new($expectedBasePath);
 
-        static::assertInstanceOf(Properties::class, $testee);
+        static::assertInstanceOf(Properties::class, $properties);
 
-        static::assertSame($expectedBaseName, $testee->baseName());
-        static::assertSame($expectedBasePath, $testee->basePath());
-        static::assertSame($expectedBaseUrl, $testee->baseUrl());
+        static::assertSame($expectedBaseName, $properties->baseName());
+        static::assertSame($expectedBasePath, $properties->basePath());
+        static::assertSame($expectedBaseUrl, $properties->baseUrl());
 
-        static::assertSame($expectedDescription, $testee->description());
-        static::assertSame($expectedAuthor, $testee->author());
-        static::assertSame($expectedAuthorUri, $testee->authorUri());
-        static::assertSame($expectedDomainPath, $testee->domainPath());
-        static::assertSame($expectedName, $testee->name());
-        static::assertSame($expectedTextDomain, $testee->textDomain());
-        static::assertSame($expectedUri, $testee->uri());
-        static::assertSame($expectedVersion, $testee->version());
-        static::assertSame($expectedWpVersion, $testee->requiresWp());
-        static::assertSame($expectedPhpVersion, $testee->requiresPhp());
+        static::assertSame($expectedDescription, $properties->description());
+        static::assertSame($expectedAuthor, $properties->author());
+        static::assertSame($expectedAuthorUri, $properties->authorUri());
+        static::assertSame($expectedDomainPath, $properties->domainPath());
+        static::assertSame($expectedName, $properties->name());
+        static::assertSame($expectedTextDomain, $properties->textDomain());
+        static::assertSame($expectedUri, $properties->uri());
+        static::assertSame($expectedVersion, $properties->version());
+        static::assertSame($expectedWpVersion, $properties->requiresWp());
+        static::assertSame($expectedPhpVersion, $properties->requiresPhp());
 
         // specific methods for Themes.
-        static::assertSame($expectedTags, $testee->tags());
-        static::assertSame('', $testee->template());
-        static::assertSame($expectedStatus, $testee->status());
+        static::assertSame($expectedTags, $properties->tags());
+        static::assertSame('', $properties->template());
+        static::assertSame($expectedStatus, $properties->status());
 
         // API for Themes
-        static::assertFalse($testee->isChildTheme());
-        static::assertTrue($testee->isCurrentTheme());
-        static::assertNull($testee->parentThemeProperties());
+        static::assertFalse($properties->isChildTheme());
+        static::assertTrue($properties->isCurrentTheme());
+        static::assertNull($properties->parentThemeProperties());
     }
 
     /**
@@ -114,9 +113,9 @@ class ThemePropertiesTest extends TestCase
 
         Functions\expect('wp_get_theme')->with($expectedBasePath)->andReturn($themeStub);
 
-        $testee = ThemeProperties::new($expectedBasePath);
+        $properties = ThemeProperties::new($expectedBasePath);
 
-        static::assertSame($expectedTemplate, $testee->template());
-        static::assertTrue($testee->isChildTheme());
+        static::assertSame($expectedTemplate, $properties->template());
+        static::assertTrue($properties->isChildTheme());
     }
 }
