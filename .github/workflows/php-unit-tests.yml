@@ -52,6 +52,7 @@ jobs:
                 run: |
                     composer remove inpsyde/php-coding-standards inpsyde/wp-stubs-versions vimeo/psalm --dev --no-update
                     composer require "psr/container:${{ matrix.container-versions }}" --no-update
+                    composer config --no-plugins allow-plugins.roots/wordpress-core-installer false
 
             -   name: Install Composer dependencies
                 uses: ramsey/composer-install@v3
