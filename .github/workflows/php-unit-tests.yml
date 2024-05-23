@@ -60,7 +60,7 @@ jobs:
                     dependency-versions: ${{ matrix.dependency-versions }}
 
             -   name: Run unit tests
-                run: /vendor/bin/phpunit ${{ ((env.USE_COVERAGE == 'yes') && '--coverage-clover coverage.xml') || '--no-coverage' }}
+                run: ./vendor/bin/phpunit ${{ ((env.USE_COVERAGE == 'yes') && '--coverage-clover coverage.xml') || '--no-coverage' }}
 
             -   name: Update coverage
                 if: ${{ env.USE_COVERAGE == 'yes' }}
