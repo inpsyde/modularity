@@ -470,7 +470,7 @@ class PackageTest extends TestCase
      *
      * @test
      */
-    public function testPackageConnection(): void
+    public function testPackageConnectionWithBoot(): void
     {
         $module1 = $this->mockModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
@@ -490,6 +490,38 @@ class PackageTest extends TestCase
 
         $connected = $package2->connect($package1);
         $package2->boot();
+
+        static::assertTrue($connected);
+        static::assertSame(['package_1' => true], $package2->connectedPackages());
+        // retrieve a Package 1's service from Package 2's container.
+        static::assertInstanceOf(\ArrayObject::class, $package2->container()->get('service_1'));
+    }
+
+    /**
+     * Test we can connect services across packages.
+     *
+     * @test
+     */
+    public function testPackageConnectionWithBuildViaPackageProxyContainer(): void
+    {
+        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+        $package1 = Package::new($this->mockProperties('package_1', false))
+            ->addModule($module1);
+
+        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+        $package2 = Package::new($this->mockProperties('package_2', false))
+            ->addModule($module2);
+
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once()
+            ->with($package1->name(), Package::STATUS_IDLE, true);
+
+        // Package1 is idle, so connection will use PackageProxyContainer
+        $connected = $package2->connect($package1);
+        $package1->build();
+        $package2->build();
 
         static::assertTrue($connected);
         static::assertSame(['package_1' => true], $package2->connectedPackages());
