@@ -119,6 +119,7 @@ class LibraryPropertiesTest extends TestCase
                     "name" => $expectedAuthor,
                     "homepage" => $expectedAuthorUri,
                 ],
+                "Invalid Author <invalid.author@example.com>",
             ],
             "keywords" => $expectedKeywords,
             "require" => [
