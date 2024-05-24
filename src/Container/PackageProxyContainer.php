@@ -10,15 +10,8 @@ use Psr\Container\ContainerInterface;
 
 class PackageProxyContainer implements ContainerInterface
 {
-    /**
-     * @var Package
-     */
-    private $package;
-
-    /**
-     * @var ContainerInterface|null
-     */
-    private $container;
+    private Package $package;
+    private ?ContainerInterface $container = null;
 
     /**
      * @param Package $package
@@ -31,8 +24,6 @@ class PackageProxyContainer implements ContainerInterface
     /**
      * @param string $id
      * @return mixed
-     *
-     * @throws \Exception
      */
     public function get(string $id)
     {
@@ -44,8 +35,6 @@ class PackageProxyContainer implements ContainerInterface
     /**
      * @param string $id
      * @return bool
-     *
-     * @throws \Exception
      */
     public function has(string $id): bool
     {
@@ -55,12 +44,12 @@ class PackageProxyContainer implements ContainerInterface
     /**
      * @return bool
      *
-     * @throws \Exception
      * @psalm-assert-if-true ContainerInterface $this->container
+     * @psalm-assert-if-false null $this->container
      */
     private function tryContainer(): bool
     {
-        if ($this->container) {
+        if ($this->container !== null) {
             return true;
         }
 
@@ -72,14 +61,12 @@ class PackageProxyContainer implements ContainerInterface
             $this->container = $this->package->container();
         }
 
-        return (bool)$this->container;
+        return $this->container !== null;
     }
 
     /**
      * @param string $id
      * @return void
-     *
-     * @throws \Exception
      *
      * @psalm-assert ContainerInterface $this->container
      */
@@ -94,9 +81,9 @@ class PackageProxyContainer implements ContainerInterface
             ? 'is errored'
             : 'is not ready yet';
 
-        throw new class ("Error retrieving service {$id} because package {$name} {$status}.")
-            extends \Exception
-            implements ContainerExceptionInterface {
+        $error = "Error retrieving service {$id} because package {$name} {$status}.";
+        throw new class (esc_html($error)) extends \Exception implements ContainerExceptionInterface
+        {
         };
     }
 }

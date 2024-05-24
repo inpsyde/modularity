@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Container;
@@ -11,34 +12,16 @@ use Psr\Container\ContainerInterface;
  */
 class ContainerConfigurator
 {
-    /**
-     * @var array<string, Service>
-     */
-    private $services = [];
+    /** @var array<string, Service> */
+    private array $services = [];
+    /** @var array<string, bool> */
+    private array $factoryIds = [];
+    private ServiceExtensions $extensions;
+    private ?ContainerInterface $compiledContainer = null;
+    /** @var ContainerInterface[] */
+    private array $containers = [];
 
     /**
-     * @var array<string, bool>
-     */
-    private $factoryIds = [];
-
-    /**
-     * @var ServiceExtensions
-     */
-    private $extensions;
-
-    /**
-     * @var ContainerInterface[]
-     */
-    private $containers = [];
-
-    /**
-     * @var null|ContainerInterface
-     */
-    private $compiledContainer;
-
-    /**
-     * ContainerConfigurator constructor.
-     *
      * @param ContainerInterface[] $containers
      */
     public function __construct(array $containers = [], ?ServiceExtensions $extensions = null)
@@ -48,9 +31,8 @@ class ContainerConfigurator
     }
 
     /**
-     * Allowing to add child containers.
-     *
      * @param ContainerInterface $container
+     * @return void
      */
     public function addContainer(ContainerInterface $container): void
     {
@@ -72,7 +54,6 @@ class ContainerConfigurator
     /**
      * @param string $id
      * @param Service $service
-     *
      * @return void
      */
     public function addService(string $id, callable $service): void
@@ -93,7 +74,6 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     *
      * @return bool
      */
     public function hasService(string $id): bool
@@ -114,7 +94,6 @@ class ContainerConfigurator
     /**
      * @param string $id
      * @param ExtendingService $extender
-     *
      * @return void
      */
     public function addExtension(string $id, callable $extender): void
@@ -124,7 +103,6 @@ class ContainerConfigurator
 
     /**
      * @param string $id
-     *
      * @return bool
      */
     public function hasExtension(string $id): bool
@@ -133,13 +111,13 @@ class ContainerConfigurator
     }
 
     /**
-     * Returns a read only version of this Container.
-     *
      * @return ContainerInterface
+     *
+     * @psalm-assert ContainerInterface $this->compiledContainer
      */
     public function createReadOnlyContainer(): ContainerInterface
     {
-        if (!$this->compiledContainer) {
+        if ($this->compiledContainer === null) {
             $this->compiledContainer = new ReadOnlyContainer(
                 $this->services,
                 $this->factoryIds,

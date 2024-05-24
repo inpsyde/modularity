@@ -18,7 +18,7 @@ class BasePropertiesTest extends TestCase
         $expectedName = 'foo';
         $expectedPath = __DIR__ . '/';
 
-        $testee = $this->createBaseProperties(
+        $testee = $this->factoryBaseProperties(
             $expectedName,
             $expectedPath
         );
@@ -44,11 +44,12 @@ class BasePropertiesTest extends TestCase
     }
 
     /**
-     * @dataProvider baseNameDataProvider
+     * @test
+     * @dataProvider provideBaseNameData
      */
     public function testBaseNameSanitization(string $baseName, string $sanitizedBaseName): void
     {
-        $testee = $this->createBaseProperties(
+        $testee = $this->factoryBaseProperties(
             $baseName,
             ''
         );
@@ -56,7 +57,10 @@ class BasePropertiesTest extends TestCase
         static::assertSame($sanitizedBaseName, $testee->baseName());
     }
 
-    public function baseNameDataProvider(): iterable
+    /**
+     * @return \Generator
+     */
+    public static function provideBaseNameData(): \Generator
     {
         yield 'empty' => ['', ''];
         yield 'word' => ['foo', 'foo'];
@@ -66,19 +70,29 @@ class BasePropertiesTest extends TestCase
         yield 'single file' => ['package.php', 'package'];
     }
 
-    private function createBaseProperties(
+    /**
+     * @param string $baseName
+     * @param string $basePath
+     * @param string|null $baseUrl
+     * @param array $properties
+     * @return BaseProperties
+     */
+    private function factoryBaseProperties(
         string $baseName,
         string $basePath,
         string $baseUrl = null,
         array $properties = []
     ): BaseProperties {
-        return new class($baseName, $basePath, $baseUrl, $properties) extends BaseProperties {
+
+        return new class ($baseName, $basePath, $baseUrl, $properties) extends BaseProperties
+        {
             public function __construct(
                 string $baseName,
                 string $basePath,
                 string $baseUrl = null,
                 array $properties = []
             ) {
+
                 parent::__construct($baseName, $basePath, $baseUrl, $properties);
             }
         };

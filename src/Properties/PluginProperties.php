@@ -4,25 +4,14 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Properties;
 
-/**
- * Class PluginProperties
- *
- * @package Inpsyde\Modularity\Properties
- *
- * @psalm-suppress PossiblyFalseArgument, InvalidArgument
- */
 class PluginProperties extends BaseProperties
 {
-    /**
-     * Custom properties for Plugins.
-     */
+    // Custom properties for Plugins
     public const PROP_NETWORK = 'network';
     public const PROP_REQUIRES_PLUGINS = 'requiresPlugins';
+
     /**
-     * Available methods of Properties::__call()
-     * from plugin headers.
-     *
-     * @link https://developer.wordpress.org/reference/functions/get_plugin_data/
+     * @see https://developer.wordpress.org/reference/functions/get_plugin_data/
      */
     protected const HEADERS = [
         self::PROP_AUTHOR => 'Author',
@@ -41,34 +30,14 @@ class PluginProperties extends BaseProperties
         self::PROP_REQUIRES_PLUGINS => 'RequiresPlugins',
     ];
 
-    /**
-     * @var string
-     */
-    private $pluginMainFile;
-
-    /**
-     * @var string
-     */
-    private $pluginBaseName;
-
-    /**
-     * @var bool|null
-     */
-    protected $isMu;
-
-    /**
-     * @var bool|null
-     */
-    protected $isActive;
-
-    /**
-     * @var bool|null
-     */
-    protected $isNetworkActive;
+    private string $pluginMainFile;
+    private string $pluginBaseName;
+    protected ?bool $isMu = null;
+    protected ?bool $isActive = null;
+    protected ?bool $isNetworkActive = null;
 
     /**
      * @param string $pluginMainFile
-     *
      * @return PluginProperties
      */
     public static function new(string $pluginMainFile): PluginProperties
@@ -77,8 +46,6 @@ class PluginProperties extends BaseProperties
     }
 
     /**
-     * PluginProperties constructor.
-     *
      * @param string $pluginMainFile
      */
     protected function __construct(string $pluginMainFile)
@@ -87,9 +54,10 @@ class PluginProperties extends BaseProperties
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
 
-        // $markup = false, to avoid an incorrect early wptexturize call. Also we probably don't want HTML here anyway
+        // $markup = false, to avoid an incorrect early wptexturize call.
+        // We also probably don't want HTML here anyway
         // @see https://core.trac.wordpress.org/ticket/49965
-        $pluginData = get_plugin_data($pluginMainFile, false);
+        $pluginData = (array) get_plugin_data($pluginMainFile, false);
         $properties = Properties::DEFAULT_PROPERTIES;
 
         // Map pluginData to internal structure.
@@ -123,8 +91,6 @@ class PluginProperties extends BaseProperties
 
     /**
      * @return bool
-     *
-     * @psalm-suppress PossiblyFalseArgument
      */
     public function network(): bool
     {
@@ -177,10 +143,6 @@ class PluginProperties extends BaseProperties
     public function isMuPlugin(): bool
     {
         if ($this->isMu === null) {
-            /**
-             * @psalm-suppress UndefinedConstant
-             * @psalm-suppress MixedArgument
-             */
             $muPluginDir = wp_normalize_path(WPMU_PLUGIN_DIR);
             $this->isMu = strpos($this->pluginMainFile, $muPluginDir) === 0;
         }

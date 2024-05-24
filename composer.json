@@ -9,31 +9,30 @@
             "email": "hello@inpsyde.com",
             "homepage": "https://inpsyde.com/",
             "role": "Company"
-        },
+        }
+    ],
+    "repositories": [
         {
-            "name": "Christian Leucht",
-            "email": "c.leucht@inpsyde.com",
-            "role": "Developer"
-        },
-        {
-            "name": "Giuseppe Mazzapica",
-            "email": "g.mazzapica@inpsyde.com",
-            "role": "Developer"
+            "type": "composer",
+            "url": "https://raw.githubusercontent.com/inpsyde/wp-stubs/main",
+            "only": [
+                "inpsyde/wp-stubs-versions"
+            ]
         }
     ],
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.4 <8.4",
         "ext-json": "*",
         "psr/container": "^1.1.0 || ^2"
     },
     "require-dev": {
         "brain/monkey": "^2.6.1",
-        "inpsyde/php-coding-standards": "^1",
-        "mikey179/vfsstream": "^v1.6.10",
-        "phpunit/phpunit": "^8.5.21 || ^9.6.7",
-        "vimeo/psalm": "^4.13.1",
-        "php-stubs/wordpress-stubs": ">=5.8@stable",
-        "johnpbloch/wordpress-core": ">=5.8"
+        "inpsyde/php-coding-standards": "^2@dev",
+        "inpsyde/wp-stubs-versions": "dev-latest",
+        "roots/wordpress-no-content": "@dev",
+        "mikey179/vfsstream": "^v1.6.11",
+        "phpunit/phpunit": "^9.6.19",
+        "vimeo/psalm": "^5.24.0"
     },
     "extra": {
         "branch-alias": {
@@ -55,19 +54,20 @@
     "prefer-stable": true,
     "scripts": {
         "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
-        "psalm": "@php ./vendor/vimeo/psalm/psalm",
+        "psalm": "@php ./vendor/vimeo/psalm/psalm --no-suggestions --report-show-info=false --find-unused-psalm-suppress --no-diff --no-cache --no-file-cache --output-format=compact",
+        "tests": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
+        "tests:coverage": "@php ./vendor/phpunit/phpunit/phpunit",
         "qa": [
-            "@tests:no-cov",
             "@cs",
-            "@psalm"
-        ],
-        "tests": "@php ./vendor/phpunit/phpunit/phpunit",
-        "tests:no-cov": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage"
+            "@psalm",
+            "@tests"
+        ]
     },
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "composer/package-versions-deprecated": true
+            "composer/*": true,
+            "inpsyde/*": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
         }
     }
 }

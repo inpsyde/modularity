@@ -7,7 +7,7 @@ namespace Inpsyde\Modularity\Tests\Unit\Properties;
 use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Properties\PluginProperties;
 use Inpsyde\Modularity\Tests\TestCase;
-use \Brain\Monkey\Functions;
+use Brain\Monkey\Functions;
 
 class PluginPropertiesTest extends TestCase
 {
@@ -22,11 +22,11 @@ class PluginPropertiesTest extends TestCase
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';
-        $expectedUri = 'http://github.com/inpsyde/modularity';
+        $expectedUri = 'https://github.com/inpsyde/modularity';
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
         $expectedWpVersion = "5.3";
-        $expectedNetwork = true;
+        $expectedNetwork = random_int(1, 1000) > 500;
 
         $expectedPluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
         $expectedBaseName = 'plugin-dir/plugin-name.php';
@@ -55,34 +55,32 @@ class PluginPropertiesTest extends TestCase
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::new($expectedPluginMainFile);
+        $properties = PluginProperties::new($expectedPluginMainFile);
 
-        static::assertInstanceOf(Properties::class, $testee);
-        static::assertSame($expectedDescription, $testee->description());
-        static::assertSame($expectedAuthor, $testee->author());
-        static::assertSame($expectedAuthorUri, $testee->authorUri());
-        static::assertSame($expectedDomainPath, $testee->domainPath());
-        static::assertSame($expectedName, $testee->name());
-        static::assertSame($expectedTextDomain, $testee->textDomain());
-        static::assertSame($expectedUri, $testee->uri());
-        static::assertSame($expectedVersion, $testee->version());
-        static::assertSame($expectedWpVersion, $testee->requiresWp());
-        static::assertSame($expectedPhpVersion, $testee->requiresPhp());
-        static::assertSame($expectedSanitizedBaseName, $testee->baseName());
+        static::assertInstanceOf(Properties::class, $properties);
+        static::assertSame($expectedDescription, $properties->description());
+        static::assertSame($expectedAuthor, $properties->author());
+        static::assertSame($expectedAuthorUri, $properties->authorUri());
+        static::assertSame($expectedDomainPath, $properties->domainPath());
+        static::assertSame($expectedName, $properties->name());
+        static::assertSame($expectedTextDomain, $properties->textDomain());
+        static::assertSame($expectedUri, $properties->uri());
+        static::assertSame($expectedVersion, $properties->version());
+        static::assertSame($expectedWpVersion, $properties->requiresWp());
+        static::assertSame($expectedPhpVersion, $properties->requiresPhp());
+        static::assertSame($expectedSanitizedBaseName, $properties->baseName());
         // Custom to Plugins
-        static::assertSame($expectedNetwork, $testee->network());
-        static::assertSame($expectedPluginMainFile, $testee->pluginMainFile());
+        static::assertSame($expectedNetwork, $properties->network());
+        static::assertSame($expectedPluginMainFile, $properties->pluginMainFile());
     }
 
     /**
+     * @test
+     * @runInSeparateProcess
+     * @dataProvider provideRequiresPluginsData
+     *
      * @param string $requiresPlugins
      * @param array $expected
-     *
-     * @test
-     *
-     * @runInSeparateProcess
-     *
-     * @dataProvider provideRequiresPluginsData
      */
     public function testRequiresPlugins(string $requiresPlugins, array $expected): void
     {
@@ -98,16 +96,16 @@ class PluginPropertiesTest extends TestCase
 
         Functions\expect('wp_normalize_path')->andReturnFirstArg();
 
-        $testee = PluginProperties::new($pluginMainFile);
-        static::assertEquals($expected, $testee->requiresPlugins());
+        $properties = PluginProperties::new($pluginMainFile);
+        static::assertEquals($expected, $properties->requiresPlugins());
     }
 
     /**
-     * @return array[]
+     * @return \Generator
      */
-    public function provideRequiresPluginsData(): array
+    public static function provideRequiresPluginsData(): \Generator
     {
-        return [
+        yield from [
             'no dependencies' => [
                 '',
                 [],
@@ -144,14 +142,14 @@ class PluginPropertiesTest extends TestCase
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::new($pluginMainFile);
+        $properties = PluginProperties::new($pluginMainFile);
 
         Functions\expect('is_plugin_active')
             ->andReturnUsing(static function (string $baseName) use ($expectedBaseName): bool {
                 return $baseName === $expectedBaseName;
             });
 
-        static::assertTrue($testee->isActive());
+        static::assertTrue($properties->isActive());
     }
 
     /**
@@ -174,8 +172,8 @@ class PluginPropertiesTest extends TestCase
                 return $baseName === $expectedBaseName;
             });
 
-        $testee = PluginProperties::new($pluginMainFile);
-        static::assertTrue($testee->isNetworkActive());
+        $properties = PluginProperties::new($pluginMainFile);
+        static::assertTrue($properties->isNetworkActive());
     }
 
     /**
@@ -198,7 +196,6 @@ class PluginPropertiesTest extends TestCase
             [
                 'Author' => $expectedAuthor,
                 'AuthorURI' => $expectedAuthorUri,
-
             ],
             $customHeaders
         );
@@ -209,33 +206,32 @@ class PluginPropertiesTest extends TestCase
         Functions\expect('plugin_basename')->andReturn($expectedBaseName);
         Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
 
-        $testee = PluginProperties::new($pluginMainFile);
+        $properties = PluginProperties::new($pluginMainFile);
 
         // Check if PluginProperties do behave as normal
-        static::assertSame($expectedSanitizedBaseName, $testee->baseName());
-        static::assertSame($expectedBasePath, $testee->basePath());
+        static::assertSame($expectedSanitizedBaseName, $properties->baseName());
+        static::assertSame($expectedBasePath, $properties->basePath());
 
         // Test default Headers
-        static::assertSame($expectedAuthor, $testee->author());
-        static::assertSame($expectedAuthor, $testee->get(Properties::PROP_AUTHOR));
-        static::assertSame($expectedAuthorUri, $testee->authorUri());
-        static::assertSame($expectedAuthorUri, $testee->get(Properties::PROP_AUTHOR_URI));
+        static::assertSame($expectedAuthor, $properties->author());
+        static::assertSame($expectedAuthor, $properties->get(Properties::PROP_AUTHOR));
+        static::assertSame($expectedAuthorUri, $properties->authorUri());
+        static::assertSame($expectedAuthorUri, $properties->get(Properties::PROP_AUTHOR_URI));
 
         // Test headers from get_plugin_data() are removed from properties
         // "Author" will be mapped to Properties::PROP_AUTHOR
-        static::assertFalse($testee->has('Author'));
-        static::assertFalse($testee->has('AuthorURI'));
+        static::assertFalse($properties->has('Author'));
+        static::assertFalse($properties->has('AuthorURI'));
 
         // Test custom Headers
         foreach ($customHeaders as $key => $value) {
-            static::assertTrue($testee->has($key));
-            static::assertSame($value, $testee->get($key));
+            static::assertTrue($properties->has($key));
+            static::assertSame($value, $properties->get($key));
         }
     }
 
     /**
-     * Provides custom Plugin Headers which will
-     * be returned by get_plugin_data()
+     * @return \Generator
      */
     public function provideCustomHeaders(): \Generator
     {
@@ -255,16 +251,13 @@ class PluginPropertiesTest extends TestCase
     }
 
     /**
+     * @test
+     * @runInSeparateProcess
+     * @dataProvider provideIsMuPluginData
      *
      * @param string $pluginPath
      * @param string $muPluginDir
      * @param bool $expected
-     *
-     * @test
-     *
-     * @runInSeparateProcess
-     *
-     * @dataProvider provideIsMuPluginData
      */
     public function testIsMuPlugin(string $pluginMainFile, string $muPluginDir, bool $expected): void
     {
@@ -279,16 +272,16 @@ class PluginPropertiesTest extends TestCase
 
         define('WPMU_PLUGIN_DIR', $muPluginDir);
 
-        $testee = PluginProperties::new($pluginMainFile);
-        static::assertSame($expected, $testee->isMuPlugin());
+        $properties = PluginProperties::new($pluginMainFile);
+        static::assertSame($expected, $properties->isMuPlugin());
     }
 
     /**
-     * @return array[]
+     * @return \Generator
      */
-    public function provideIsMuPluginData(): array
+    public static function provideIsMuPluginData(): \Generator
     {
-        return [
+        yield from [
             'is not mu-plugin' => [
                 '/wp-content/plugins/the-plugin/index.php',
                 '/wp-content/mu-plugins/',

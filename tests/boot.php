@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+// phpcs:disable PSR1
+
 $testsDir = str_replace('\\', '/', __DIR__);
 $libDir = dirname($testsDir);
 $vendorDir = "{$libDir}/vendor";
@@ -22,7 +26,10 @@ if (!defined('PHPUNIT_COMPOSER_INSTALL')) {
     require_once $autoload;
 }
 
-defined('ABSPATH') or define('ABSPATH', "{$vendorDir}/johnpbloch/wordpress-core/");
-require_once "{$vendorDir}/johnpbloch/wordpress-core/wp-includes/class-wp-error.php";
+if (!defined('ABSPATH')) {
+    define('ABSPATH', "{$vendorDir}/roots/wordpress-no-content/");
+}
+
+require_once "{$vendorDir}/roots/wordpress-no-content/wp-includes/class-wp-error.php";
 
 unset($testsDir, $libDir, $vendorDir, $autoload);

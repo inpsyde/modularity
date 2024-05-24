@@ -9,14 +9,13 @@ use Inpsyde\Modularity\Tests\TestCase;
 
 class ModuleClassNameIdTraitTest extends TestCase
 {
-
     /**
      * @test
      */
     public function testIdMatchesClassName(): void
     {
-        $module = new class implements Modularity\Module\Module {
-
+        $module = new class implements Modularity\Module\Module
+        {
             use Modularity\Module\ModuleClassNameIdTrait;
         };
 

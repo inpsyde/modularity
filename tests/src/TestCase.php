@@ -10,20 +10,19 @@ use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
+use Inpsyde\Modularity\Package;
 use Inpsyde\Modularity\Properties\Properties;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Error\Deprecated;
 use PHPUnit\Framework\TestCase as FrameworkTestCase;
+use Psr\Container\ContainerInterface;
 
 abstract class TestCase extends FrameworkTestCase
 {
     use MockeryPHPUnitIntegration;
 
-    /**
-     * @var int|null
-     */
-    private $currentErrorReporting = null;
+    private ?int $currentErrorReporting = null;
 
     /**
      * @return void
@@ -32,6 +31,7 @@ abstract class TestCase extends FrameworkTestCase
     {
         parent::setUp();
         Monkey\setUp();
+        Monkey\Functions\stubEscapeFunctions();
     }
 
     /**
@@ -52,7 +52,7 @@ abstract class TestCase extends FrameworkTestCase
      *
      * @return Properties|MockInterface
      */
-    protected function mockProperties(
+    protected function stubProperties(
         string $basename = 'basename',
         bool $isDebug = false
     ): Properties {
@@ -69,30 +69,44 @@ abstract class TestCase extends FrameworkTestCase
      * @param class-string ...$interfaces
      * @return Module|MockInterface
      */
-    protected function mockModule(string $id = 'module', string ...$interfaces): Module
+    protected function stubModule(string $id = 'module', string ...$interfaces): Module
     {
         $interfaces or $interfaces[] = Module::class;
 
         $stub = \Mockery::mock(...$interfaces);
         $stub->allows('id')->andReturn($id);
 
-        if (in_array(ServiceModule::class, $interfaces, true) ) {
+        if (in_array(ServiceModule::class, $interfaces, true)) {
             $stub->allows('services')->byDefault()->andReturn([]);
         }
 
-        if (in_array(FactoryModule::class, $interfaces, true) ) {
+        if (in_array(FactoryModule::class, $interfaces, true)) {
             $stub->allows('factories')->byDefault()->andReturn([]);
         }
 
-        if (in_array(ExtendingModule::class, $interfaces, true) ) {
+        if (in_array(ExtendingModule::class, $interfaces, true)) {
             $stub->allows('extensions')->byDefault()->andReturn([]);
         }
 
-        if (in_array(ExecutableModule::class, $interfaces, true) ) {
+        if (in_array(ExecutableModule::class, $interfaces, true)) {
             $stub->allows('run')->byDefault()->andReturn(false);
         }
 
         return $stub;
+    }
+
+    /**
+     * @param string $suffix
+     * @param bool $debug
+     * @return Package
+     */
+    protected function stubSimplePackage(string $suffix, bool $debug = false): Package
+    {
+        $module = $this->stubModule("module_{$suffix}", ServiceModule::class);
+        $module->expects('services')->andReturn($this->stubServices("service_{$suffix}"));
+        $properties = $this->stubProperties("package_{$suffix}", $debug);
+
+        return Package::new($properties)->addModule($module);
     }
 
     /**
@@ -103,7 +117,7 @@ abstract class TestCase extends FrameworkTestCase
     {
         $services = [];
         foreach ($ids as $id) {
-            $services[$id] = static function () use ($id) {
+            $services[$id] = static function () use ($id): \ArrayObject {
                 return new \ArrayObject(['id' => $id]);
             };
         }
@@ -112,10 +126,49 @@ abstract class TestCase extends FrameworkTestCase
     }
 
     /**
+     * @param string ...$ids
+     * @return ContainerInterface
+     *
+     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
+     */
+    protected function stubContainer(string ...$ids): ContainerInterface
+    {
+        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
+        return new class ($this->stubServices(...$ids)) implements ContainerInterface
+        {
+            /** @var array<string, callable> */
+            private array $services; // phpcs:ignore
+
+            /** @param array<string, callable> $services */
+            public function __construct(array $services)
+            {
+                $this->services = $services;
+            }
+
+            /** @return mixed */
+            public function get(string $id)
+            {
+                if (!isset($this->services[$id])) {
+                    throw new \Exception("Service {$id} not found.");
+                }
+
+                return $this->services[$id]($this);
+            }
+
+            public function has(string $id): bool
+            {
+                return isset($this->services[$id]);
+            }
+        };
+    }
+
+    /**
      * @return void
      */
     protected function ignoreDeprecations(): void
     {
+        \Brain\Monkey\Actions\expectDone('wp_trigger_error_run')->atLeast()->once();
+
         $this->currentErrorReporting = error_reporting();
         error_reporting($this->currentErrorReporting & ~\E_DEPRECATED & ~\E_USER_DEPRECATED);
     }

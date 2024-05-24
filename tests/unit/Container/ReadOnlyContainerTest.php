@@ -16,7 +16,7 @@ class ReadOnlyContainerTest extends TestCase
      */
     public function testBasic(): void
     {
-        $testee = $this->createContainer();
+        $testee = $this->factoryContainer();
 
         static::assertInstanceOf(ContainerInterface::class, $testee);
         static::assertFalse($testee->has('unknown'));
@@ -29,20 +29,22 @@ class ReadOnlyContainerTest extends TestCase
     {
         static::expectException(\Exception::class);
 
-        $testee = $this->createContainer();
+        $testee = $this->factoryContainer();
         $testee->get('unknown');
     }
 
     /**
      * @test
-     *
      * @dataProvider provideServices
+     *
+     * @param mixed $expected
+     * @param callable $service
      */
     public function testHasGetService($expected, callable $service): void
     {
         $expectedId = 'service';
         $services = [$expectedId => $service];
-        $testee = $this->createContainer($services);
+        $testee = $this->factoryContainer($services);
 
         // check in Services
         static::assertTrue($testee->has($expectedId));
@@ -52,12 +54,15 @@ class ReadOnlyContainerTest extends TestCase
         static::assertTrue($testee->has($expectedId));
     }
 
-    public function provideServices(): \Generator
+    /**
+     * @return \Generator
+     */
+    public static function provideServices(): \Generator
     {
         $service = new \stdClass();
         yield 'object service' => [
             $service,
-            function () use ($service) {
+            static function () use ($service): object {
                 return $service;
             },
         ];
@@ -65,7 +70,7 @@ class ReadOnlyContainerTest extends TestCase
         $service = 'foo';
         yield 'string service' => [
             $service,
-            function () use ($service) {
+            static function () use ($service): string {
                 return $service;
             },
         ];
@@ -73,7 +78,7 @@ class ReadOnlyContainerTest extends TestCase
         $service = ['foo', 'bar'];
         yield 'array service' => [
             $service,
-            function () use ($service) {
+            static function () use ($service): array {
                 return $service;
             },
         ];
@@ -84,11 +89,12 @@ class ReadOnlyContainerTest extends TestCase
      */
     public function testHasGetServiceFromChildContainer(): void
     {
-        $expectedServiceKey = 'service';
+        $expectedKey = 'service';
         $expectedValue = new \stdClass();
 
-        $childContainer = new class($expectedServiceKey, $expectedValue) implements ContainerInterface {
-            private $data = [];
+        $childContainer = new class ($expectedKey, $expectedValue) implements ContainerInterface
+        {
+            private array $data = [];
 
             public function __construct(string $key, \stdClass $value)
             {
@@ -106,28 +112,32 @@ class ReadOnlyContainerTest extends TestCase
             }
         };
 
-        $testee = $this->createContainer([], [], [$childContainer]);
+        $testee = $this->factoryContainer([], [], [$childContainer]);
 
         // check in child Container
-        static::assertTrue($testee->has($expectedServiceKey));
+        static::assertTrue($testee->has($expectedKey));
         // resolve Service
-        static::assertSame($expectedValue, $testee->get($expectedServiceKey));
+        static::assertSame($expectedValue, $testee->get($expectedKey));
         // check in resolved Services
-        static::assertTrue($testee->has($expectedServiceKey));
+        static::assertTrue($testee->has($expectedKey));
     }
 
     /**
      * @test
+     *
+     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testFactoriesAndServices(): void
     {
+        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         $expectedServiceKey = 'service';
         $expectedFactoryKey = 'factory';
 
         $services = [
-            $expectedServiceKey => function () {
-                return new class {
-                    protected $counter = 0;
+            $expectedServiceKey => function (): object {
+                return new class
+                {
+                    protected int $counter = 0;
 
                     public function count(): int
                     {
@@ -137,9 +147,10 @@ class ReadOnlyContainerTest extends TestCase
                     }
                 };
             },
-            $expectedFactoryKey => function () {
-                return new class {
-                    protected $counter = 0;
+            $expectedFactoryKey => function (): object {
+                return new class
+                {
+                    protected int $counter = 0;
 
                     public function count(): int
                     {
@@ -152,7 +163,7 @@ class ReadOnlyContainerTest extends TestCase
         ];
         $factoryIds = [$expectedFactoryKey => true];
 
-        $testee = $this->createContainer($services, $factoryIds);
+        $testee = $this->factoryContainer($services, $factoryIds);
 
         // Services are cached and same instance is returned.
         static::assertSame(1, $testee->get($expectedServiceKey)->count());
@@ -200,10 +211,9 @@ class ReadOnlyContainerTest extends TestCase
      * @param array $services
      * @param array $factoryIds
      * @param array $containers
-     *
      * @return Container
      */
-    private function createContainer(
+    private function factoryContainer(
         array $services = [],
         array $factoryIds = [],
         array $containers = []

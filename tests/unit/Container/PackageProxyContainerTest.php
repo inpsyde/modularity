@@ -16,7 +16,7 @@ class PackageProxyContainerTest extends TestCase
      */
     public function testAccessingContainerEarlyThrows(): void
     {
-        $package = Package::new($this->mockProperties());
+        $package = Package::new($this->stubProperties());
 
         $container = new PackageProxyContainer($package);
         static::assertFalse($container->has('test'));
@@ -30,7 +30,7 @@ class PackageProxyContainerTest extends TestCase
      */
     public function testAccessingFailedPackageEarlyThrows(): void
     {
-        $package = Package::new($this->mockProperties());
+        $package = Package::new($this->stubProperties());
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
             ->once()
