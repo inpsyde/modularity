@@ -385,7 +385,7 @@ class ContainerConfiguratorTest extends TestCase
         class A {}
         class B extends A {}
         PHP;
-        eval($php); // phpcs:ignore
+        eval($php);
 
         $called = [];
 
@@ -446,7 +446,7 @@ class ContainerConfiguratorTest extends TestCase
         class D {};
         class E extends D {};
         PHP;
-        eval($php); // phpcs:ignore
+        eval($php);
 
         $configurator->addExtension(
             '@instanceof<D>',
