@@ -1,11 +1,14 @@
 <?xml version="1.0"?>
 <psalm
+    errorLevel="1"
     useDocblockPropertyTypes="true"
     usePhpDocMethodsWithoutMagicCall="true"
     strictBinaryOperands="true"
     ignoreInternalFunctionFalseReturn="false"
     ignoreInternalFunctionNullReturn="false"
     hideExternalErrors="true"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="false"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
@@ -18,17 +21,12 @@
     </projectFiles>
 
     <stubs>
-        <file name="vendor/php-stubs/wordpress-stubs/wordpress-stubs.php" />
+        <file name="vendor/inpsyde/wp-stubs-versions/latest.php" />
     </stubs>
 
     <issueHandlers>
         <MixedAssignment errorLevel="suppress" />
-        <MissingClosureParamType errorLevel="suppress" />
-        <MissingClosureReturnType errorLevel="suppress" />
-        <ParadoxicalCondition errorLevel="suppress" />
-        <RedundantCondition errorLevel="suppress" />
         <UnresolvableInclude errorLevel="suppress" />
-        <UndefinedConstant errorLevel="suppress" />
-        <RedundantCastGivenDocblockType errorLevel="suppress" />
+        <MissingClassConstType errorLevel="suppress" />
     </issueHandlers>
 </psalm>

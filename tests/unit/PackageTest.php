@@ -22,7 +22,7 @@ class PackageTest extends TestCase
     public function testBasic(): void
     {
         $expectedName = 'foo';
-        $propertiesStub = $this->mockProperties($expectedName);
+        $propertiesStub = $this->stubProperties($expectedName);
 
         $package = Package::new($propertiesStub);
 
@@ -36,16 +36,16 @@ class PackageTest extends TestCase
     }
 
     /**
+     * @test
+     * @dataProvider provideHookNameSuffix
+     *
      * @param string $suffix
      * @param string $baseName
      * @param string $expectedHookName
-     *
-     * @test
-     * @dataProvider provideHookNameSuffix
      */
     public function testHookName(string $suffix, string $baseName, string $expectedHookName): void
     {
-        $propertiesStub = $this->mockProperties($baseName);
+        $propertiesStub = $this->stubProperties($baseName);
         $package = Package::new($propertiesStub);
         static::assertSame($expectedHookName, $package->hookName($suffix));
     }
@@ -53,7 +53,7 @@ class PackageTest extends TestCase
     /**
      * @return \Generator
      */
-    public function provideHookNameSuffix(): \Generator
+    public static function provideHookNameSuffix(): \Generator
     {
         $expectedName = 'baseName';
         $baseHookName = 'inpsyde.modularity.' . $expectedName;
@@ -89,8 +89,8 @@ class PackageTest extends TestCase
     {
         $expectedId = 'my-module';
 
-        $moduleStub = $this->mockModule($expectedId);
-        $propertiesStub = $this->mockProperties('name', false);
+        $moduleStub = $this->stubModule($expectedId);
+        $propertiesStub = $this->stubProperties('name', false);
 
         $package = Package::new($propertiesStub)->addModule($moduleStub);
 
@@ -101,7 +101,7 @@ class PackageTest extends TestCase
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_EXTENDED));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_ADDED));
 
-        // booting again will do nothing.
+        // booting again fails, but does not throw because debug is false
         static::assertFalse($package->boot());
     }
 
@@ -113,10 +113,10 @@ class PackageTest extends TestCase
         $moduleId = 'my-service-module';
         $serviceId = 'service-id';
 
-        $module = $this->mockModule($moduleId, ServiceModule::class);
+        $module = $this->stubModule($moduleId, ServiceModule::class);
         $module->expects('services')->andReturn($this->stubServices($serviceId));
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
@@ -135,10 +135,10 @@ class PackageTest extends TestCase
         $moduleId = 'my-factory-module';
         $factoryId = 'factory-id';
 
-        $module = $this->mockModule($moduleId, FactoryModule::class);
+        $module = $this->stubModule($moduleId, FactoryModule::class);
         $module->expects('factories')->andReturn($this->stubServices($factoryId));
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
@@ -157,10 +157,10 @@ class PackageTest extends TestCase
         $moduleId = 'my-extension-module';
         $extensionId = 'extension-id';
 
-        $module = $this->mockModule($moduleId, ExtendingModule::class);
+        $module = $this->stubModule($moduleId, ExtendingModule::class);
         $module->expects('extensions')->andReturn($this->stubServices($extensionId));
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
@@ -180,11 +180,11 @@ class PackageTest extends TestCase
         $moduleId = 'my-extension-module';
         $serviceId = 'service-id';
 
-        $module = $this->mockModule($moduleId, ServiceModule::class, ExtendingModule::class);
+        $module = $this->stubModule($moduleId, ServiceModule::class, ExtendingModule::class);
         $module->expects('services')->andReturn($this->stubServices($serviceId));
         $module->expects('extensions')->andReturn($this->stubServices($serviceId));
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
@@ -201,10 +201,10 @@ class PackageTest extends TestCase
     public function testBootWithExecutableModule(): void
     {
         $moduleId = 'executable-module';
-        $module = $this->mockModule($moduleId, ExecutableModule::class);
+        $module = $this->stubModule($moduleId, ExecutableModule::class);
         $module->expects('run')->andReturn(true);
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
@@ -220,10 +220,10 @@ class PackageTest extends TestCase
     public function testBootWithExecutableModuleFailed(): void
     {
         $moduleId = 'executable-module';
-        $module = $this->mockModule($moduleId, ExecutableModule::class);
+        $module = $this->stubModule($moduleId, ExecutableModule::class);
         $module->expects('run')->andReturn(false);
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
@@ -237,10 +237,10 @@ class PackageTest extends TestCase
      */
     public function testBootPassingModulesEmitDeprecation(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->allows('services')->andReturn($this->stubServices('service_1'));
 
-        $package = Package::new($this->mockProperties('test', true));
+        $package = Package::new($this->stubProperties('test', true));
 
         $this->convertDeprecationsToExceptions();
         try {
@@ -259,11 +259,11 @@ class PackageTest extends TestCase
      */
     public function testAddModuleFailsAfterBuild(): void
     {
-        $package = Package::new($this->mockProperties('test', true))->build();
+        $package = Package::new($this->stubProperties('test', true))->build();
 
         $this->expectExceptionMessageMatches("/can't add module/i");
 
-        $package->addModule($this->mockModule());
+        $package->addModule($this->stubModule());
     }
 
     /**
@@ -271,7 +271,7 @@ class PackageTest extends TestCase
      */
     public function testPropertiesCanBeRetrievedFromContainer(): void
     {
-        $expected = $this->mockProperties();
+        $expected = $this->stubProperties();
         $actual = Package::new($expected)->build()->container()->get(Package::PROPERTIES);
 
         static::assertSame($expected, $actual);
@@ -284,21 +284,21 @@ class PackageTest extends TestCase
      */
     public function testStatusForMultipleModulesWhenDebug(): void
     {
-        $emptyModule = $this->mockModule('empty');
-        $emptyServicesModule = $this->mockModule('empty_services', ServiceModule::class);
-        $emptyFactoriesModule = $this->mockModule('empty_factories', FactoryModule::class);
-        $emptyExtensionsModule = $this->mockModule('empty_extensions', ExtendingModule::class);
+        $emptyModule = $this->stubModule('empty');
+        $emptyServicesModule = $this->stubModule('empty_services', ServiceModule::class);
+        $emptyFactoriesModule = $this->stubModule('empty_factories', FactoryModule::class);
+        $emptyExtensionsModule = $this->stubModule('empty_extensions', ExtendingModule::class);
 
-        $servicesModule = $this->mockModule('service', ServiceModule::class);
+        $servicesModule = $this->stubModule('service', ServiceModule::class);
         $servicesModule->expects('services')->andReturn($this->stubServices('S1', 'S2'));
 
-        $factoriesModule = $this->mockModule('factory', FactoryModule::class);
+        $factoriesModule = $this->stubModule('factory', FactoryModule::class);
         $factoriesModule->expects('factories')->andReturn($this->stubServices('F'));
 
-        $extendingModule = $this->mockModule('extension', ExtendingModule::class);
+        $extendingModule = $this->stubModule('extension', ExtendingModule::class);
         $extendingModule->expects('extensions')->andReturn($this->stubServices('E'));
 
-        $multiModule = $this->mockModule(
+        $multiModule = $this->stubModule(
             'multi',
             ServiceModule::class,
             ExtendingModule::class,
@@ -308,7 +308,7 @@ class PackageTest extends TestCase
         $multiModule->expects('factories')->andReturn($this->stubServices('MF1', 'MF2'));
         $multiModule->expects('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
 
-        $package = Package::new($this->mockProperties('name', true))
+        $package = Package::new($this->stubProperties('name', true))
             ->addModule($emptyModule)
             ->addModule($extendingModule)
             ->addModule($emptyServicesModule)
@@ -378,21 +378,21 @@ class PackageTest extends TestCase
      */
     public function testStatusForMultipleModulesWhenNotDebug(): void
     {
-        $emptyModule = $this->mockModule('empty');
-        $emptyServicesModule = $this->mockModule('empty_services', ServiceModule::class);
-        $emptyFactoriesModule = $this->mockModule('empty_factories', FactoryModule::class);
-        $emptyExtensionsModule = $this->mockModule('empty_extensions', ExtendingModule::class);
+        $emptyModule = $this->stubModule('empty');
+        $emptyServicesModule = $this->stubModule('empty_services', ServiceModule::class);
+        $emptyFactoriesModule = $this->stubModule('empty_factories', FactoryModule::class);
+        $emptyExtensionsModule = $this->stubModule('empty_extensions', ExtendingModule::class);
 
-        $servicesModule = $this->mockModule('service', ServiceModule::class);
+        $servicesModule = $this->stubModule('service', ServiceModule::class);
         $servicesModule->expects('services')->andReturn($this->stubServices('S1', 'S2'));
 
-        $factoriesModule = $this->mockModule('factory', FactoryModule::class);
+        $factoriesModule = $this->stubModule('factory', FactoryModule::class);
         $factoriesModule->expects('factories')->andReturn($this->stubServices('F'));
 
-        $extendingModule = $this->mockModule('extension', ExtendingModule::class);
+        $extendingModule = $this->stubModule('extension', ExtendingModule::class);
         $extendingModule->expects('extensions')->andReturn($this->stubServices('E'));
 
-        $multiModule = $this->mockModule(
+        $multiModule = $this->stubModule(
             'multi',
             ServiceModule::class,
             ExtendingModule::class,
@@ -402,7 +402,7 @@ class PackageTest extends TestCase
         $multiModule->expects('factories')->andReturn($this->stubServices('MF1', 'MF2'));
         $multiModule->expects('extensions')->andReturn($this->stubServices('ME1', 'ME2'));
 
-        $package = Package::new($this->mockProperties('name', false))
+        $package = Package::new($this->stubProperties('name', false))
             ->addModule($emptyModule)
             ->addModule($extendingModule)
             ->addModule($emptyServicesModule)
@@ -472,14 +472,14 @@ class PackageTest extends TestCase
      */
     public function testPackageConnectionWithBoot(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->stubProperties('package_1', false))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', false))
+        $package2 = Package::new($this->stubProperties('package_2', false))
             ->addModule($module2);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
@@ -536,14 +536,14 @@ class PackageTest extends TestCase
      */
     public function testPackageConnectionFailsIfBootedWithDebugOff(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->stubProperties('package_1', false))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', false))
+        $package2 = Package::new($this->stubProperties('package_2', false))
             ->addModule($module2);
 
         $package1->boot();
@@ -574,14 +574,14 @@ class PackageTest extends TestCase
      */
     public function testPackageConnectionFailsIfBootedWithDebugOn(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', true))
+        $package1 = Package::new($this->stubProperties('package_1', true))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', true))
+        $package2 = Package::new($this->stubProperties('package_2', true))
             ->addModule($module2);
 
         $package1->boot();
@@ -594,7 +594,7 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
             ->once()
             ->whenHappen(
-                function (\Throwable $throwable) {
+                function (\Throwable $throwable): void {
                     $this->assertThrowableMessageMatches($throwable, 'failed connect.+?booted');
                 }
             );
@@ -610,14 +610,14 @@ class PackageTest extends TestCase
      */
     public function testPackageConnectionWithProxyContainer(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->stubProperties('package_1', false))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', false))
+        $package2 = Package::new($this->stubProperties('package_2', false))
             ->addModule($module2);
 
         $connected = $package2->connect($package1);
@@ -647,14 +647,14 @@ class PackageTest extends TestCase
      */
     public function testPackageConnectionWithProxyContainerFailsIfNoBoot(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->stubProperties('package_1', false))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', false))
+        $package2 = Package::new($this->stubProperties('package_2', false))
             ->addModule($module2);
 
         $connected = $package2->connect($package1);
@@ -676,14 +676,14 @@ class PackageTest extends TestCase
      */
     public function testPackageCanOnlyBeConnectedOnceDebugOff(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->stubProperties('package_1', false))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', false))
+        $package2 = Package::new($this->stubProperties('package_2', false))
             ->addModule($module2);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
@@ -718,14 +718,14 @@ class PackageTest extends TestCase
      */
     public function testPackageCanOnlyBeConnectedOnceDebugOn(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', false))
+        $package1 = Package::new($this->stubProperties('package_1', false))
             ->addModule($module1);
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
-        $package2 = Package::new($this->mockProperties('package_2', true))
+        $package2 = Package::new($this->stubProperties('package_2', true))
             ->addModule($module2);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
@@ -738,7 +738,7 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
             ->once()
             ->whenHappen(
-                function (\Throwable $throwable) {
+                function (\Throwable $throwable): void {
                     $this->assertThrowableMessageMatches($throwable, 'failed connect.+?already');
                 }
             );
@@ -756,9 +756,9 @@ class PackageTest extends TestCase
      */
     public function testPackageCanNotBeConnectedWithThemselves(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
-        $package1 = Package::new($this->mockProperties('package_1', true))
+        $package1 = Package::new($this->stubProperties('package_1', true))
             ->addModule($module1);
 
         $action = $package1->hookName(Package::ACTION_FAILED_CONNECTION);
@@ -768,11 +768,56 @@ class PackageTest extends TestCase
     }
 
     /**
+     * Test getting services from a built package works, but getting services from
+     * a connected built package fails.
+     */
+    public function testGettingServicesFromBuiltConnectedPackageFails(): void
+    {
+        $package1 = $this->stubSimplePackage('1');
+        $package2 = $this->stubSimplePackage('2');
+        $package3 = $this->stubSimplePackage('3');
+
+        $connected2 = $package1->connect($package2);
+        $connected3 = $package1->connect($package3);
+
+        // Note only P2 is "booted", while P1 and P3 are "built".
+        $package1->build();
+        $package2->boot();
+        $package3->build();
+
+        // Test connection was successful
+        static::assertTrue($connected2);
+        static::assertTrue($connected3);
+        static::assertTrue($package1->isPackageConnected($package2->name()));
+        static::assertTrue($package1->isPackageConnected($package3->name()));
+
+        // We can get containers of all three packages
+        $container1 = $package1->container();
+        $container2 = $package2->container();
+        $container3 = $package3->container();
+
+        // And we can get services from all three containers if called directly
+        static::assertSame('service_1', $container1->get('service_1')['id']);
+        static::assertSame('service_2', $container2->get('service_2')['id']);
+        static::assertSame('service_3', $container3->get('service_3')['id']);
+
+        // And we can use Package 1 to get a service from the connected+booted Package 2
+        $package1->container()->get('service_2');
+        // However, we get an exception when getting a service from the connected+built Package 3
+        /** TODO: Do we consider this a bug? See https://github.com/inpsyde/modularity/pull/49 */
+        $this->expectExceptionMessageMatches('/service_3.+not found/i');
+        $package1->container()->get('service_3');
+    }
+
+    /**
      * @test
+     *
+     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testBuildResolveServices(): void
     {
-        $module = new class() implements ServiceModule, ExtendingModule, ExecutableModule
+        // phpcs:enable phpcs:disable Inpsyde.CodeQuality.NestingLevel
+        $module = new class () implements ServiceModule, ExtendingModule, ExecutableModule
         {
             public function id(): string
             {
@@ -782,23 +827,27 @@ class PackageTest extends TestCase
             public function services(): array
             {
                 return [
-                    'dependency' => function () {
-                        return (object)['x' => 'Works!'];
+                    'dependency' => static function (): object {
+                        return (object) ['x' => 'Works!'];
                     },
-                    'service' => function (ContainerInterface $container) {
+                    'service' => static function (ContainerInterface $container): object {
                         $works = $container->get('dependency')->x;
 
-                        return new class(['works?' => $works]) extends \ArrayObject {};
-                    }
+                        return new class (['works?' => $works]) extends \ArrayObject
+                        {
+                        };
+                    },
                 ];
             }
 
             public function extensions(): array
             {
                 return [
-                    'service' => function (\ArrayObject $current) {
-                        return new class ($current) {
-                            public $object;
+                    'service' => function (\ArrayObject $current): object {
+                        return new class ($current)
+                        {
+                            public \ArrayObject $object; // phpcs:ignore
+
                             public function __construct(\ArrayObject $object)
                             {
                                 $this->object = $object;
@@ -809,7 +858,7 @@ class PackageTest extends TestCase
                                 return $this->object->offsetGet('works?');
                             }
                         };
-                    }
+                    },
                 ];
             }
 
@@ -819,7 +868,7 @@ class PackageTest extends TestCase
             }
         };
 
-        $actual = Package::new($this->mockProperties())
+        $actual = Package::new($this->stubProperties())
             ->addModule($module)
             ->build()
             ->container()
@@ -834,16 +883,16 @@ class PackageTest extends TestCase
      */
     public function testBuildPassingModulesToBoot(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
 
-        $module3 = $this->mockModule('module_3', ServiceModule::class);
+        $module3 = $this->stubModule('module_3', ServiceModule::class);
         $module3->expects('services')->andReturn($this->stubServices('service_3'));
 
-        $package = Package::new($this->mockProperties('test', true))
+        $package = Package::new($this->stubProperties('test', true))
             ->addModule($module1)
             ->addModule($module2)
             ->build();
@@ -863,16 +912,16 @@ class PackageTest extends TestCase
      */
     public function testBootFailsIfPassingNotAddedModulesAfterContainer(): void
     {
-        $module1 = $this->mockModule('module_1', ServiceModule::class);
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
         $module1->expects('services')->andReturn($this->stubServices('service_1'));
 
-        $module2 = $this->mockModule('module_2', ServiceModule::class);
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
         $module2->expects('services')->andReturn($this->stubServices('service_2'));
 
-        $module3 = $this->mockModule('module_3', ServiceModule::class);
+        $module3 = $this->stubModule('module_3', ServiceModule::class);
         $module3->allows('services')->andReturn($this->stubServices('service_3'));
 
-        $package = Package::new($this->mockProperties('test', true))
+        $package = Package::new($this->stubProperties('test', true))
             ->addModule($module1)
             ->addModule($module2)
             ->build();
@@ -897,10 +946,10 @@ class PackageTest extends TestCase
     {
         $exception = new \Exception('Test');
 
-        $module = $this->mockModule('id', ExecutableModule::class);
+        $module = $this->stubModule('id', ExecutableModule::class);
         $module->expects('run')->andThrow($exception);
 
-        $package = Package::new($this->mockProperties())->addModule($module);
+        $package = Package::new($this->stubProperties())->addModule($module);
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
             ->once()
@@ -919,10 +968,10 @@ class PackageTest extends TestCase
     {
         $exception = new \Exception('Test');
 
-        $module = $this->mockModule('id', ExecutableModule::class);
+        $module = $this->stubModule('id', ExecutableModule::class);
         $module->expects('run')->andThrow($exception);
 
-        $package = Package::new($this->mockProperties('basename', true))->addModule($module);
+        $package = Package::new($this->stubProperties('basename', true))->addModule($module);
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))
             ->once()
@@ -936,7 +985,7 @@ class PackageTest extends TestCase
      * When multiple calls to `Package::addPackage()` throw an exception, and debug is off, we
      * expect none of them to bubble up, and the first to cause the "build failed" action.
      * We also expect the Package to be in errored status.
-     * We expect all other `Package::addPackage()` exceptions to do not fire action hook.@psalm-allow-private-mutation
+     * We expect all other `Package::addPackage()` exceptions to do not fire action hook.
      * We expect Package::build()` to fail without doing anything. Finally, when `Package::boot()`
      * is called, we expect the action "boot failed" to be called, and the passed exception to have
      * an exception hierarchy with all the thrown exceptions.
@@ -947,13 +996,13 @@ class PackageTest extends TestCase
     {
         $exception = new \Exception('Test 1');
 
-        $module1 = $this->mockModule('one', ServiceModule::class);
+        $module1 = $this->stubModule('one', ServiceModule::class);
         $module1->expects('services')->andThrow($exception);
 
-        $module2 = $this->mockModule('two', ServiceModule::class);
+        $module2 = $this->stubModule('two', ServiceModule::class);
         $module2->expects('services')->never();
 
-        $package = Package::new($this->mockProperties());
+        $package = Package::new($this->stubProperties());
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
             ->once()
@@ -992,15 +1041,15 @@ class PackageTest extends TestCase
     {
         $exception = new \Exception('Test 1');
 
-        $module1 = $this->mockModule('one', ServiceModule::class);
+        $module1 = $this->stubModule('one', ServiceModule::class);
         $module1->expects('services')->andThrow($exception);
 
-        $module2 = $this->mockModule('two', ServiceModule::class);
+        $module2 = $this->stubModule('two', ServiceModule::class);
         $module2->expects('services')->never();
 
-        $package = Package::new($this->mockProperties());
+        $package = Package::new($this->stubProperties());
 
-        $connected = Package::new($this->mockProperties());
+        $connected = Package::new($this->stubProperties());
         $connected->boot();
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
@@ -1047,7 +1096,7 @@ class PackageTest extends TestCase
     {
         $exception = new \Exception('Test');
 
-        $package = Package::new($this->mockProperties());
+        $package = Package::new($this->stubProperties());
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
             ->once()
@@ -1085,7 +1134,7 @@ class PackageTest extends TestCase
     {
         $exception = new \Exception('Test');
 
-        $package = Package::new($this->mockProperties('basename', true));
+        $package = Package::new($this->stubProperties('basename', true));
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
             ->once()

@@ -11,7 +11,6 @@ use Psr\Container\ContainerInterface;
  */
 interface ServiceModule extends Module
 {
-
     /**
      * Return application services' factories.
      *

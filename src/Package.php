@@ -22,7 +22,6 @@ class Package
 {
     /**
      * All the hooks fired in this class use this prefix.
-     * @var string
      */
     private const HOOK_PREFIX = 'inpsyde.modularity.';
 
@@ -38,8 +37,6 @@ class Package
      * $container->has(Package::PROPERTIES);
      * $container->get(Package::PROPERTIES);
      * </code>
-     *
-     * @var string
      */
     public const PROPERTIES = 'properties';
 
@@ -142,6 +139,8 @@ class Package
      * <code>
      * $package = Package::new();
      * $package->statusIs(Package::IDLE); // true
+     * $package->build();
+     * $package->statusIs(Package::INITIALIZED); // true
      * $package->boot();
      * $package->statusIs(Package::BOOTED); // true
      * </code>
@@ -149,82 +148,47 @@ class Package
     public const STATUS_IDLE = 2;
     public const STATUS_INITIALIZED = 4;
     public const STATUS_MODULES_ADDED = 5;
+    public const STATUS_BOOTING = self::STATUS_MODULES_ADDED;
     public const STATUS_READY = 7;
     public const STATUS_BOOTED = 8;
     public const STATUS_FAILED = -8;
 
-    /**
-     * Current state of the application.
-     *
-     * @see Package::STATUS_*
-     *
-     * @var int
-     */
-    private $status = self::STATUS_IDLE;
+    private const OPERATORS = [
+        '<' => '<',
+        '<=' => '<=',
+        '>' => '>',
+        '>=' => '>=',
+        '==' => '==',
+        '!=' => '!=',
+    ];
 
-    /**
-     * Contains the progress of all modules.
-     *
-     * @see Package::moduleProgress()
-     *
-     * @var array<string, list<string>>
-     */
-    private $moduleStatus = [self::MODULES_ALL => []];
-
-    /**
-     * Hashmap of where keys are names of connected packages, and values are boolean, true
-     * if connection was successful.
-     *
-     * @see Package::connect()
-     *
-     * @var array<string, bool>
-     */
-    private $connectedPackages = [];
-
-    /**
-     * @var list<ExecutableModule>
-     */
-    private $executables = [];
-
-    /**
-     * @var Properties
-     */
-    private $properties;
-
-    /**
-     * @var ContainerConfigurator
-     */
-    private $containerConfigurator;
-
-    /**
-     * @var bool
-     */
-    private $built = false;
-
-    /**
-     * @var bool
-     */
-    private $hasContainer = false;
-
-    /**
-     * @var \Throwable|null
-     */
-    private $lastError = null;
+    /** @var Package::STATUS_* */
+    private int $status = self::STATUS_IDLE;
+    /** @var array<string, list<string>> */
+    private array $moduleStatus = [self::MODULES_ALL => []];
+    /** @var array<string, bool> */
+    private array $connectedPackages = [];
+    /** @var list<ExecutableModule> */
+    private array $executables = [];
+    private Properties $properties;
+    private ContainerConfigurator $containerConfigurator;
+    private bool $built = false;
+    private bool $hasContainer = false;
+    private ?\Throwable $lastError = null;
 
     /**
      * @param Properties $properties
-     * @param ContainerInterface[] $containers
-     *
+     * @param ContainerInterface ...$containers
      * @return Package
      */
-    public static function new(Properties $properties, ContainerInterface  ...$containers): Package
+    public static function new(Properties $properties, ContainerInterface ...$containers): Package
     {
-        return new self($properties, ...$containers);
+        return new self($properties, ...array_values($containers));
     }
 
     /**
      * @param Properties $properties
-     * @param ContainerInterface[] $containers
+     * @param list<ContainerInterface> $containers
      */
     private function __construct(Properties $properties, ContainerInterface ...$containers)
     {
@@ -233,7 +197,7 @@ class Package
         $this->containerConfigurator = new ContainerConfigurator($containers);
         $this->containerConfigurator->addService(
             self::PROPERTIES,
-            static function () use ($properties) {
+            static function () use ($properties): Properties {
                 return $properties;
             }
         );
@@ -241,9 +205,7 @@ class Package
 
     /**
      * @param Module $module
-     *
      * @return static
-     * @throws \Exception
      */
     public function addModule(Module $module): Package
     {
@@ -284,10 +246,12 @@ class Package
     /**
      * @param Package $package
      * @return bool
-     * @throws \Exception
+     *
+     * phpcs:disable Inpsyde.CodeQuality.FunctionLength
      */
     public function connect(Package $package): bool
     {
+        // phpcs:enable Inpsyde.CodeQuality.FunctionLength
         try {
             if ($package === $this) {
                 return false;
@@ -373,10 +337,11 @@ class Package
                 $this->hookName(self::ACTION_INIT),
                 $this
             );
-            // Changing the status here ensures we can not call this method again, and also we can not
-            // add new modules, because both this and `addModule()` methods check for idle status.
-            // For backward compatibility, adding new modules via `boot()` will still be possible, even
-            // if deprecated, at the condition that the container was not yet accessed at that point.
+            // Changing the status here ensures we can not call this method again, and also we can
+            // not add new modules, because both here and in `addModule()` we check for idle status.
+            // For backward compatibility, adding new modules via `boot()` will still be possible,
+            // even if deprecated, at the condition that the container was not yet accessed at that
+            // point.
             $this->progress(self::STATUS_INITIALIZED);
         } catch (\Throwable $throwable) {
             $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
@@ -390,8 +355,6 @@ class Package
     /**
      * @param Module ...$defaultModules Deprecated, use `addModule()` to add default modules.
      * @return bool
-     *
-     * @throws \Throwable
      */
     public function boot(Module ...$defaultModules): bool
     {
@@ -401,10 +364,10 @@ class Package
             $this->doBuild(...$defaultModules);
 
             // Don't allow booting the application multiple times.
-            $this->assertStatus(self::STATUS_MODULES_ADDED, 'boot application', '<');
+            $this->assertStatus(self::STATUS_BOOTING, 'boot application', '<');
             $this->assertStatus(self::STATUS_FAILED, 'boot application', '!=');
 
-            $this->progress(self::STATUS_MODULES_ADDED);
+            $this->progress(self::STATUS_BOOTING);
 
             $this->doExecute();
 
@@ -444,7 +407,7 @@ class Package
         }
 
         if (!$this->built) {
-            array_map([$this, 'addModule'], $defaultModules);
+            $defaultModules and array_map([$this, 'addModule'], $defaultModules);
             $this->build();
 
             return;
@@ -452,11 +415,11 @@ class Package
 
         if (
             !$defaultModules
-            || ($this->status >= self::STATUS_MODULES_ADDED)
+            || ($this->checkStatus(self::STATUS_INITIALIZED, '>'))
             || ($this->statusIs(self::STATUS_FAILED))
         ) {
-            // if we don't have default modules, there's nothing to do, and if the status is beyond
-            // "modules added" or is failed, we do nothing as well and let `boot()` throw.
+            // If we don't have default modules, there's nothing to do, and if the status is beyond
+            // initialized or is failed, we do nothing as well and let `boot()` throw.
             return;
         }
 
@@ -486,7 +449,9 @@ class Package
      */
     private function addModuleServices(Module $module, string $status): bool
     {
+        /** @var null|array<string, Service|ExtendingService> $services */
         $services = null;
+        /** @var null|callable(string, Service|ExtendingService) $addCallback */
         $addCallback = null;
         switch ($status) {
             case self::MODULE_REGISTERED:
@@ -503,21 +468,16 @@ class Package
                 break;
         }
 
-        if (!$services) {
+        if (($services === null) || ($services === []) || ($addCallback === null)) {
             return false;
         }
 
         $ids = [];
-        array_walk(
-            $services,
-            static function (callable $service, string $id) use ($addCallback, &$ids) {
-                /** @var callable(string, Service|ExtendingService) $addCallback */
-                $addCallback($id, $service);
-                /** @var list<string> $ids */
-                $ids[] = $id;
-            }
-        );
-        /** @var list<string> $ids */
+        foreach ($services as $id => $service) {
+            $addCallback($id, $service);
+            $ids[] = $id;
+        }
+
         $this->moduleProgress($module->id(), $status, $ids);
 
         return true;
@@ -525,8 +485,6 @@ class Package
 
     /**
      * @return void
-     *
-     * @throws \Throwable
      */
     private function doExecute(): void
     {
@@ -534,9 +492,7 @@ class Package
             $success = $executable->run($this->container());
             $this->moduleProgress(
                 $executable->id(),
-                $success
-                    ? self::MODULE_EXECUTED
-                    : self::MODULE_EXECUTION_FAILED
+                $success ? self::MODULE_EXECUTED : self::MODULE_EXECUTION_FAILED
             );
         }
     }
@@ -545,15 +501,18 @@ class Package
      * @param string $moduleId
      * @param string $status
      * @param list<string>|null $serviceIds
-     *
-     * @return  void
+     * @return void
      */
-    private function moduleProgress(string $moduleId, string $status, ?array $serviceIds = null)
-    {
+    private function moduleProgress(
+        string $moduleId,
+        string $status,
+        ?array $serviceIds = null
+    ): void {
+
         isset($this->moduleStatus[$status]) or $this->moduleStatus[$status] = [];
         $this->moduleStatus[$status][] = $moduleId;
 
-        if (!$serviceIds || !$this->properties->isDebug()) {
+        if (($serviceIds === null) || ($serviceIds === []) || !$this->properties->isDebug()) {
             $this->moduleStatus[self::MODULES_ALL][] = "{$moduleId} {$status}";
 
             return;
@@ -609,10 +568,9 @@ class Package
      * `inpsyde.modularity.my-plugin` anyway, so the file name is not relevant.
      *
      * @param string $suffix
-     *
      * @return string
-     * @see Package::name()
      *
+     * @see Package::name()
      */
     public function hookName(string $suffix = ''): string
     {
@@ -635,8 +593,6 @@ class Package
 
     /**
      * @return ContainerInterface
-     *
-     * @throws \Exception
      */
     public function container(): ContainerInterface
     {
@@ -656,6 +612,27 @@ class Package
 
     /**
      * @param int $status
+     * @return bool
+     */
+    public function statusIs(int $status): bool
+    {
+        return $this->checkStatus($status);
+    }
+
+    /**
+     * @param int $status
+     * @param value-of<Package::OPERATORS> $operator
+     * @return bool
+     */
+    private function checkStatus(int $status, string $operator = '=='): bool
+    {
+        assert(isset(self::OPERATORS[$operator]));
+
+        return version_compare((string) $this->status, (string) $status, $operator);
+    }
+
+    /**
+     * @param Package::STATUS_* $status
      */
     private function progress(int $status): void
     {
@@ -663,20 +640,9 @@ class Package
     }
 
     /**
-     * @param int $status
-     *
-     * @return bool
-     */
-    public function statusIs(int $status): bool
-    {
-        return $this->status === $status;
-    }
-
-    /**
      * @param \Throwable $throwable
      * @param Package::ACTION_FAILED_* $action
      * @return void
-     * @throws \Throwable
      */
     private function handleFailure(\Throwable $throwable, string $action): void
     {
@@ -694,18 +660,15 @@ class Package
     /**
      * @param int $status
      * @param string $action
-     * @param string $operator
-     *
-     * @throws \Exception
-     * @psalm-suppress ArgumentTypeCoercion
+     * @param value-of<Package::OPERATORS> $operator
      */
     private function assertStatus(int $status, string $action, string $operator = '=='): void
     {
-        if (!version_compare((string) $this->status, (string) $status, $operator)) {
+        if (!$this->checkStatus($status, $operator)) {
             throw new \Exception(
-                sprintf("Can't %s at this point of application.", $action),
+                sprintf("Can't %s at this point of application.", esc_html($action)),
                 0,
-                $this->lastError
+                $this->lastError // phpcs:ignore
             );
         }
     }
@@ -717,7 +680,6 @@ class Package
      * @param string $message
      * @param string $function
      * @param string $version
-     *
      * @return void
      */
     private function deprecatedArgument(string $message, string $function, string $version): void
@@ -725,7 +687,8 @@ class Package
         do_action('deprecated_argument_run', $function, $message, $version);
 
         if (apply_filters('deprecated_argument_trigger_error', true)) {
-            trigger_error($message, \E_USER_DEPRECATED);
+            do_action('wp_trigger_error_run', $function, $message, \E_USER_DEPRECATED);
+            trigger_error(esc_html($message), \E_USER_DEPRECATED);
         }
     }
 }

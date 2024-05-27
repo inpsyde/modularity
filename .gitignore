@@ -1,10 +1,12 @@
 ### Composer template
 composer.phar
 composer.lock
-/vendor/
+vendor/
 
 # PHPUnit
 .phpunit.result.cache
+phpunit.xml
+coverage/
 
 # tmp files
 tmp/

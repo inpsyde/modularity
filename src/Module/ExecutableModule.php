@@ -8,7 +8,6 @@ use Psr\Container\ContainerInterface;
 
 interface ExecutableModule extends Module
 {
-
     /**
      * Perform actions with objects retrieved from the container. Usually, adding WordPress hooks.
      * Return true to signal a success, false to signal a failure.

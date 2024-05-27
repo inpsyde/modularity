@@ -6,8 +6,6 @@ namespace Inpsyde\Modularity\Tests\Unit\Container;
 
 use Inpsyde\Modularity\Container\ServiceExtensions;
 use Inpsyde\Modularity\Tests\TestCase;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
 
 class ServiceExtensionsTest extends TestCase
 {
@@ -73,26 +71,5 @@ class ServiceExtensionsTest extends TestCase
         static::assertTrue($serviceExtensions->has('thing'));
         static::assertTrue($serviceExtensions->has(ServiceExtensions::typeId(\stdClass::class)));
         static::assertSame($expected, $thing->count);
-    }
-
-    /**
-     * @return ContainerInterface
-     */
-    private function stubContainer(): ContainerInterface
-    {
-        return new class implements ContainerInterface
-        {
-            public function get(string $id)
-            {
-                throw new class () extends \Exception implements NotFoundExceptionInterface
-                {
-                };
-            }
-
-            public function has(string $id): bool
-            {
-                return false;
-            }
-        };
     }
 }

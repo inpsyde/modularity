@@ -16,8 +16,9 @@ class LibraryPropertiesTest extends TestCase
      */
     public function testForLibraryInvalidFile(): void
     {
-        static::expectException(\Exception::class);
-        LibraryProperties::new('non-existing.file');
+        $this->expectException(\Exception::class);
+
+        LibraryProperties::new('non-existing.file')->basePath();
     }
 
     /**
@@ -104,7 +105,7 @@ class LibraryPropertiesTest extends TestCase
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';
-        $expectedUri = 'http://github.com/inpsyde/modularity';
+        $expectedUri = 'https://github.com/inpsyde/modularity';
         $expectedVersion = '1.0';
         $expectedPhpVersion = "7.4";
         $expectedWpVersion = "5.3";
@@ -118,6 +119,7 @@ class LibraryPropertiesTest extends TestCase
                     "name" => $expectedAuthor,
                     "homepage" => $expectedAuthorUri,
                 ],
+                "Invalid Author <invalid.author@example.com>",
             ],
             "keywords" => $expectedKeywords,
             "require" => [
@@ -165,7 +167,7 @@ class LibraryPropertiesTest extends TestCase
      */
     public function testPhpDevRequireParsing(string $requirement, ?string $expected): void
     {
-        $which = random_int(1, 10) > 5 ? 'require-dev' : 'require';
+        $which = (random_int(1, 10) > 5) ? 'require-dev' : 'require';
 
         $composerJsonData = [
             'name' => 'inpsyde/some-package_name',
@@ -181,54 +183,18 @@ class LibraryPropertiesTest extends TestCase
         ];
         $root = vfsStream::setup('root', null, $structure);
 
-        $testee = LibraryProperties::new($root->url() . '/json/composer.json');
-        $php = $testee->requiresPhp();
+        $properties = LibraryProperties::new($root->url() . '/json/composer.json');
+        $requiresPhp = $properties->requiresPhp();
 
-        static::assertSame($expected, $php, "For requirement: '{$requirement}'");
+        static::assertSame($expected, $requiresPhp, "For requirement: '{$requirement}'");
     }
 
     /**
-     * @test
+     * @return \Generator
      */
-    public function testBaseUrlCanBeSet(): void
+    public static function providePhpRequirements(): \Generator
     {
-        $root = vfsStream::setup('root', null, ['composer.json' => '{"name": "vendor/test"}']);
-
-        $properties = LibraryProperties::new($root->url() . '/composer.json');
-
-        static::assertNull($properties->baseUrl());
-
-        $properties->withBaseUrl('https://example.com');
-        static::assertSame('https://example.com/', $properties->baseUrl());
-    }
-
-    /**
-     * @test
-     */
-    public function testBaseUrlCanNotBeOverridden(): void
-    {
-        $root = vfsStream::setup('root', null, ['composer.json' => '{"name": "vendor/test"}']);
-
-        $properties = LibraryProperties::new(
-            $root->url() . '/composer.json',
-            'https://example.com'
-        );
-
-        static::assertSame('https://example.com/', $properties->baseUrl());
-
-        $this->expectExceptionMessageMatches('/not overridable/i');
-
-        $properties->withBaseUrl('https://example.com/something');
-    }
-
-    /**
-     * @return array
-     */
-    public function providePhpRequirements(): array
-    {
-        // [requirement, expected]
-
-        return [
+        yield from [
             // simple requirements
             ['7.1', '7.1'],
             ['7.1.3-dev', '7.1.3'],
@@ -276,5 +242,39 @@ class LibraryPropertiesTest extends TestCase
             ['dev-master', null],
             ['dev-foo#abcde', null],
         ];
+    }
+
+    /**
+     * @test
+     */
+    public function testBaseUrlCanBeSet(): void
+    {
+        $root = vfsStream::setup('root', null, ['composer.json' => '{"name": "vendor/test"}']);
+
+        $properties = LibraryProperties::new($root->url() . '/composer.json');
+
+        static::assertNull($properties->baseUrl());
+
+        $properties->withBaseUrl('https://example.com');
+        static::assertSame('https://example.com/', $properties->baseUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function testBaseUrlCanNotBeOverridden(): void
+    {
+        $root = vfsStream::setup('root', null, ['composer.json' => '{"name": "vendor/test"}']);
+
+        $properties = LibraryProperties::new(
+            $root->url() . '/composer.json',
+            'https://example.com'
+        );
+
+        static::assertSame('https://example.com/', $properties->baseUrl());
+
+        $this->expectExceptionMessageMatches('/not overridable/i');
+
+        $properties->withBaseUrl('https://example.com/something');
     }
 }
