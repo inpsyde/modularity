@@ -736,6 +736,48 @@ class PackageTest extends TestCase
     }
 
     /**
+     * Test getting services from a built package works, but getting services from
+     * a connected built package fails.
+     */
+    public function testGettingServicesFromBuiltConnectedPackageFails(): void
+    {
+        $package1 = $this->stubSimplePackage('1');
+        $package2 = $this->stubSimplePackage('2');
+        $package3 = $this->stubSimplePackage('3');
+
+        $connected2 = $package1->connect($package2);
+        $connected3 = $package1->connect($package3);
+
+        // Note only P2 is "booted", while P1 and P3 are "built".
+        $package1->build();
+        $package2->boot();
+        $package3->build();
+
+        // Test connection was successful
+        static::assertTrue($connected2);
+        static::assertTrue($connected3);
+        static::assertTrue($package1->isPackageConnected($package2->name()));
+        static::assertTrue($package1->isPackageConnected($package3->name()));
+
+        // We can get containers of all three packages
+        $container1 = $package1->container();
+        $container2 = $package2->container();
+        $container3 = $package3->container();
+
+        // And we can get services from all three containers if called directly
+        static::assertSame('service_1', $container1->get('service_1')['id']);
+        static::assertSame('service_2', $container2->get('service_2')['id']);
+        static::assertSame('service_3', $container3->get('service_3')['id']);
+
+        // And we can use Package 1 to get a service from the connected+booted Package 2
+        $package1->container()->get('service_2');
+        // However, we get an exception when getting a service from the connected+built Package 3
+        /** TODO: Do we consider this a bug? See https://github.com/inpsyde/modularity/pull/49 */
+        $this->expectExceptionMessageMatches('/service_3.+not found/i');
+        $package1->container()->get('service_3');
+    }
+
+    /**
      * @test
      *
      * phpcs:disable Inpsyde.CodeQuality.NestingLevel
