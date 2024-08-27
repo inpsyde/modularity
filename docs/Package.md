@@ -235,8 +235,8 @@ $theme->boot();
 
 To note:
 
-- `Package::connect()` must be called **before** boot. If called later, no connections happen and it returns `false`
-- The package to be connected might be already booted or not. In the second case the connection will happen, but before accessing its services it has to be booted, or an exception will happen.
+- `Package::connect()` must be called **before** the package enters the "initialized" status, that is, before calling `Package::boot()` or `Package::build()`. If called later, no connections happen and it returns `false`
+- The package to be connected might be already booted or not. In the second case the connection will happen, but before accessing its services it has to be at least built, or an exception will happen.
 
 Package connection is a great way to create reusable libraries and services that can be used by many plugins. For example, it might be possible to have a *library* that has something like this:
 
