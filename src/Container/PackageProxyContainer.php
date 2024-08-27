@@ -53,12 +53,9 @@ class PackageProxyContainer implements ContainerInterface
             return true;
         }
 
-        /** TODO: We need a better way to deal with status checking besides equality */
         if (
-            $this->package->statusIs(Package::STATUS_INITIALIZED)
-            || $this->package->statusIs(Package::STATUS_MODULES_ADDED)
-            || $this->package->statusIs(Package::STATUS_READY)
-            || $this->package->statusIs(Package::STATUS_BOOTED)
+            $this->package->hasContainer()
+            || $this->package->hasReachedStatus(Package::STATUS_INITIALIZED)
         ) {
             $this->container = $this->package->container();
         }
