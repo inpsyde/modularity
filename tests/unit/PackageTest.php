@@ -47,6 +47,7 @@ class PackageTest extends TestCase
         static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTING));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTED));
+        static::assertFalse($package->hasReachedStatus(3));
 
         static::assertSame($expectedName, $package->name());
         static::assertInstanceOf(Properties::class, $package->properties());
