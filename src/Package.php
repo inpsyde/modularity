@@ -274,7 +274,7 @@ class Package
             }
 
             // Don't connect, if already booted or boot failed
-            $failed = $this->isFailed();
+            $failed = $this->hasFailed();
             if ($failed || $this->checkStatus(self::STATUS_INITIALIZED, '>=')) {
                 $reason = $failed ? 'an errored package' : 'a package with a built container';
                 $status = $failed ? 'failed' : 'built_container';
@@ -634,7 +634,7 @@ class Package
     /**
      * @return bool
      */
-    public function isFailed(): bool
+    public function hasFailed(): bool
     {
         return $this->status === self::STATUS_FAILED;
     }

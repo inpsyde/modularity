@@ -900,7 +900,7 @@ class PackageTest extends TestCase
 
         static::assertFalse($package->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
-        static::assertTrue($package->isFailed());
+        static::assertTrue($package->hasFailed());
     }
 
     /**
@@ -972,7 +972,7 @@ class PackageTest extends TestCase
             );
 
         static::assertFalse($package->addModule($module1)->addModule($module2)->build()->boot());
-        static::assertTrue($package->isFailed());
+        static::assertTrue($package->hasFailed());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
     }
 
@@ -1027,7 +1027,7 @@ class PackageTest extends TestCase
         static::assertFalse($package->connect($connected));
         static::assertFalse($package->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
-        static::assertTrue($package->isFailed());
+        static::assertTrue($package->hasFailed());
     }
 
     /**
@@ -1069,7 +1069,7 @@ class PackageTest extends TestCase
 
         static::assertFalse($package->build()->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
-        static::assertTrue($package->isFailed());
+        static::assertTrue($package->hasFailed());
     }
 
     /**
@@ -1093,7 +1093,7 @@ class PackageTest extends TestCase
                 static function (\Throwable $throwable) use ($exception, $package): void {
                     static::assertSame($exception, $throwable);
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
-                    static::assertTrue($package->isFailed());
+                    static::assertTrue($package->hasFailed());
                 }
             );
 
