@@ -153,6 +153,14 @@ class Package
     public const STATUS_BOOTED = 8;
     public const STATUS_FAILED = -8;
 
+    private const SUCCESS_STATUSES = [
+        self::STATUS_IDLE => self::STATUS_IDLE,
+        self::STATUS_INITIALIZED => self::STATUS_INITIALIZED,
+        self::STATUS_BOOTING => self::STATUS_BOOTING,
+        self::STATUS_READY => self::STATUS_READY,
+        self::STATUS_BOOTED => self::STATUS_BOOTED,
+    ];
+
     private const OPERATORS = [
         '<' => '<',
         '<=' => '<=',
@@ -275,7 +283,7 @@ class Package
 
             // Don't connect, if already booted or boot failed
             $failed = $this->hasFailed();
-            if ($failed || $this->checkStatus(self::STATUS_INITIALIZED, '>=')) {
+            if ($failed || $this->hasReachedStatus(self::STATUS_INITIALIZED)) {
                 $reason = $failed ? 'an errored package' : 'a package with a built container';
                 $status = $failed ? 'failed' : 'built_container';
                 $error = "{$errorMessage} to {$reason}.";
@@ -645,7 +653,11 @@ class Package
      */
     public function hasReachedStatus(int $status): bool
     {
-        return ($this->status !== self::STATUS_FAILED) && $this->checkStatus($status, '>=');
+        if (!isset(self::SUCCESS_STATUSES[$status])) {
+            return false;
+        }
+
+        return !$this->hasFailed() && $this->checkStatus($status, '>=');
     }
 
     /**
