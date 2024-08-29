@@ -41,8 +41,9 @@ class Package
     public const PROPERTIES = 'properties';
 
     /**
-     * Custom action to be used to add Modules to the package.
+     * Custom action to be used to add modules and connect other packages.
      * It might also be used to access package properties.
+     * Access container is not possible at this stage.
      *
      * @example
      * <code>
@@ -50,65 +51,57 @@ class Package
      *
      * add_action(
      *      $package->hookName(Package::ACTION_INIT),
-     *      $callback
+     *      fn (Package $package) => // do something,
      * );
      * </code>
      */
     public const ACTION_INIT = 'init';
 
     /**
-     * Custom action which is triggered after the application
-     * is booted to access container and properties.
+     * Very similar to `ACTION_INIT`, but it is static, so not dependent on package name.
+     * It passes package name as first argument.
      *
      * @example
-     * <code>
-     * $package = Package::new();
-     *
-     * add_action(
-     *      $package->hookName(Package::ACTION_READY),
-     *      $callback
-     * );
-     * </code>
+     *  <code>
+     *  add_action(
+     *       Package::ACTION_MODULARITY_INIT,
+     *       fn (string $packageName, Package $package) => // do something,
+     *       10,
+     *       2
+     *  );
+     *  </code>
+     */
+    public const ACTION_MODULARITY_INIT = self::HOOK_PREFIX . self::ACTION_INIT;
+
+    /**
+     * Action fired when it is safe to access container.
+     * Add more modules is not anymore possible at this stage.
+     */
+    public const ACTION_INITIALIZED = 'initialized';
+
+    /**
+     * Action fired when plugin finished its bootstrapping process, all its hooks are added.
+     * Add more modules is not anymore possible at this stage.
      */
     public const ACTION_READY = 'ready';
 
     /**
-     * Custom action which is triggered when a failure happens during the building stage.
-     *
-     * @example
-     * <code>
-     * $package = Package::new();
-     *
-     * add_action(
-     *      $package->hookName(Package::ACTION_FAILED_BUILD),
-     *      $callback
-     * );
-     * </code>
+     * Action fired when anything went wrong during the "build" procedure.
      */
     public const ACTION_FAILED_BUILD = 'failed-build';
 
     /**
-     * Custom action which is triggered when a failure happens during the booting stage.
-     *
-     * @example
-     * <code>
-     * $package = Package::new();
-     *
-     * add_action(
-     *      $package->hookName(Package::ACTION_FAILED_BOOT),
-     *      $callback
-     * );
-     * </code>
+     * Action fired when anything went wrong during the "boot" procedure.
      */
     public const ACTION_FAILED_BOOT = 'failed-boot';
 
     /**
-     * Custom action which is triggered when a package is connected.
+     * Action fired when a package is connected successfully.
      */
     public const ACTION_PACKAGE_CONNECTED = 'package-connected';
 
     /**
-     * Custom action which is triggered when a package cannot be connected.
+     * Action fired when a package connection failed.
      */
     public const ACTION_FAILED_CONNECTION = 'failed-connection';
 
@@ -142,23 +135,36 @@ class Package
      * $package->build();
      * $package->statusIs(Package::INITIALIZED); // true
      * $package->boot();
-     * $package->statusIs(Package::BOOTED); // true
+     * $package->statusIs(Package::STATUS_DONE); // true
      * </code>
      */
     public const STATUS_IDLE = 2;
+    public const STATUS_INIT = 3;
     public const STATUS_INITIALIZED = 4;
-    public const STATUS_MODULES_ADDED = 5;
-    public const STATUS_BOOTING = self::STATUS_MODULES_ADDED;
+    public const STATUS_BOOTING = 5;
     public const STATUS_READY = 7;
-    public const STATUS_BOOTED = 8;
+    public const STATUS_DONE = 8;
     public const STATUS_FAILED = -8;
+
+    // Deprecated statuses
+    /** @deprecated  */
+    public const STATUS_MODULES_ADDED = self::STATUS_BOOTING;
+    /** @deprecated  */
+    public const STATUS_BOOTED = self::STATUS_DONE;
+
+    private const STATUSES_ACTIONS_MAP = [
+        self::STATUS_INIT => [self::ACTION_INIT, self::ACTION_MODULARITY_INIT],
+        self::STATUS_INITIALIZED => [self::ACTION_INITIALIZED, null],
+        self::STATUS_READY => [self::ACTION_READY, null],
+    ];
 
     private const SUCCESS_STATUSES = [
         self::STATUS_IDLE => self::STATUS_IDLE,
+        self::STATUS_INIT => self::STATUS_INIT,
         self::STATUS_INITIALIZED => self::STATUS_INITIALIZED,
         self::STATUS_BOOTING => self::STATUS_BOOTING,
         self::STATUS_READY => self::STATUS_READY,
-        self::STATUS_BOOTED => self::STATUS_BOOTED,
+        self::STATUS_DONE => self::STATUS_DONE,
     ];
 
     private const OPERATORS = [
@@ -218,7 +224,9 @@ class Package
     public function addModule(Module $module): Package
     {
         try {
-            $this->assertStatus(self::STATUS_IDLE, sprintf('add module %s', $module->id()));
+            $reason = sprintf('add module %s', $module->id());
+            $this->assertStatus(self::STATUS_FAILED, $reason, '!=');
+            $this->assertStatus(self::STATUS_INIT, $reason, '<=');
 
             $registeredServices = $this->addModuleServices(
                 $module,
@@ -266,34 +274,17 @@ class Package
             }
 
             $packageName = $package->name();
-            $errorData = ['package' => $packageName, 'status' => $this->status];
-            $errorMessage = "Failed connecting package {$packageName}";
 
             // Don't connect, if already connected
             if (array_key_exists($packageName, $this->connectedPackages)) {
-                $error = "{$errorMessage} because it was already connected.";
-                do_action(
-                    $this->hookName(self::ACTION_FAILED_CONNECTION),
-                    $packageName,
-                    new \WP_Error('already_connected', $error, $errorData)
-                );
-
-                throw new \Exception($error, 0, $this->lastError);
+                return $this->handleConnectionFailure($packageName, 'already connected', false);
             }
 
             // Don't connect, if already booted or boot failed
             $failed = $this->hasFailed();
             if ($failed || $this->hasReachedStatus(self::STATUS_INITIALIZED)) {
-                $reason = $failed ? 'an errored package' : 'a package with a built container';
-                $status = $failed ? 'failed' : 'built_container';
-                $error = "{$errorMessage} to {$reason}.";
-                do_action(
-                    $this->hookName(self::ACTION_FAILED_CONNECTION),
-                    $packageName,
-                    new \WP_Error("no_connect_on_{$status}", $error, $errorData)
-                );
-
-                throw new \Exception($error, 0, $this->lastError);
+                $reason = $failed ? 'is errored' : 'has a built container already';
+                $this->handleConnectionFailure($packageName, "current package {$reason}", true);
             }
 
             $this->connectedPackages[$packageName] = true;
@@ -307,9 +298,10 @@ class Package
                 }
             );
 
-            // If the other package is booted, we can obtain a container, otherwise
-            // we build a proxy container
-            $container = $package->statusIs(self::STATUS_BOOTED)
+            // If we can obtain a container we do, otherwise we build a proxy container
+            $packageHasContainer = $package->hasReachedStatus(self::STATUS_INITIALIZED)
+                || $package->hasContainer();
+            $container = $packageHasContainer
                 ? $package->container()
                 : new PackageProxyContainer($package);
 
@@ -342,18 +334,26 @@ class Package
     public function build(): Package
     {
         try {
-            // Don't allow building the application multiple times.
+            // Be tolerant about things like `$package->build()->build()`.
+            // Sometimes, from the extern, we might want to call `build()` to ensure the container
+            // is ready before accessing a service. And in that case we don't want to throw an
+            // exception if the container is already built.
+            if ($this->built && $this->statusIs(self::STATUS_INITIALIZED)) {
+                return $this;
+            }
+
+            // We expect `build` to be called only after `addModule()` or `connect()` which do
+            // not change the status, so we expect status to be still "IDLE".
+            // This will prevent invalid things like calling `build()` from inside something
+            // hooking ACTION_INIT OR ACTION_INITIALIZED.
             $this->assertStatus(self::STATUS_IDLE, 'build package');
 
-            do_action(
-                $this->hookName(self::ACTION_INIT),
-                $this
-            );
-            // Changing the status here ensures we can not call this method again, and also we can
-            // not add new modules, because both here and in `addModule()` we check for idle status.
-            // For backward compatibility, adding new modules via `boot()` will still be possible,
-            // even if deprecated, at the condition that the container was not yet accessed at that
-            // point.
+            // This will change the status to "INIT" then fire the action that allow external
+            // packages to add modules or connect packages.
+            $this->progress(self::STATUS_INIT);
+
+            // This will change the status to "INITIALIZED" then fire an action when it is safe to
+            // access the container, because from this moment on, container is locked from change.
             $this->progress(self::STATUS_INITIALIZED);
         } catch (\Throwable $throwable) {
             $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
@@ -371,31 +371,43 @@ class Package
     public function boot(Module ...$defaultModules): bool
     {
         try {
+            // When package is done, nothing should happen to it calling boot again, but we call
+            // false to signal something is off.
+            if ($this->hasReachedStatus(self::STATUS_DONE)) {
+                return false;
+            }
+
             // Call build() if not called yet, and ensure any new module passed here is added
             // as well, throwing if the container was already built.
             $this->doBuild(...$defaultModules);
 
-            // Don't allow booting the application multiple times.
-            $this->assertStatus(self::STATUS_BOOTING, 'boot application', '<');
-            $this->assertStatus(self::STATUS_FAILED, 'boot application', '!=');
+            // Make sure we call boot() on a non-failed instance, and also make a sanity check
+            // on the status flow, e.g. prevent calling boot() from an action hook.
+            $this->assertStatus(self::STATUS_INITIALIZED, 'boot application');
 
+            // This will change status to STATUS_BOOTING "locking" subsequent call to `boot()`, but
+            // no hook is fired here, because at this point we can not do anything more or less than
+            // what can be done on the ACTION_BUILD hook, so that hook is sufficient.
             $this->progress(self::STATUS_BOOTING);
 
             $this->doExecute();
 
+            // This will change status to STATUS_READY and then fire an action that make it possible
+            // to hook on a package that has finished its bootstrapping process, so all its
+            // "executable" modules have been executed.
             $this->progress(self::STATUS_READY);
-
-            do_action(
-                $this->hookName(self::ACTION_READY),
-                $this
-            );
         } catch (\Throwable $throwable) {
             $this->handleFailure($throwable, self::ACTION_FAILED_BOOT);
 
             return false;
         }
 
-        $this->progress(self::STATUS_BOOTED);
+        // This will change the status to DONE and will not fire any action.
+        // This is a status that proves that everything went well, not only the Package itself,
+        // but also anything hooking Package's hooks.
+        // The only way to move out of this status is a failure that might only happen directly
+        // calling `addModule()`, `connect()` or `build()`.
+        $this->progress(self::STATUS_DONE);
 
         return true;
     }
@@ -418,39 +430,67 @@ class Package
             );
         }
 
+        // We expect `boot()` to be called either:
+        //   1. Directly after `addModule()`/`connect()`, without any `build()` call in between, so
+        //     status is IDLE and `$this->built` is `false`.
+        //   2. After `build()` is called, so status is INITIALIZED and `$this->built` is `true`.
+        // Any other usage is not allowed (e.g. calling `boot()` from an hook callback) and in that
+        // case we return here, giving back control to `boot()` which will throw.
+        $validFlows = (!$this->built && $this->statusIs(self::STATUS_IDLE))
+            || ($this->built && $this->statusIs(self::STATUS_INITIALIZED));
+
+        if (!$validFlows) {
+            // If none of the two supported flows happened, we just return handling control back
+            // to `boot()`, that will throw.
+            return;
+        }
+
         if (!$this->built) {
-            $defaultModules and array_map([$this, 'addModule'], $defaultModules);
+            // First valid flow: `boot()` was called directly after `addModule()`/`connect()`
+            // without any call to `build()`. We can call `build()` and return, handing control
+            // back to `boot()`. Before returning, if we had default modules passed to `boot()` we
+            // already have fired a deprecation, so here we just add them dealing with back-compat.
+            foreach ($defaultModules as $defaultModule) {
+                $this->addModule($defaultModule);
+            }
             $this->build();
 
             return;
         }
 
-        if (
-            !$defaultModules
-            || ($this->checkStatus(self::STATUS_INITIALIZED, '>'))
-            || ($this->statusIs(self::STATUS_FAILED))
-        ) {
-            // If we don't have default modules, there's nothing to do, and if the status is beyond
-            // initialized or is failed, we do nothing as well and let `boot()` throw.
+        // Second valid flow: we have called `boot()` after `build()`. If we did it correctly,
+        // without default modules passed to `boot()`, we can just return handing control back
+        // to `boot()`.
+        if (!$defaultModules) {
             return;
         }
 
+        // If here, we have done something like: `$package->build()->boot($module1, $module2)`.
+        // Passing modules to `boot()` was deprecated when `build()` was introduced, so whoever
+        // added `build()` should have removed modules passed to `boot()`.
+        // But we want to keep 100% backward compatibility so we still support this behavior
+        // until the next major is released. To do that, we simulate IDLE status to prevent
+        // `addModule()` from throwing when adding default modules.
+        // But we can do that only if we don't have a compiled container yet.
+        // If anything hooking ACTION_INITIALIZED called `container()` we have a compiled container
+        // already, and we can't add modules, so we not going to simulate INIT status, which mean
+        // the `$this->addModule()` call below will throw.
         $backup = $this->status;
-
         try {
-            // simulate idle status to prevent `addModule()` from throwing
-            // only if we don't have a container yet
-            $this->hasContainer or $this->status = self::STATUS_IDLE;
-
+            if (!$this->hasContainer()) {
+                $this->status = self::STATUS_IDLE;
+            }
             foreach ($defaultModules as $defaultModule) {
-                // If a module was added by `build()` or `addModule()` we can skip it, a
-                // deprecation was trigger to make it noticeable without breakage
+                // If a module was already added via `addModule()` we can skip it, reducing the
+                // chances of throwing an exception if not needed.
                 if (!$this->moduleIs($defaultModule->id(), self::MODULE_ADDED)) {
                     $this->addModule($defaultModule);
                 }
             }
         } finally {
-            $this->status = $backup;
+            if (!$this->hasFailed()) {
+                $this->status = $backup;
+            }
         }
     }
 
@@ -678,6 +718,42 @@ class Package
     private function progress(int $status): void
     {
         $this->status = $status;
+
+        [$packageHookSuffix, $globalHook] = self::STATUSES_ACTIONS_MAP[$status] ?? [null, null];
+        if ($packageHookSuffix !== null) {
+            do_action($this->hookName($packageHookSuffix), $this);
+        }
+        if ($globalHook !== null) {
+            do_action($globalHook, $this->name(), $this);
+        }
+    }
+
+    /**
+     * @param string $packageName
+     * @param string $reason
+     * @param bool $throw
+     * @return ($throw is true ? never: false)
+     */
+    private function handleConnectionFailure(string $packageName, string $reason, bool $throw): bool
+    {
+        $errorData = ['package' => $packageName, 'status' => $this->status];
+        $message = "Failed connecting package {$packageName} because {$reason}.";
+
+        do_action(
+            $this->hookName(self::ACTION_FAILED_CONNECTION),
+            $packageName,
+            new \WP_Error('failed_connection', $message, $errorData)
+        );
+
+        if ($throw) {
+            throw new \Exception(
+                esc_html($message),
+                0,
+                $this->lastError // phpcs:ignore WordPress.Security.EscapeOutput
+            );
+        }
+
+        return false;
     }
 
     /**
@@ -709,7 +785,7 @@ class Package
             throw new \Exception(
                 sprintf("Can't %s at this point of application.", esc_html($action)),
                 0,
-                $this->lastError // phpcs:ignore
+                $this->lastError // phpcs:ignore WordPress.Security.EscapeOutput
             );
         }
     }
