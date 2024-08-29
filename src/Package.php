@@ -131,9 +131,9 @@ class Package
      * @example
      * <code>
      * $package = Package::new();
-     * $package->statusIs(Package::IDLE); // true
+     * $package->statusIs(Package::STATUS_IDLE); // true
      * $package->build();
-     * $package->statusIs(Package::INITIALIZED); // true
+     * $package->statusIs(Package::STATUS_INITIALIZED); // true
      * $package->boot();
      * $package->statusIs(Package::STATUS_DONE); // true
      * </code>
