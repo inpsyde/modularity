@@ -653,11 +653,11 @@ class Package
      */
     public function hasReachedStatus(int $status): bool
     {
-        if (!isset(self::SUCCESS_STATUSES[$status])) {
+        if ($this->hasFailed()) {
             return false;
         }
 
-        return !$this->hasFailed() && $this->checkStatus($status, '>=');
+        return isset(self::SUCCESS_STATUSES[$status]) && $this->checkStatus($status, '>=');
     }
 
     /**
