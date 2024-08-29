@@ -14,7 +14,7 @@ The `Package` class implements the two phases above, respectively, in the two me
 
 ### Single-phase VS two-phases bootstrapping
 
-It must be noted that **`Package::boot()`**, before proceeding with the "boot" phase, will execute the "build" phase if it hasn't been executed yet. In other words, it is not always necessary to explicitly call `Package::build()`, and many times calling `Package::build()` will suffice.
+It must be noted that **`Package::boot()`**, before proceeding with the "boot" phase, will execute the "build" phase if it hasn't been executed yet. In other words, it is not always necessary to explicitly call `Package::build()`, and many times calling `Package::boot()` will suffice.
 
 The following two code snippets are equivalent:
 

@@ -152,6 +152,7 @@ class Package
     /** @deprecated  */
     public const STATUS_BOOTED = self::STATUS_DONE;
 
+    // Map of status to package-specific and global hook, both optional (i..e, null).
     private const STATUSES_ACTIONS_MAP = [
         self::STATUS_INIT => [self::ACTION_INIT, self::ACTION_MODULARITY_INIT],
         self::STATUS_INITIALIZED => [self::ACTION_INITIALIZED, null],
