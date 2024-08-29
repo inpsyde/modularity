@@ -357,15 +357,16 @@ class Package
     }
 
     /**
-     * @param Module ...$defaultModules Deprecated, use `addModule()` to add default modules.
      * @return bool
      */
-    public function boot(Module ...$defaultModules): bool
+    public function boot(): bool
     {
         try {
             // Call build() if not called yet, and ensure any new module passed here is added
             // as well, throwing if the container was already built.
-            $this->doBuild(...$defaultModules);
+            if (!$this->built) {
+                $this->build();
+            }
 
             // Don't allow booting the application multiple times.
             $this->assertStatus(self::STATUS_BOOTING, 'boot application', '<');
@@ -390,60 +391,6 @@ class Package
         $this->progress(self::STATUS_BOOTED);
 
         return true;
-    }
-
-    /**
-     * @param Module ...$defaultModules
-     * @return void
-     */
-    private function doBuild(Module ...$defaultModules): void
-    {
-        if ($defaultModules) {
-            $this->deprecatedArgument(
-                sprintf(
-                    'Passing default modules to %1$s::boot() is deprecated since version 1.7.0.'
-                    . ' Please add modules via %1$s::addModule().',
-                    __CLASS__
-                ),
-                __METHOD__,
-                '1.7.0'
-            );
-        }
-
-        if (!$this->built) {
-            $defaultModules and array_map([$this, 'addModule'], $defaultModules);
-            $this->build();
-
-            return;
-        }
-
-        if (
-            !$defaultModules
-            || ($this->checkStatus(self::STATUS_INITIALIZED, '>'))
-            || ($this->statusIs(self::STATUS_FAILED))
-        ) {
-            // If we don't have default modules, there's nothing to do, and if the status is beyond
-            // initialized or is failed, we do nothing as well and let `boot()` throw.
-            return;
-        }
-
-        $backup = $this->status;
-
-        try {
-            // simulate idle status to prevent `addModule()` from throwing
-            // only if we don't have a container yet
-            $this->hasContainer or $this->status = self::STATUS_IDLE;
-
-            foreach ($defaultModules as $defaultModule) {
-                // If a module was added by `build()` or `addModule()` we can skip it, a
-                // deprecation was trigger to make it noticeable without breakage
-                if (!$this->moduleIs($defaultModule->id(), self::MODULE_ADDED)) {
-                    $this->addModule($defaultModule);
-                }
-            }
-        } finally {
-            $this->status = $backup;
-        }
     }
 
     /**

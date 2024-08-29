@@ -171,7 +171,7 @@ $plugin->boot();
 static::assertTrue($myService->isBooted());
 ```
 
-### Deprecated boot parameters
+### Removed boot parameters
 
 Before Modularity v1.7.0, it was an accepted practice to pass default modules to `Package::boot()`,
 as in:
@@ -185,14 +185,17 @@ add_action(
 );
 ```
 
-This is now deprecated to allow a better separation of the "building" and "booting" steps.
+This is now removed to allow a better separation of the "building" and "booting" steps.
 
 While it still works (and it will work up to version 2.0), it will emit a deprecation notice.
 
 The replacement is using `Package::addModule()`:
 
 ```php
-plugin()->addModule(new ModuleOne())->addModule(new ModuleTwo())->boot();
+plugin()
+    ->addModule(new ModuleOne())
+    ->addModule(new ModuleTwo())
+    ->boot();
 ```
 
 There's only one case in which calling `Package::boot()` with default modules will throw an 
