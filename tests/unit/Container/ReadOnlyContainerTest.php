@@ -94,6 +94,7 @@ class ReadOnlyContainerTest extends TestCase
 
         $childContainer = new class ($expectedKey, $expectedValue) implements ContainerInterface
         {
+            /** @var array<string, \stdClass> */
             private array $data = [];
 
             public function __construct(string $key, \stdClass $value)

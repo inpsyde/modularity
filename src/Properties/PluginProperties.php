@@ -65,6 +65,7 @@ class PluginProperties extends BaseProperties
             $properties[$key] = $pluginData[$pluginDataKey] ?? '';
             unset($pluginData[$pluginDataKey]);
         }
+        /** @var array<string, mixed> $properties */
         $properties = array_merge($properties, $pluginData);
 
         $this->pluginMainFile = wp_normalize_path($pluginMainFile);

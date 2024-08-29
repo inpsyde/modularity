@@ -153,6 +153,14 @@ class Package
     public const STATUS_BOOTED = 8;
     public const STATUS_FAILED = -8;
 
+    private const SUCCESS_STATUSES = [
+        self::STATUS_IDLE => self::STATUS_IDLE,
+        self::STATUS_INITIALIZED => self::STATUS_INITIALIZED,
+        self::STATUS_BOOTING => self::STATUS_BOOTING,
+        self::STATUS_READY => self::STATUS_READY,
+        self::STATUS_BOOTED => self::STATUS_BOOTED,
+    ];
+
     private const OPERATORS = [
         '<' => '<',
         '<=' => '<=',
@@ -274,8 +282,8 @@ class Package
             }
 
             // Don't connect, if already booted or boot failed
-            $failed = $this->statusIs(self::STATUS_FAILED);
-            if ($failed || $this->checkStatus(self::STATUS_INITIALIZED, '>=')) {
+            $failed = $this->hasFailed();
+            if ($failed || $this->hasReachedStatus(self::STATUS_INITIALIZED)) {
                 $reason = $failed ? 'an errored package' : 'a package with a built container';
                 $status = $failed ? 'failed' : 'built_container';
                 $error = "{$errorMessage} to {$reason}.";
@@ -607,6 +615,14 @@ class Package
     }
 
     /**
+     * @return bool
+     */
+    public function hasContainer(): bool
+    {
+        return $this->hasContainer;
+    }
+
+    /**
      * @return string
      */
     public function name(): string
@@ -621,6 +637,27 @@ class Package
     public function statusIs(int $status): bool
     {
         return $this->checkStatus($status);
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasFailed(): bool
+    {
+        return $this->status === self::STATUS_FAILED;
+    }
+
+    /**
+     * @param int $status
+     * @return bool
+     */
+    public function hasReachedStatus(int $status): bool
+    {
+        if ($this->hasFailed()) {
+            return false;
+        }
+
+        return isset(self::SUCCESS_STATUSES[$status]) && $this->checkStatus($status, '>=');
     }
 
     /**

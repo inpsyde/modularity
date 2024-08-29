@@ -27,8 +27,28 @@ class PackageTest extends TestCase
         $package = Package::new($propertiesStub);
 
         static::assertTrue($package->statusIs(Package::STATUS_IDLE));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_INITIALIZED));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTING));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTED));
+
+        $package->build();
+
+        static::assertFalse($package->statusIs(Package::STATUS_IDLE));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTING));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTED));
+
         static::assertTrue($package->boot());
+
         static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTING));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTED));
+        static::assertFalse($package->hasReachedStatus(3));
+
         static::assertSame($expectedName, $package->name());
         static::assertInstanceOf(Properties::class, $package->properties());
         static::assertInstanceOf(ContainerInterface::class, $package->container());
@@ -900,6 +920,8 @@ class PackageTest extends TestCase
 
         static::assertFalse($package->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+        static::assertTrue($package->hasFailed());
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_IDLE));
     }
 
     /**
@@ -971,6 +993,7 @@ class PackageTest extends TestCase
             );
 
         static::assertFalse($package->addModule($module1)->addModule($module2)->build()->boot());
+        static::assertTrue($package->hasFailed());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
     }
 
@@ -1025,6 +1048,7 @@ class PackageTest extends TestCase
         static::assertFalse($package->connect($connected));
         static::assertFalse($package->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+        static::assertTrue($package->hasFailed());
     }
 
     /**
@@ -1066,6 +1090,7 @@ class PackageTest extends TestCase
 
         static::assertFalse($package->build()->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+        static::assertTrue($package->hasFailed());
     }
 
     /**
@@ -1089,6 +1114,7 @@ class PackageTest extends TestCase
                 static function (\Throwable $throwable) use ($exception, $package): void {
                     static::assertSame($exception, $throwable);
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                    static::assertTrue($package->hasFailed());
                 }
             );
 

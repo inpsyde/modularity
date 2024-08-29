@@ -526,6 +526,7 @@ class ContainerConfiguratorTest extends TestCase
 
         $childContainer = new class ($expectedId, $expectedValue) implements ContainerInterface
         {
+            /** @var array<string, object> */
             private array $values = [];
 
             public function __construct(string $expectedId, object $expectedValue)
