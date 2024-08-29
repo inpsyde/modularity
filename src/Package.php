@@ -96,14 +96,19 @@ class Package
     public const ACTION_FAILED_BOOT = 'failed-boot';
 
     /**
-     * Action fired when a package is connected successfully.
+     * Action fired when adding a module failed.
      */
-    public const ACTION_PACKAGE_CONNECTED = 'package-connected';
+    public const ACTION_FAILED_ADD_MODULE = 'failed-add-module';
 
     /**
      * Action fired when a package connection failed.
      */
-    public const ACTION_FAILED_CONNECTION = 'failed-connection';
+    public const ACTION_FAILED_CONNECT = 'failed-connect';
+
+    /**
+     * Action fired when a package is connected successfully.
+     */
+    public const ACTION_PACKAGE_CONNECTED = 'package-connected';
 
     /**
      * Module states can be used to get information about your module.
@@ -254,7 +259,7 @@ class Package
             $status = $added ? self::MODULE_ADDED : self::MODULE_NOT_ADDED;
             $this->moduleProgress($module->id(), $status);
         } catch (\Throwable $throwable) {
-            $this->handleFailure($throwable, self::ACTION_FAILED_BUILD);
+            $this->handleFailure($throwable, self::ACTION_FAILED_ADD_MODULE);
         }
 
         return $this;
@@ -741,7 +746,7 @@ class Package
         $message = "Failed connecting package {$packageName} because {$reason}.";
 
         do_action(
-            $this->hookName(self::ACTION_FAILED_CONNECTION),
+            $this->hookName(self::ACTION_FAILED_CONNECT),
             $packageName,
             new \WP_Error('failed_connection', $message, $errorData)
         );

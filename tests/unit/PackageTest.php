@@ -1195,7 +1195,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -1213,7 +1213,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -1232,7 +1232,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -1250,7 +1250,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -1293,7 +1293,7 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
             ->once();
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->twice()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -1321,7 +1321,7 @@ class PackageTest extends TestCase
     {
         $package1 = $this->stubSimplePackage('1');
 
-        $action = $package1->hookName(Package::ACTION_FAILED_CONNECTION);
+        $action = $package1->hookName(Package::ACTION_FAILED_CONNECT);
         Monkey\Actions\expectDone($action)->never();
 
         static::assertFalse($package1->connect($package1));
@@ -1435,11 +1435,20 @@ class PackageTest extends TestCase
 
         $package = Package::new($this->stubProperties());
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_ADD_MODULE))
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
                     static::assertSame($exception, $throwable);
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable) use ($package): void {
+                    $this->assertThrowableMessageMatches($throwable, 'build package');
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -1452,7 +1461,7 @@ class PackageTest extends TestCase
                     $previous = $throwable->getPrevious();
                     $this->assertThrowableMessageMatches($previous, 'build package');
                     $previous = $previous->getPrevious();
-                    $this->assertThrowableMessageMatches($previous, 'two');
+                    $this->assertThrowableMessageMatches($previous, 'add module');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
@@ -1484,7 +1493,7 @@ class PackageTest extends TestCase
         $connected = Package::new($this->stubProperties());
         $connected->boot();
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_ADD_MODULE))
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
