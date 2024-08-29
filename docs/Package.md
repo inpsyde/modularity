@@ -150,8 +150,37 @@ add_action(
 );
 ```
 
-This approach makes sense when we expect multiple external plugins/libraries/themes to extend our plugin, e. g. when we are writing a plugin we design to be extended via extensions.
+This is now removed to allow a better separation of the "building" and "booting" steps.
 
+While it still works (and it will work up to version 2.0), it will emit a deprecation notice.
+
+The replacement is using `Package::addModule()`:
+
+```php
+plugin()
+    ->addModule(new ModuleOne())
+    ->addModule(new ModuleTwo())
+    ->boot();
+```
+
+There's only one case in which calling `Package::boot()` with default modules will throw an 
+exception (besides triggering a deprecated notice), that is when a passed modules was not added
+before `Package::addModule()` and an instance of the container was already obtained from the package.
+
+For example, this will throw an exception:
+
+```php
+$plugin = plugin()->build();
+
+// Now that container is built, passing modules to `boot()` will raise an exception, because we
+// can't add new modules to an already "compiled" container being that read-only.
+$container = $plugin->container();
+
+$plugin->boot(new ModuleOne());
+```
+
+To prevent the exception it would be necessary to add the module before calling `build()`, or  alternatively, to call `$plugin->boot(new ModuleOne())` _before_ calling `$plugin->container()`.
+In this latter case the exception is not thrown, but the deprecation will still be emitted.
 
 
 ## Connecting packages
