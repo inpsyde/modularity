@@ -424,6 +424,23 @@ class PackageTest extends TestCase
 
     /**
      * @test
+     * @runInSeparateProcess
+     */
+    public function testBootPassingModulesAddModules(): void
+    {
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
+        $module1->allows('services')->andReturn($this->stubServices('service_1'));
+
+        $package = Package::new($this->stubProperties('test', true));
+
+        $this->ignoreDeprecations();
+        $package->boot($module1);
+
+        static::assertSame('service_1', $package->container()->get('service_1')['id']);
+    }
+
+    /**
+     * @test
      */
     public function testAddModuleFailsAfterBuild(): void
     {
@@ -620,6 +637,7 @@ class PackageTest extends TestCase
         $package->boot();
 
         static::assertSame(range(0, 4), $log);
+        static::assertCount(1, $package->connectedPackages());
     }
 
     /**
@@ -684,6 +702,7 @@ class PackageTest extends TestCase
         $package->build()->boot();
 
         static::assertSame(range(0, 4), $log);
+        static::assertCount(1, $package->connectedPackages());
     }
 
     /**
@@ -742,6 +761,7 @@ class PackageTest extends TestCase
         $package->build();
 
         static::assertSame(range(0, 3), $log);
+        static::assertCount(1, $package->connectedPackages());
     }
 
     /**
