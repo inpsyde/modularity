@@ -83,7 +83,7 @@ class Package
      * Action fired when plugin finished its bootstrapping process, all its hooks are added.
      * Add more modules is not anymore possible at this stage.
      */
-    public const ACTION_READY = 'ready';
+    public const ACTION_BOOTED = 'ready';
 
     /**
      * Action fired when anything went wrong during the "build" procedure.
@@ -139,32 +139,32 @@ class Package
      * </code>
      */
     public const STATUS_IDLE = 2;
-    public const STATUS_INIT = 3;
+    public const STATUS_INITIALIZING = 3;
     public const STATUS_INITIALIZED = 4;
     public const STATUS_BOOTING = 5;
-    public const STATUS_READY = 7;
+    public const STATUS_BOOTED = 7;
     public const STATUS_DONE = 8;
     public const STATUS_FAILED = -8;
 
-    // Deprecated statuses
+    // Deprecated flags
     /** @deprecated  */
     public const STATUS_MODULES_ADDED = self::STATUS_BOOTING;
     /** @deprecated  */
-    public const STATUS_BOOTED = self::STATUS_DONE;
+    public const ACTION_READY = self::ACTION_BOOTED;
 
     // Map of status to package-specific and global hook, both optional (i..e, null).
     private const STATUSES_ACTIONS_MAP = [
-        self::STATUS_INIT => [self::ACTION_INIT, self::ACTION_MODULARITY_INIT],
+        self::STATUS_INITIALIZING => [self::ACTION_INIT, self::ACTION_MODULARITY_INIT],
         self::STATUS_INITIALIZED => [self::ACTION_INITIALIZED, null],
-        self::STATUS_READY => [self::ACTION_READY, null],
+        self::STATUS_BOOTED => [self::ACTION_BOOTED, null],
     ];
 
     private const SUCCESS_STATUSES = [
         self::STATUS_IDLE => self::STATUS_IDLE,
-        self::STATUS_INIT => self::STATUS_INIT,
+        self::STATUS_INITIALIZING => self::STATUS_INITIALIZING,
         self::STATUS_INITIALIZED => self::STATUS_INITIALIZED,
         self::STATUS_BOOTING => self::STATUS_BOOTING,
-        self::STATUS_READY => self::STATUS_READY,
+        self::STATUS_BOOTED => self::STATUS_BOOTED,
         self::STATUS_DONE => self::STATUS_DONE,
     ];
 
@@ -227,7 +227,7 @@ class Package
         try {
             $reason = sprintf('add module %s', $module->id());
             $this->assertStatus(self::STATUS_FAILED, $reason, '!=');
-            $this->assertStatus(self::STATUS_INIT, $reason, '<=');
+            $this->assertStatus(self::STATUS_INITIALIZING, $reason, '<=');
 
             $registeredServices = $this->addModuleServices(
                 $module,
@@ -349,9 +349,9 @@ class Package
             // hooking ACTION_INIT OR ACTION_INITIALIZED.
             $this->assertStatus(self::STATUS_IDLE, 'build package');
 
-            // This will change the status to "INIT" then fire the action that allow external
+            // This will change the status to "INITIALIZING" then fire the action that allow other
             // packages to add modules or connect packages.
-            $this->progress(self::STATUS_INIT);
+            $this->progress(self::STATUS_INITIALIZING);
 
             // This will change the status to "INITIALIZED" then fire an action when it is safe to
             // access the container, because from this moment on, container is locked from change.
@@ -374,7 +374,7 @@ class Package
         try {
             // When package is done, nothing should happen to it calling boot again, but we call
             // false to signal something is off.
-            if ($this->hasReachedStatus(self::STATUS_DONE)) {
+            if ($this->statusIs(self::STATUS_DONE)) {
                 return false;
             }
 
@@ -388,15 +388,15 @@ class Package
 
             // This will change status to STATUS_BOOTING "locking" subsequent call to `boot()`, but
             // no hook is fired here, because at this point we can not do anything more or less than
-            // what can be done on the ACTION_BUILD hook, so that hook is sufficient.
+            // what can be done on the ACTION_INITIALIZED hook, so that hook is sufficient.
             $this->progress(self::STATUS_BOOTING);
 
             $this->doExecute();
 
-            // This will change status to STATUS_READY and then fire an action that make it possible
-            // to hook on a package that has finished its bootstrapping process, so all its
+            // This will change status to STATUS_BOOTED and then fire an action that make it
+            // possible to hook on a package that has finished its bootstrapping process, so all its
             // "executable" modules have been executed.
-            $this->progress(self::STATUS_READY);
+            $this->progress(self::STATUS_BOOTED);
         } catch (\Throwable $throwable) {
             $this->handleFailure($throwable, self::ACTION_FAILED_BOOT);
 
@@ -473,7 +473,7 @@ class Package
         // until the next major is released. To do that, we simulate IDLE status to prevent
         // `addModule()` from throwing when adding default modules.
         // But we can do that only if we don't have a compiled container yet.
-        // If anything hooking ACTION_INITIALIZED called `container()` we have a compiled container
+        // If anything hooking ACTION_INIT called `container()` we have a compiled container
         // already, and we can't add modules, so we not going to simulate INIT status, which mean
         // the `$this->addModule()` call below will throw.
         $backup = $this->status;

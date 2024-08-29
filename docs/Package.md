@@ -24,9 +24,9 @@ It has been mentioned how during both the "build" and "boot" phases the `Package
 
 There are three package-specific hooks:
 
-- `Package::ACTION_INIT`, fired at the beginning of the "build" phase, enables adding modules or connecting packages to the passed `Package` instance.
+- `Package::ACTION_INITIALIZING`, fired at the beginning of the "build" phase, enables adding modules or connecting packages to the passed `Package` instance.
 - `Package::ACTION_INITIALIZED`, fired at the end of the "build" phase, enables external code to access `Package`'s container, resolving services. No modification to the `Package`'s services are possible at this time or later.
-- `Package::ACTION_READY`, fired at the end of the "boot" phase, enables external code to access `Package`'s instance at a stage where it did all its job by registering services and adding hook to WordPress.
+- `Package::ACTION_BOOTED`, fired at the end of the "boot" phase, enables external code to access `Package`'s instance at a stage where it did all its job by registering services and adding hook to WordPress.
 
 All the hooks above enable access to `Package` properties and to retrieve information about specific modules.
 
@@ -327,12 +327,12 @@ Access to the wrapped [properties instance](./Properties.md).
 
 Retrieve the current status of the application. The following statuses are available:
 
-| Status                        | Description                                                                       |
-|-------------------------------|-----------------------------------------------------------------------------------|
-| `Package::STATUS_IDLE`        | Before application is built or booted (`Package` instance just instantiated).     |
-| `Package::STATUS_INIT`        | Before `Package::build()` started processing modules.                             |
-| `Package::STATUS_INITIALIZED` | After `Package::build()` end processing modules.                                  |
-| `Package::STATUS_BOOTING`     | Before `Package::boot()` started processing executable modules' "run procedures". |
-| `Package::STATUS_READY`       | After `Package::boot()` ended processing executable modules' "run procedures".    |
-| `Package::STATUS_DONE`        | The application has successfully booted.                                          |
-| `Package::STATUS_FAILED`      | The application did not build/boot properly.                                      |
+| Status                         | Description                                                                       |
+|--------------------------------|-----------------------------------------------------------------------------------|
+| `Package::STATUS_IDLE`         | Before application is built or booted (`Package` instance just instantiated).     |
+| `Package::STATUS_INITIALIZING` | Before `Package::build()` started processing modules.                             |
+| `Package::STATUS_INITIALIZED`  | After `Package::build()` end processing modules.                                  |
+| `Package::STATUS_BOOTING`      | Before `Package::boot()` started processing executable modules' "run procedures". |
+| `Package::STATUS_BOOTED`       | After `Package::boot()` ended processing executable modules' "run procedures".    |
+| `Package::STATUS_DONE`         | The application has successfully completed both processes.                        |
+| `Package::STATUS_FAILED`       | The application did not build/boot properly.                                      |

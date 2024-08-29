@@ -30,7 +30,7 @@ class PackageTest extends TestCase
         static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTING));
-        static::assertFalse($package->hasReachedStatus(Package::STATUS_READY));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTED));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_DONE));
 
         $package->build();
@@ -39,13 +39,13 @@ class PackageTest extends TestCase
         static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTING));
-        static::assertFalse($package->hasReachedStatus(Package::STATUS_READY));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTED));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_DONE));
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
             ->whenHappen(static function (Package $package): void {
-                static::assertTrue($package->statusIs(Package::STATUS_READY));
+                static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
             });
 
         static::assertTrue($package->boot());
@@ -53,11 +53,11 @@ class PackageTest extends TestCase
         static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTING));
-        static::assertTrue($package->hasReachedStatus(Package::STATUS_DONE));
-        // check back compat
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTED));
-        static::assertTrue($package->hasReachedStatus(Package::STATUS_MODULES_ADDED));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_DONE));
         static::assertFalse($package->hasReachedStatus(6));
+        // check back compat
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_MODULES_ADDED));
 
         static::assertSame($expectedName, $package->name());
         static::assertInstanceOf(Properties::class, $package->properties());
@@ -105,10 +105,10 @@ class PackageTest extends TestCase
             $baseHookName . '.' . Package::ACTION_INIT,
         ];
 
-        yield 'ready' => [
-            Package::ACTION_READY,
+        yield 'booted' => [
+            Package::ACTION_BOOTED,
             $expectedName,
-            $baseHookName . '.' . Package::ACTION_READY,
+            $baseHookName . '.' . Package::ACTION_BOOTED,
         ];
     }
 
@@ -583,7 +583,7 @@ class PackageTest extends TestCase
             ->once()
             ->whenHappen(
                 static function (Package $package) use (&$log): void {
-                    static::assertTrue($package->statusIs(Package::STATUS_INIT));
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
                     $log[] = 1;
                 }
             );
@@ -593,7 +593,7 @@ class PackageTest extends TestCase
             ->whenHappen(
                 static function (string $packageName, Package $package) use (&$log): void {
                     static::assertSame('package_1', $packageName);
-                    static::assertTrue($package->statusIs(Package::STATUS_INIT));
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
                     $log[] = 2;
                 }
             );
@@ -607,11 +607,11 @@ class PackageTest extends TestCase
                 }
             );
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
             ->whenHappen(
                 static function (Package $package) use (&$log): void {
-                    static::assertTrue($package->statusIs(Package::STATUS_READY));
+                    static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
                     $log[] = 4;
                 }
             );
@@ -647,7 +647,7 @@ class PackageTest extends TestCase
             ->once()
             ->whenHappen(
                 static function (Package $package) use (&$log): void {
-                    static::assertTrue($package->statusIs(Package::STATUS_INIT));
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
                     $log[] = 1;
                 }
             );
@@ -657,7 +657,7 @@ class PackageTest extends TestCase
             ->whenHappen(
                 static function (string $packageName, Package $package) use (&$log): void {
                     static::assertSame('package_1', $packageName);
-                    static::assertTrue($package->statusIs(Package::STATUS_INIT));
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
                     $log[] = 2;
                 }
             );
@@ -671,11 +671,11 @@ class PackageTest extends TestCase
                 }
             );
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
             ->whenHappen(
                 static function (Package $package) use (&$log): void {
-                    static::assertTrue($package->statusIs(Package::STATUS_READY));
+                    static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
                     $log[] = 4;
                 }
             );
@@ -711,7 +711,7 @@ class PackageTest extends TestCase
             ->once()
             ->whenHappen(
                 static function (Package $package) use (&$log): void {
-                    static::assertTrue($package->statusIs(Package::STATUS_INIT));
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
                     $log[] = 1;
                 }
             );
@@ -721,7 +721,7 @@ class PackageTest extends TestCase
             ->whenHappen(
                 static function (string $packageName, Package $package) use (&$log): void {
                     static::assertSame('package_1', $packageName);
-                    static::assertTrue($package->statusIs(Package::STATUS_INIT));
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
                     $log[] = 2;
                 }
             );
@@ -735,7 +735,7 @@ class PackageTest extends TestCase
                 }
             );
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->never();
 
         $package->connect(Package::new($this->stubProperties('connected', true)));
@@ -757,7 +757,7 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
 
@@ -777,7 +777,7 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
 
@@ -798,7 +798,7 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
 
@@ -813,7 +813,7 @@ class PackageTest extends TestCase
     {
         $package = Package::new($this->stubProperties('test', true));
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
             ->whenHappen([$package, 'boot']);
 
@@ -840,7 +840,7 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
 
@@ -861,7 +861,7 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
 
@@ -876,7 +876,7 @@ class PackageTest extends TestCase
     {
         $package = Package::new($this->stubProperties('test', true));
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_READY))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
             ->whenHappen([$package, 'build']);
 

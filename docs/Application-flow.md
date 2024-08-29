@@ -46,7 +46,7 @@ At any point of the flow, by holding an instance of the `Package`, it is possibl
 1. Upon instantiation, the `Package` status is at **`Package::STATUS_IDLE`**
 2. Modules can be added by directly calling **`Package::addModule()`** on the instance, and other packages can be added by calling **`Package::connect()`**.
 3. **`Package::build()`** is called.
-4. The `Package` status moves to **`Package::STATUS_INIT`**.
+4. The `Package` status moves to **`Package::STATUS_INITIALIZING`**.
 5. The **`Package::ACTION_INIT`** action hook is fired, passing the package instance as an argument. That allows external code to add modules and connect other packages.
 6. The `Package` status moves to **`Package::STATUS_INITIALIZED`**. No more modules can be added.
 7. The **`Package::ACTION_INITIALIZED`** action hook is fired, passing the package instance as an argument. That allows external code to get services from the container.
@@ -58,8 +58,8 @@ At any point of the flow, by holding an instance of the `Package`, it is possibl
 1. **`Package::boot()`** is called.
 2. `Package` status moves to **`Package::STATUS_BOOTING`**.
 3. **All executables modules run**. That is when all the application behavior happens.
-4. The `Package` status moves to **`Package::STATUS_READY`**.
-5. The **`Package::ACTION_READY`** action hook is fired, passing the package instance as an argument.
+4. The `Package` status moves to **`Package::STATUS_BOOTED`**.
+5. The **`Package::ACTION_BOOTED`** action hook is fired, passing the package instance as an argument.
 6. The `Package` status moves to **`Package::STATUS_DONE`**. The booting stage is completed. `Package::boot()` returns true.
 
 
