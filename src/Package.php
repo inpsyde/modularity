@@ -103,7 +103,7 @@ class Package
     /**
      * Action fired when a package connection failed.
      */
-    public const ACTION_FAILED_CONNECT = 'failed-connect';
+    public const ACTION_FAILED_CONNECT = 'failed-connection';
 
     /**
      * Action fired when a package is connected successfully.
@@ -156,6 +156,8 @@ class Package
     public const STATUS_MODULES_ADDED = self::STATUS_BOOTING;
     /** @deprecated  */
     public const ACTION_READY = self::ACTION_BOOTED;
+    /** @deprecated  */
+    public const ACTION_FAILED_CONNECTION = self::ACTION_FAILED_CONNECT;
 
     // Map of status to package-specific and global hook, both optional (i..e, null).
     private const STATUSES_ACTIONS_MAP = [
