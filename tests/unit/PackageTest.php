@@ -31,23 +31,33 @@ class PackageTest extends TestCase
         static::assertFalse($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTING));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTED));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_DONE));
 
         $package->build();
 
-        static::assertFalse($package->statusIs(Package::STATUS_IDLE));
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTING));
         static::assertFalse($package->hasReachedStatus(Package::STATUS_BOOTED));
+        static::assertFalse($package->hasReachedStatus(Package::STATUS_DONE));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
+            ->once()
+            ->whenHappen(static function (Package $package): void {
+                static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+            });
 
         static::assertTrue($package->boot());
-
-        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_IDLE));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_INITIALIZED));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTING));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTED));
-        static::assertFalse($package->hasReachedStatus(3));
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_DONE));
+        static::assertFalse($package->hasReachedStatus(6));
+        // check back compat
+        static::assertTrue($package->hasReachedStatus(Package::STATUS_MODULES_ADDED));
 
         static::assertSame($expectedName, $package->name());
         static::assertInstanceOf(Properties::class, $package->properties());
@@ -95,10 +105,10 @@ class PackageTest extends TestCase
             $baseHookName . '.' . Package::ACTION_INIT,
         ];
 
-        yield 'ready' => [
-            Package::ACTION_READY,
+        yield 'booted' => [
+            Package::ACTION_BOOTED,
             $expectedName,
-            $baseHookName . '.' . Package::ACTION_READY,
+            $baseHookName . '.' . Package::ACTION_BOOTED,
         ];
     }
 
@@ -110,19 +120,46 @@ class PackageTest extends TestCase
         $expectedId = 'my-module';
 
         $moduleStub = $this->stubModule($expectedId);
-        $propertiesStub = $this->stubProperties('name', false);
+        $propertiesStub = $this->stubProperties('name', true);
 
         $package = Package::new($propertiesStub)->addModule($moduleStub);
 
         static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
         static::assertTrue($package->moduleIs($expectedId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED_FACTORIES));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_EXTENDED));
         static::assertFalse($package->moduleIs($expectedId, Package::MODULE_ADDED));
 
-        // booting again fails, but does not throw because debug is false
+        // booting again return false, but we expect no breakage
         static::assertFalse($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithEmptyModule(): void
+    {
+        $expectedId = 'my-module';
+
+        $moduleStub = $this->stubModule($expectedId);
+        $propertiesStub = $this->stubProperties('name', true);
+
+        $package = Package::new($propertiesStub)->addModule($moduleStub);
+
+        $package->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
+        static::assertTrue($package->moduleIs($expectedId, Package::MODULE_NOT_ADDED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_EXTENDED));
+        static::assertFalse($package->moduleIs($expectedId, Package::MODULE_ADDED));
+
+        // building again we expect no breakage
+        $package->build()->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
     }
 
     /**
@@ -130,15 +167,33 @@ class PackageTest extends TestCase
      */
     public function testBootWithServiceModule(): void
     {
-        $moduleId = 'my-service-module';
-        $serviceId = 'service-id';
+        $moduleId = 'module_test';
+        $serviceId = 'service_test';
 
-        $module = $this->stubModule($moduleId, ServiceModule::class);
-        $module->expects('services')->andReturn($this->stubServices($serviceId));
-
-        $package = Package::new($this->stubProperties())->addModule($module);
+        $package = $this->stubSimplePackage('test');
 
         static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($serviceId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithServiceModule(): void
+    {
+        $moduleId = 'module_test';
+        $serviceId = 'service_test';
+
+        $package = $this->stubSimplePackage('test');
+
+        $package->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
@@ -161,6 +216,30 @@ class PackageTest extends TestCase
         $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($factoryId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithFactoryModule(): void
+    {
+        $moduleId = 'my-factory-module';
+        $factoryId = 'factory-id';
+
+        $module = $this->stubModule($moduleId, FactoryModule::class);
+        $module->expects('factories')->andReturn($this->stubServices($factoryId));
+
+        $package = Package::new($this->stubProperties())->addModule($module);
+
+        $package->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
@@ -183,6 +262,31 @@ class PackageTest extends TestCase
         $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        // false because extending a service not in container
+        static::assertFalse($package->container()->has($extensionId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithExtendingModuleWithNonExistingService(): void
+    {
+        $moduleId = 'my-extension-module';
+        $extensionId = 'extension-id';
+
+        $module = $this->stubModule($moduleId, ExtendingModule::class);
+        $module->expects('extensions')->andReturn($this->stubServices($extensionId));
+
+        $package = Package::new($this->stubProperties())->addModule($module);
+
+        $package->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
@@ -207,6 +311,31 @@ class PackageTest extends TestCase
         $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXTENDED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertTrue($package->container()->has($serviceId));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithExtendingModuleWithExistingService(): void
+    {
+        $moduleId = 'my-extension-module';
+        $serviceId = 'service-id';
+
+        $module = $this->stubModule($moduleId, ServiceModule::class, ExtendingModule::class);
+        $module->expects('services')->andReturn($this->stubServices($serviceId));
+        $module->expects('extensions')->andReturn($this->stubServices($serviceId));
+
+        $package = Package::new($this->stubProperties())->addModule($module);
+
+        $package->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_NOT_ADDED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_REGISTERED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_REGISTERED_FACTORIES));
@@ -227,8 +356,27 @@ class PackageTest extends TestCase
         $package = Package::new($this->stubProperties())->addModule($module);
 
         static::assertTrue($package->boot());
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
         static::assertTrue($package->moduleIs($moduleId, Package::MODULE_EXECUTED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXECUTION_FAILED));
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildWithExecutableModule(): void
+    {
+        $moduleId = 'executable-module';
+        $module = $this->stubModule($moduleId, ExecutableModule::class);
+        $module->expects('run')->never();
+
+        $package = Package::new($this->stubProperties())->addModule($module);
+
+        $package->build();
+        static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
+        static::assertTrue($package->moduleIs($moduleId, Package::MODULE_ADDED));
+        static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXECUTED));
         static::assertFalse($package->moduleIs($moduleId, Package::MODULE_EXECUTION_FAILED));
     }
 
@@ -276,14 +424,490 @@ class PackageTest extends TestCase
 
     /**
      * @test
+     * @runInSeparateProcess
+     */
+    public function testBootPassingModulesAddModules(): void
+    {
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
+        $module1->allows('services')->andReturn($this->stubServices('service_1'));
+
+        $package = Package::new($this->stubProperties('test', true));
+
+        $this->ignoreDeprecations();
+        $package->boot($module1);
+
+        static::assertSame('service_1', $package->container()->get('service_1')['id']);
+    }
+
+    /**
+     * @test
      */
     public function testAddModuleFailsAfterBuild(): void
     {
         $package = Package::new($this->stubProperties('test', true))->build();
 
-        $this->expectExceptionMessageMatches("/can't add module/i");
+        $this->expectExceptionMessageMatches("/add module/i");
 
         $package->addModule($this->stubModule());
+    }
+
+    /**
+     * @test
+     *
+     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
+     */
+    public function testBuildResolveServices(): void
+    {
+        // phpcs:enable phpcs:disable Inpsyde.CodeQuality.NestingLevel
+        $module = new class () implements ServiceModule, ExtendingModule, ExecutableModule
+        {
+            public function id(): string
+            {
+                return 'test-module';
+            }
+
+            public function services(): array
+            {
+                return [
+                    'dependency' => static function (): object {
+                        return (object) ['x' => 'Works!'];
+                    },
+                    'service' => static function (ContainerInterface $container): object {
+                        $works = $container->get('dependency')->x;
+
+                        return new class (['works?' => $works]) extends \ArrayObject
+                        {
+                        };
+                    },
+                ];
+            }
+
+            public function extensions(): array
+            {
+                return [
+                    'service' => function (\ArrayObject $current): object {
+                        return new class ($current)
+                        {
+                            public \ArrayObject $object; // phpcs:ignore
+
+                            public function __construct(\ArrayObject $object)
+                            {
+                                $this->object = $object;
+                            }
+
+                            public function works(): string
+                            {
+                                return $this->object->offsetGet('works?');
+                            }
+                        };
+                    },
+                ];
+            }
+
+            public function run(ContainerInterface $container): bool
+            {
+                throw new \Error('This should not run!');
+            }
+        };
+
+        $actual = Package::new($this->stubProperties())
+            ->addModule($module)
+            ->build()
+            ->container()
+            ->get('service')
+            ->works();
+
+        static::assertSame('Works!', $actual);
+    }
+
+    /**
+     * @test
+     */
+    public function testBuildPassingModulesToBoot(): void
+    {
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+
+        $module3 = $this->stubModule('module_3', ServiceModule::class);
+        $module3->expects('services')->andReturn($this->stubServices('service_3'));
+
+        $package = Package::new($this->stubProperties('test', true))
+            ->addModule($module1)
+            ->addModule($module2)
+            ->build();
+
+        $this->ignoreDeprecations();
+        $package->boot($module2, $module3);
+
+        $container = $package->container();
+
+        static::assertSame('service_1', $container->get('service_1')['id']);
+        static::assertSame('service_2', $container->get('service_2')['id']);
+        static::assertSame('service_3', $container->get('service_3')['id']);
+    }
+
+    /**
+     * @test
+     */
+    public function testBootFailsIfPassingNotAddedModulesAfterContainer(): void
+    {
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
+
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
+
+        $module3 = $this->stubModule('module_3', ServiceModule::class);
+        $module3->allows('services')->andReturn($this->stubServices('service_3'));
+
+        $package = Package::new($this->stubProperties('test', true))
+            ->addModule($module1)
+            ->addModule($module2)
+            ->build();
+
+        $container = $package->container();
+
+        static::assertSame('service_1', $container->get('service_1')['id']);
+        static::assertSame('service_2', $container->get('service_2')['id']);
+
+        $this->expectExceptionMessageMatches("/can't add module module_3/i");
+        $this->ignoreDeprecations();
+        $package->boot($module2, $module3);
+    }
+
+    /**
+     * @test
+     */
+    public function testBootFireHooks(): void
+    {
+        $package = $this->stubSimplePackage('1');
+
+        $log = [];
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once()
+            ->whenHappen(
+                static function (string $packageName, int $status) use (&$log): void {
+                    static::assertSame($status, Package::STATUS_IDLE);
+                    $log[] = 0;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
+                    $log[] = 1;
+                }
+            );
+
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)
+            ->once()
+            ->whenHappen(
+                static function (string $packageName, Package $package) use (&$log): void {
+                    static::assertSame('package_1', $packageName);
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
+                    $log[] = 2;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
+                    $log[] = 3;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+                    $log[] = 4;
+                }
+            );
+
+        $package->connect(Package::new($this->stubProperties('connected', true)));
+        $package->boot();
+
+        static::assertSame(range(0, 4), $log);
+        static::assertCount(1, $package->connectedPackages());
+    }
+
+    /**
+     * This is identical to the above where we do only `boot()`, we do here `build()->boot()` but
+     * we expect identical result.
+     *
+     * @test
+     */
+    public function testBuildAndBootFireHooks(): void
+    {
+        $package = $this->stubSimplePackage('1');
+
+        $log = [];
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once()
+            ->whenHappen(
+                static function (string $packageName, int $status) use (&$log): void {
+                    static::assertSame($status, Package::STATUS_IDLE);
+                    $log[] = 0;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
+                    $log[] = 1;
+                }
+            );
+
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)
+            ->once()
+            ->whenHappen(
+                static function (string $packageName, Package $package) use (&$log): void {
+                    static::assertSame('package_1', $packageName);
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
+                    $log[] = 2;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
+                    $log[] = 3;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+                    $log[] = 4;
+                }
+            );
+
+        $package->connect(Package::new($this->stubProperties('connected', true)));
+        $package->build()->boot();
+
+        static::assertSame(range(0, 4), $log);
+        static::assertCount(1, $package->connectedPackages());
+    }
+
+    /**
+     * This is mostly identical to the above where we do `build()->boot()` but here we do
+     * we do just `build()` and we expect very similar result, but ACTION_READY never fired.
+     *
+     * @test
+     */
+    public function testBuildFireHooks(): void
+    {
+        $package = $this->stubSimplePackage('1');
+
+        $log = [];
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_PACKAGE_CONNECTED))
+            ->once()
+            ->whenHappen(
+                static function (string $packageName, int $status) use (&$log): void {
+                    static::assertSame($status, Package::STATUS_IDLE);
+                    $log[] = 0;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
+                    $log[] = 1;
+                }
+            );
+
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)
+            ->once()
+            ->whenHappen(
+                static function (string $packageName, Package $package) use (&$log): void {
+                    static::assertSame('package_1', $packageName);
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZING));
+                    $log[] = 2;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
+            ->once()
+            ->whenHappen(
+                static function (Package $package) use (&$log): void {
+                    static::assertTrue($package->statusIs(Package::STATUS_INITIALIZED));
+                    $log[] = 3;
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
+            ->never();
+
+        $package->connect(Package::new($this->stubProperties('connected', true)));
+        $package->build();
+
+        static::assertSame(range(0, 3), $log);
+        static::assertCount(1, $package->connectedPackages());
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBootFromInitHookDebugOff(): void
+    {
+        $package = Package::new($this->stubProperties('test', false));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->whenHappen([$package, 'boot']);
+
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
+
+        $package->build();
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBootFromInitHookDebugOn(): void
+    {
+        $package = Package::new($this->stubProperties('test', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->whenHappen([$package, 'boot']);
+
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
+
+        $this->expectExceptionMessageMatches('/boot/i');
+        $package->build();
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBootFromInitializedHook(): void
+    {
+        $package = Package::new($this->stubProperties('test', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
+            ->once()
+            ->whenHappen([$package, 'boot']);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
+
+        $this->expectExceptionMessageMatches('/boot/i');
+        $package->build();
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBootFromReadyHook(): void
+    {
+        $package = Package::new($this->stubProperties('test', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
+            ->once()
+            ->whenHappen([$package, 'boot']);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->once();
+
+        $this->expectExceptionMessageMatches('/boot/i');
+        $package->boot();
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBuildFromInitHook(): void
+    {
+        $package = Package::new($this->stubProperties('test', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
+            ->once()
+            ->whenHappen([$package, 'build']);
+
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
+
+        $this->expectExceptionMessageMatches('/build/i');
+        $package->build();
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBuildFromInitializedHook(): void
+    {
+        $package = Package::new($this->stubProperties('test', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
+            ->once()
+            ->whenHappen([$package, 'build']);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))->never();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->never();
+
+        $this->expectExceptionMessageMatches('/build/i');
+        $package->build();
+    }
+
+    /**
+     * @test
+     */
+    public function testItFailsWhenCallingBuildFromReadyHook(): void
+    {
+        $package = Package::new($this->stubProperties('test', true));
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
+            ->once()
+            ->whenHappen([$package, 'build']);
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
+        Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))->once();
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BOOT))->once();
+
+        $this->expectExceptionMessageMatches('/build/i');
+        $package->boot();
     }
 
     /**
@@ -523,7 +1147,7 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
             ->once()
-            ->with($package1->name(), Package::STATUS_IDLE, true);
+            ->with($package1->name(), Package::STATUS_IDLE, false);
 
         $package1->build();
 
@@ -571,7 +1195,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -589,7 +1213,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -608,7 +1232,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -626,7 +1250,7 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
@@ -661,40 +1285,7 @@ class PackageTest extends TestCase
     /**
      * @test
      */
-    public function testPackageCanOnlyBeConnectedOnceDebugOff(): void
-    {
-        $package1 = $this->stubSimplePackage('1', true);
-        $package2 = $this->stubSimplePackage('2', false);
-
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
-            ->once();
-
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
-            ->twice()
-            ->with($package1->name(), \Mockery::type(\WP_Error::class));
-
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
-            ->once()
-            ->whenHappen(
-                function (\Throwable $throwable): void {
-                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?already');
-                }
-            );
-
-        static::assertTrue($package2->connect($package1));
-        static::assertTrue($package2->isPackageConnected($package1->name()));
-
-        static::assertFalse($package2->connect($package1));
-        static::assertTrue($package2->isPackageConnected($package1->name()));
-
-        static::assertFalse($package2->connect($package1));
-        static::assertTrue($package2->isPackageConnected($package1->name()));
-    }
-
-    /**
-     * @test
-     */
-    public function testPackageCanOnlyBeConnectedOnceDebugOn(): void
+    public function testPackageCanOnlyBeConnectedOnce(): void
     {
         $package1 = $this->stubSimplePackage('1', false);
         $package2 = $this->stubSimplePackage('2', true);
@@ -702,23 +1293,25 @@ class PackageTest extends TestCase
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_PACKAGE_CONNECTED))
             ->once();
 
-        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECTION))
-            ->once()
+        Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
+            ->twice()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_BUILD))
-            ->once()
-            ->whenHappen(
-                function (\Throwable $throwable): void {
-                    $this->assertThrowableMessageMatches($throwable, 'failed connect.+?already');
-                }
-            );
+            ->never();
 
         static::assertTrue($package2->connect($package1));
         static::assertTrue($package2->isPackageConnected($package1->name()));
 
-        $this->expectExceptionMessageMatches('/already connected/i');
-        $package2->connect($package1);
+        static::assertFalse($package2->connect($package1));
+        static::assertTrue($package2->isPackageConnected($package1->name()));
+
+        static::assertFalse($package2->connect($package1));
+        static::assertTrue($package2->isPackageConnected($package1->name()));
+
+        $package1->build();
+        $package2->build();
+        static::assertSame('service_1', $package2->container()->get('service_1')['id']);
     }
 
     /**
@@ -728,7 +1321,7 @@ class PackageTest extends TestCase
     {
         $package1 = $this->stubSimplePackage('1');
 
-        $action = $package1->hookName(Package::ACTION_FAILED_CONNECTION);
+        $action = $package1->hookName(Package::ACTION_FAILED_CONNECT);
         Monkey\Actions\expectDone($action)->never();
 
         static::assertFalse($package1->connect($package1));
@@ -770,133 +1363,6 @@ class PackageTest extends TestCase
         // And we can use Package 1 to get a service from the two connected packages
         static::assertSame('service_2', $package1->container()->get('service_2')['id']);
         static::assertSame('service_3', $package1->container()->get('service_3')['id']);
-    }
-
-    /**
-     * @test
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
-     */
-    public function testBuildResolveServices(): void
-    {
-        // phpcs:enable phpcs:disable Inpsyde.CodeQuality.NestingLevel
-        $module = new class () implements ServiceModule, ExtendingModule, ExecutableModule
-        {
-            public function id(): string
-            {
-                return 'test-module';
-            }
-
-            public function services(): array
-            {
-                return [
-                    'dependency' => static function (): object {
-                        return (object) ['x' => 'Works!'];
-                    },
-                    'service' => static function (ContainerInterface $container): object {
-                        $works = $container->get('dependency')->x;
-
-                        return new class (['works?' => $works]) extends \ArrayObject
-                        {
-                        };
-                    },
-                ];
-            }
-
-            public function extensions(): array
-            {
-                return [
-                    'service' => function (\ArrayObject $current): object {
-                        return new class ($current)
-                        {
-                            public \ArrayObject $object; // phpcs:ignore
-
-                            public function __construct(\ArrayObject $object)
-                            {
-                                $this->object = $object;
-                            }
-
-                            public function works(): string
-                            {
-                                return $this->object->offsetGet('works?');
-                            }
-                        };
-                    },
-                ];
-            }
-
-            public function run(ContainerInterface $container): bool
-            {
-                throw new \Error('This should not run!');
-            }
-        };
-
-        $actual = Package::new($this->stubProperties())
-            ->addModule($module)
-            ->build()
-            ->container()
-            ->get('service')
-            ->works();
-
-        static::assertSame('Works!', $actual);
-    }
-
-    /**
-     * @test
-     */
-    public function testBuildPassingModulesToBoot(): void
-    {
-        $module1 = $this->stubModule('module_1', ServiceModule::class);
-        $module1->expects('services')->andReturn($this->stubServices('service_1'));
-
-        $module2 = $this->stubModule('module_2', ServiceModule::class);
-        $module2->expects('services')->andReturn($this->stubServices('service_2'));
-
-        $module3 = $this->stubModule('module_3', ServiceModule::class);
-        $module3->expects('services')->andReturn($this->stubServices('service_3'));
-
-        $package = Package::new($this->stubProperties('test', true))
-            ->addModule($module1)
-            ->addModule($module2)
-            ->build();
-
-        $this->ignoreDeprecations();
-        $package->boot($module2, $module3);
-
-        $container = $package->container();
-
-        static::assertSame('service_1', $container->get('service_1')['id']);
-        static::assertSame('service_2', $container->get('service_2')['id']);
-        static::assertSame('service_3', $container->get('service_3')['id']);
-    }
-
-    /**
-     * @test
-     */
-    public function testBootFailsIfPassingNotAddedModulesAfterContainer(): void
-    {
-        $module1 = $this->stubModule('module_1', ServiceModule::class);
-        $module1->expects('services')->andReturn($this->stubServices('service_1'));
-
-        $module2 = $this->stubModule('module_2', ServiceModule::class);
-        $module2->expects('services')->andReturn($this->stubServices('service_2'));
-
-        $module3 = $this->stubModule('module_3', ServiceModule::class);
-        $module3->allows('services')->andReturn($this->stubServices('service_3'));
-
-        $package = Package::new($this->stubProperties('test', true))
-            ->addModule($module1)
-            ->addModule($module2)
-            ->build();
-
-        $container = $package->container();
-
-        static::assertSame('service_1', $container->get('service_1')['id']);
-        static::assertSame('service_2', $container->get('service_2')['id']);
-
-        $this->expectExceptionMessageMatches("/can't add module module_3/i");
-        $this->ignoreDeprecations();
-        $package->boot($module2, $module3);
     }
 
     /**
@@ -969,11 +1435,20 @@ class PackageTest extends TestCase
 
         $package = Package::new($this->stubProperties());
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_ADD_MODULE))
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
                     static::assertSame($exception, $throwable);
+                    static::assertTrue($package->statusIs(Package::STATUS_FAILED));
+                }
+            );
+
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+            ->once()
+            ->whenHappen(
+                function (\Throwable $throwable) use ($package): void {
+                    $this->assertThrowableMessageMatches($throwable, 'build package');
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
             );
@@ -986,7 +1461,7 @@ class PackageTest extends TestCase
                     $previous = $throwable->getPrevious();
                     $this->assertThrowableMessageMatches($previous, 'build package');
                     $previous = $previous->getPrevious();
-                    $this->assertThrowableMessageMatches($previous, 'add module two');
+                    $this->assertThrowableMessageMatches($previous, 'add module');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
@@ -1018,7 +1493,7 @@ class PackageTest extends TestCase
         $connected = Package::new($this->stubProperties());
         $connected->boot();
 
-        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_BUILD))
+        Monkey\Actions\expectDone($package->hookName(Package::ACTION_FAILED_ADD_MODULE))
             ->once()
             ->whenHappen(
                 static function (\Throwable $throwable) use ($exception, $package): void {
@@ -1033,11 +1508,7 @@ class PackageTest extends TestCase
                 function (\Throwable $throwable) use ($exception, $package): void {
                     $this->assertThrowableMessageMatches($throwable, 'boot application');
                     $previous = $throwable->getPrevious();
-                    $this->assertThrowableMessageMatches($previous, 'build package');
-                    $previous = $previous->getPrevious();
-                    $this->assertThrowableMessageMatches($previous, 'failed connect.+?errored');
-                    $previous = $previous->getPrevious();
-                    $this->assertThrowableMessageMatches($previous, 'add module two');
+                    $this->assertThrowableMessageMatches($previous, 'two');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
                 }
@@ -1045,7 +1516,6 @@ class PackageTest extends TestCase
 
         $package = $package->addModule($module1)->addModule($module2);
 
-        static::assertFalse($package->connect($connected));
         static::assertFalse($package->boot());
         static::assertTrue($package->statusIs(Package::STATUS_FAILED));
         static::assertTrue($package->hasFailed());

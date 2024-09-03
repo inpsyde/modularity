@@ -76,9 +76,7 @@ class PackageProxyContainer implements ContainerInterface
         }
 
         $name = $this->package->name();
-        $status = $this->package->statusIs(Package::STATUS_FAILED)
-            ? 'is errored'
-            : 'is not ready yet';
+        $status = $this->package->hasFailed() ? 'is errored' : 'is not ready yet';
 
         $error = "Error retrieving service {$id} because package {$name} {$status}.";
         throw new class (esc_html($error)) extends \Exception implements ContainerExceptionInterface
