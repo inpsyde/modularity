@@ -19,7 +19,7 @@ composer require inpsyde/modularity
 
 ## Minimum Requirements and Dependencies
 
-* PHP 7.2+
+* PHP 7.4+
 
 When installed for development via Composer, the package also requires:
 
