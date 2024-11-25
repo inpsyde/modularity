@@ -87,6 +87,7 @@ class PluginPropertiesTest extends TestCase
         $pluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
         $expectedBaseName = 'plugin-dir/plugin-name.php';
 
+        Functions\expect('current_action')->andReturn('init');
         Functions\expect('get_plugin_data')->andReturn([
             'RequiresPlugins' => $requiresPlugins,
         ]);
@@ -291,6 +292,57 @@ class PluginPropertiesTest extends TestCase
                 '/wp-content/mu-plugins/the-plugin/index.php',
                 '/wp-content/mu-plugins/',
                 true,
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider provideTranslationLoadingData
+     *
+     * @param bool $didAfterSetupTheme
+     * @param bool $shouldTranslate
+     *
+     * @return void
+     */
+    public function testTranslationLoading(bool $didAfterSetupTheme, bool $shouldTranslate): void
+    {
+        $pluginMainFile = '/app/wp-content/plugins/plugin-dir/plugin-name.php';
+        $expectedBaseName = 'plugin-dir/plugin-name.php';
+        $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
+
+        $actualTranslate = false;
+
+        Functions\expect('did_action')->andReturn($didAfterSetupTheme);
+        Functions\expect('doing_action')->andReturn($didAfterSetupTheme);
+        Functions\expect('get_plugin_data')->andReturnUsing(
+            static function (string $file, bool $markup, bool $translate) use (&$actualTranslate): array {
+                $actualTranslate = $translate;
+                return [];
+            }
+        );
+        Functions\when('plugins_url')->returnArg(1);
+        Functions\when('wp_normalize_path')->returnArg(1);
+        Functions\expect('plugin_basename')->andReturn($expectedBaseName);
+        Functions\expect('plugin_dir_path')->andReturn($expectedBasePath);
+
+        PluginProperties::new($pluginMainFile);
+        static::assertSame($shouldTranslate, $actualTranslate);
+    }
+
+    /**
+     * @return \Generator
+     */
+    public static function provideTranslationLoadingData(): \Generator
+    {
+        yield from [
+            'is late hook' => [
+                true,
+                true,
+            ],
+            'is early hook' => [
+                false,
+                false,
             ],
         ];
     }
