@@ -55,9 +55,10 @@ class PluginProperties extends BaseProperties
         }
 
         // $markup = false, to avoid an incorrect early wptexturize call.
-        // We also probably don't want HTML here anyway
+        // $translate = false, to avoid loading translations too early
         // @see https://core.trac.wordpress.org/ticket/49965
-        $pluginData = (array) get_plugin_data($pluginMainFile, false);
+        // @see https://core.trac.wordpress.org/ticket/34114
+        $pluginData = (array) get_plugin_data($pluginMainFile, false, false);
         $properties = Properties::DEFAULT_PROPERTIES;
 
         // Map pluginData to internal structure.
@@ -65,6 +66,7 @@ class PluginProperties extends BaseProperties
             $properties[$key] = $pluginData[$pluginDataKey] ?? '';
             unset($pluginData[$pluginDataKey]);
         }
+        /** @var array<string, mixed> $properties */
         $properties = array_merge($properties, $pluginData);
 
         $this->pluginMainFile = wp_normalize_path($pluginMainFile);

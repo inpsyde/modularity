@@ -10,13 +10,14 @@ class BaseProperties implements Properties
     protected string $baseName;
     protected string $basePath;
     protected ?string $baseUrl;
+    /** @var array<string, mixed> */
     protected array $properties;
 
     /**
      * @param string $baseName
      * @param string $basePath
      * @param string|null $baseUrl
-     * @param array $properties
+     * @param array<string, mixed> $properties
      */
     protected function __construct(
         string $baseName,

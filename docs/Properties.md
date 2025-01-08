@@ -77,7 +77,8 @@ Additionally, PluginProperties will have the following public API:
 - `PluginProperties::isNetworkActive(): bool` - returns if the current Plugin is network-wide active.
 - `PluginProperties::isMuPlugin(): bool` - returns if the current Plugin is a must-use Plugin.
 
-
+Please note that our usage of `get_plugin_data` opts out of translations and HTML-safe text processing (via `wptexturize`) offered by default.
+These functions should not be used before the 'init' hook which may be too late for some applications.
 
 ## ThemeProperties
 

@@ -53,12 +53,9 @@ class PackageProxyContainer implements ContainerInterface
             return true;
         }
 
-        /** TODO: We need a better way to deal with status checking besides equality */
         if (
-            $this->package->statusIs(Package::STATUS_INITIALIZED)
-            || $this->package->statusIs(Package::STATUS_MODULES_ADDED)
-            || $this->package->statusIs(Package::STATUS_READY)
-            || $this->package->statusIs(Package::STATUS_BOOTED)
+            $this->package->hasContainer()
+            || $this->package->hasReachedStatus(Package::STATUS_INITIALIZED)
         ) {
             $this->container = $this->package->container();
         }
@@ -79,9 +76,7 @@ class PackageProxyContainer implements ContainerInterface
         }
 
         $name = $this->package->name();
-        $status = $this->package->statusIs(Package::STATUS_FAILED)
-            ? 'is errored'
-            : 'is not ready yet';
+        $status = $this->package->hasFailed() ? 'is errored' : 'is not ready yet';
 
         $error = "Error retrieving service {$id} because package {$name} {$status}.";
         throw new class (esc_html($error)) extends \Exception implements ContainerExceptionInterface

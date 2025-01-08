@@ -1,237 +1,170 @@
 # Package
-This is the central class, which will allow you to add multiple Containers, register Modules and use Properties to get more information about your Application.
 
-Aside from that, the `Package`-class will boot your Application on a specific point (like plugins_loaded) and grants access for other Applications via hook to register and extend Services via Modules.
+`Package` is the library's main class that manages different modules, containers, and embeds a "properties" object that provides information about the application.
+
+
+
+## "Build" and "Boot" procedures
+
+The `Package` class is responsible for "bootstrapping" the application and, by emitting hooks, enable external code to register and extend services, as well as "connecting" other `Package` instances sharing the containers.
+
+That happens in two separate phases, the "build" and "boot" phase.
+
+In the **"build" phase**, initialized by calling **`Package::build()`**, the class emits an hook that allow external code to add modules or connect other packages. After that, the package container is "locked" and no more services can be added.
+
+In the **"boot" phase**, initialized by calling **`Package::boot()`**, any "executable" module that was added in the "build" phase is now executed.
+
+More info about the two phases can be found in the ["Application flow" chapter](./Application-flow.md)
+
+
+
+## Action hooks
+
+It has been mentioned how during both the "build" and "boot" phases the `Package` instance emits hooks that allow external code to interact with it, e. g. by extending or connecting it.
+
+There are three package-specific hooks:
+
+- `Package::ACTION_INITIALIZING`, fired at the beginning of the "build" phase, enables adding modules or connecting packages to the passed `Package` instance.
+- `Package::ACTION_INITIALIZED`, fired at the end of the "build" phase, enables external code to access `Package`'s container, resolving services. No modification to the `Package`'s services are possible at this time or later.
+- `Package::ACTION_BOOTED`, fired at the end of the "boot" phase, enables external code to access `Package`'s instance at a stage where it did all its job by registering services and adding hook to WordPress.
+
+All the hooks above enable access to `Package` properties and to retrieve information about specific modules.
+
+
+
+### Hooking package-specific hooks
+
+The three package-specific hooks are so called because their name is dynamic, and can be obtained via a `Package` instance, by calling `Package::hookName()` passing any of the hook name constant mentioned above. For example:
 
 ```php
-<?php
-Inpsyde\Modularity\Package::new($properties)->boot();
+add_action(
+    $package->hookName(Package::ACTION_INIT),
+    fn (Package $package) => $package->addModule(new SomeModule())
+);
 ```
 
-The `Package`-class contains the following public API:
-
-**Package::moduleStatus(): array**
-
-Returns an array of all Modules and the current status.
-
-**Package::moduleIs(string $moduleId, string $status): bool**
-
-Allows to check the status for a given `Module::id()`.
-
-Following `Module` statuses are available:
-
-| Status                                 | Description                                                  |
-| -------------------------------------- | ------------------------------------------------------------ |
-| `Package::MODULE_REGISTERED`           | A `ServiceModule` was added and returned a non-zero number of services. |
-| `Package::MODULE_REGISTERED_FACTORIES` | A `FactoryModule` was added and returned a non-zero number of factories. |
-| `Package::MODULE_EXTENDED`             | An `ExtendingModule` was added and returned a non-zero number of extension. |
-| `Package::MODULE_ADDED`                | _Any_ of the three statuses above applied, or a module implements `ExecutableModule` |
-| `Package::MODULE_NOT_ADDED`            | _None_ of the first three statuses applied for a modules that is non-executable. That might happen in two scenarios: a module only implemented base `Module` interface, or did not return any service/factory/extension. |
-| `Package::MODULE_EXECUTED`             | An `ExecutableModule::run()` method was called and returned `true`. |
-| `Package::MODULE_EXECUTION_FAILED`     | An `ExecutableModule::run()` method was called and returned `false`. |
-
-**Package::hookName(string $suffix = ''): string**
-
-Allows to generate the hookName for Package-class (see below)
-
-**Package::properties(): PropertiesInterface**
-
-Access to Properties.
-
-**Package::container(): ContainerInterface**
-
-Access to the compiled Container after the booting process is finished.
-
-**Package::name():string**
-
-A shortcut to `Properties::baseName()` which contains the name of your Application
-
-**Package::addModule(Module $module): self**
-
-Allows adding Modules from outside via custom Hooks triggered.
-
-**Package::statusIs(int $status): bool**
-
-Retrieve the current status of the Application. Following are available:
-
-- `Package::STATUS_IDLE` - before Application is booted.
-- `Package::STATUS_INITIALIZED` - after first init action is triggered.
-- `Package::STATUS_MODULES_ADDED` - after all modules have been added.
-- `Package::STATUS_READY` - after the "ready" action has been fired.
-- `Package::STATUS_BOOTED` - Application has successfully booted.
-- `Package::STATUS_FAILED_BOOT` - when Application did not boot properly.
 
 
+### Generic "init" hook
 
-## Access from external
+Besides the three package-specific hooks, the `Package` instance emits a single hook whose name is not dynamic, but is fired for every `Package` instance. 
 
-The recommended way to set up your Application is to provide a function in your Application namespace which returns an instance of Package. Here’s a short example of an “Acme”-Plugin:
+The hook name is stored in the `Package::ACTION_MODULARITY_INIT` constant, it is executed right after the package-specific `Package::ACTION_INIT` hook, and unlike the three package-specific hooks, it passes the package name as first argument and the `Package` instance as second.  
 
 ```php
-<?php
-
-declare(strict_types=1);
-
-/*
- * Plugin Name:       Acme
- * Author:            Inpsyde GmbH
- * Author URI:        https://inpsyde.com/
- * Version:           1.0.0
- * Text Domain:       acme
- */
-
-namespace Acme;
-
-use Inpsyde\Modularity;
-
-function plugin(): Modularity\Package {
-    static $package;
-    if (!$package) {
-        $properties = Modularity\Properties\PluginProperties::new(__FILE__);
-        $package = Modularity\Package::new($properties);
-    }
-
-   return $package;
-}
-
 add_action(
-    'plugins_loaded',
-    static function(): void {
-        plugin()->boot();
+    Package::ACTION_MODULARITY_INIT,
+    function (string $packageName, Package $package): void {
+        if (str_starts_with($packageName, 'acme-')) {
+            $package->connect(\Acme\someGlobalLibrary())
+        }
     }
 );
 ```
 
-By providing the `Acme\plugin()` function, you’ll enable external code to hook into your application:
+Among other things, this enables to easily apply the same operations to multiple packages without calling `function_exists()` and even without knowing in advance what packages will be there.
+
+
+
+## Usage example
+
+The following code shows how to use this class for a plugin. A theme or library usage would not differ much. 
 
 ```php
-<?php
+/* Plugin Name: Acme */
 
-declare(strict_types=1);
+namespace Acme;
 
+use Inpsyde\Modularity\{Package, Properties};
+
+function plugin(): Package {
+    static $package;
+    if (!$package) {
+        $properties = Properties\PluginProperties::new(__FILE__);
+        $package = Package::new($properties)
+            ->addModule(new ModuleOne())
+            ->addModule(new ModuleTwo());
+    }
+   return $package;
+}
+
+// An early hook. Not _too_ early to allow external code to extend the instance before
+// the call to `plugin()->build()` "locks" it. A late priority is used so that hooking
+// 'plugins_loaded' is still ok to call `plugin()` and extend the obtained `Package`.
+add_action('plugins_loaded', fn () => plugin()->build(), PHP_INT_MAX);
+
+// The latest hook the plugin can use to do its job.
+add_action('template_redirect', fn () => plugin()->boot());
+```
+
+The `Acme\plugin()` function above enables external code to use an action hook to extend the package, for example adding more modules:
+
+```php
 namespace FooBarInc;
 
 use Inpsyde\Modularity\Package;
 
-if (! function_exists('Acme\plugin')) {
-   return;
+if (function_exists('Acme\plugin')) {
+   add_action(
+        Acme\plugin()->hookName(Package::ACTION_INIT),
+        fn (Package $plugin) => $plugin->addModule(new MyModule())
+    );
 }
-
-add_action(
-    Acme\plugin()->hookName(Package::ACTION_INIT),
-    static function (Package $plugin): void {
-       $plugin->addModule(new MyModule());
-    }
-);
 ```
 
-## Building the package
 
-Sometimes, especially in unit tests, it might be desirable to obtain services as defined for the
-production code, but without calling any `ExecutableModule::run()`, which usually contains
-WP-dependant code, and therefore requires heavy mocking.
 
-For example, assuming a common `plugin()` function like the following:
+### Alternative usage using a plugin-specific hook
+
+An alternative to the previous example makes use of a plugin-specific hook to allow for extension. This hook is fired inside the `plugin()` function, right before calling `build()`:
 
 ```php
-function plugin(): Modularity\Package {
+use Inpsyde\Modularity\{Package, Properties};
+
+function plugin(): Package {
     static $package;
     if (!$package) {
-        $properties = Modularity\Properties\PluginProperties::new(__FILE__);
-        $package = Modularity\Package::new($properties)
-            ->addModule(new ModuleOne())
-            ->addModule(new ModuleTwo())
+        $properties = Properties\PluginProperties::new(__FILE__);
+        $package = Package::new($properties);
+        // Add default modules here...
+        do_action('acme-plugin.extend', $package);
+        $package->build();
     }
     return $package;
 }
+
+// The latest hook the plugin can use to do its job.
+add_action('template_redirect', fn () => plugin()->boot());
 ```
 
-In unit test it will be possible (as of v1.7+) to do something like the following:
+Thanks to that, any code that needs to extend this plugin, does not need to call `function_exists()`, and the bootstrap process is easier without a separate `build()`, still keeping `boot()` as late as possible. Extending code can look like the following:
 
 ```php
-$myService = plugin()->build()->container()->get(MyService::class);
-static::assertTrue($myService->isValid());
-```
+use Inpsyde\Modularity\Package;
 
-### Booting a built container
-
-The `Package::boot()` method can be called on already built package.
-
-For example, the following is a valid unit test code:
-
-```php
-$plugin = plugin()->build();
-$myService = $plugin->container()->get(MyService::class);
-
-static::assertTrue($myService->isValid());
-static::assertFalse($myService->isBooted());
-
-$plugin->boot();
-
-static::assertTrue($myService->isBooted());
-```
-
-### Removed boot parameters
-
-Before Modularity v1.7.0, it was an accepted practice to pass default modules to `Package::boot()`,
-as in:
-
-```php
 add_action(
-    'plugins_loaded',
-    static function(): void {
-        plugin()->boot(new ModuleOne(), new ModuleTwo());
+    'acme-plugin.extend',
+    function (Package $plugin): void {
+        $plugin->addModule(new MyModule());
     }
 );
 ```
 
-This is now removed to allow a better separation of the "building" and "booting" steps.
+This approach makes sense when we expect multiple external plugins/libraries/themes to extend our plugin, e. g. when we are writing a plugin we design to be extended via extensions.
 
-While it still works (and it will work up to version 2.0), it will emit a deprecation notice.
-
-The replacement is using `Package::addModule()`:
-
-```php
-plugin()
-    ->addModule(new ModuleOne())
-    ->addModule(new ModuleTwo())
-    ->boot();
-```
-
-There's only one case in which calling `Package::boot()` with default modules will throw an 
-exception (besides triggering a deprecated notice), that is when a passed modules was not added
-before `Package::addModule()` and an instance of the container was already obtained from the package.
-
-For example, this will throw an exception:
-
-```php
-$plugin = plugin()->build();
-
-// Now that container is built, passing modules to `boot()` will raise an exception, because we
-// can't add new modules to an already "compiled" container being that read-only.
-$container = $plugin->container();
-
-$plugin->boot(new ModuleOne());
-```
-
-To prevent the exception it would be necessary to add the module before calling `build()`, or  alternatively, to call `$plugin->boot(new ModuleOne())` _before_ calling `$plugin->container()`.
-In this latter case the exception is not thrown, but the deprecation will still be emitted.
 
 
 ## Connecting packages
 
-Every `Package` has a separate container, however sometimes it might be desirable access another package's services. For example from a plugin access one library services, or from a theme access a plugin's services.
+Every `Package` has a separate container, however it might be desirable access another package's services. For example, from a plugin access a library's services, or from a theme access a plugin's services.
 
-That can be done using the `Package::connect()` method.
-
-For example:
+That can be done using the `Package::connect()` method. Here's an example:
 
 ```php
-// a theme functions.php
+// Theme functions.php
+use Inpsyde\Modularity\{Package, Properties};
 
-$properties = Properties\ThemeProperties::new('/path/to/theme/dir/');
-$theme = Inpsyde\Modularity\Package::new($properties);
-
+$theme = Package::new(Properties\ThemeProperties::new(__DIR__));
 $theme->connect(\Acme\plugin());
 $theme->boot();
 ```
@@ -241,37 +174,165 @@ To note:
 - `Package::connect()` must be called **before** the package enters the "initialized" status, that is, before calling `Package::boot()` or `Package::build()`. If called later, no connections happen and it returns `false`
 - The package to be connected might be already booted or not. In the second case the connection will happen, but before accessing its services it has to be at least built, or an exception will happen.
 
-Package connection is a great way to create reusable libraries and services that can be used by many plugins. For example, it might be possible to have a *library* that has something like this:
+Package connection enables the creation of reusable libraries to be consumed by multiple plugins. For example, it might be possible to have a *library* that has something like this:
 
 ```php
 namespace Acme;
+
+use Inpsyde\Modularity\{Package, Properties};
 
 function myLibrary(): Package {
     static $lib;
     if (!$lib) {
         $properties = Properties\LibraryProperties::new('path/to/composer.json');
-        $lib = Inpsyde\Modularity\Package::new($properties);
-        $lib->addModule(new ModuleOne());
-        $lib->addModule(new ModuleTwo());
-        $lib->boot();
+        Package::new($properties)
+            ->addModule(new ModuleOne())
+            ->addModule(new ModuleTwo())
+            ->boot();
     }
     return $lib;
 }
 ```
 
-This would be autoloaded by Composer, but not being a plugin will not be called by WordPress.
+This function might be autoloaded via Composer, autoload, but not being a plugin, it will not be executed by WordPress.
 
-However, *many* plugins in the same installation could do:
+However, multiple plugins in the same installation could do:
 
 ```php
-/** @var Package $plugin */
 $plugin->connect(\Acme\myLibrary());
 ```
 
 Thanks to that, all plugins will be able to access the library's services in the same way they access own modules' services.
 
+Please note that by calling `Package::boot()` in the `myLibrary()` function immediately after having instantiated the `Package` instance will prevent any external code to extend the library, adding more modules or connecting other packages.
 
 
-### Accessing connected packages' properties 
+
+### Accessing connected packages' properties
 
 In modules, we can access package properties calling `$container->get(Package::PROPERTIES)`. If we'd like to access any connected package properties, we could do that using a key whose format is: `sprintf('%s.%s', $connectedPackage->name(), Package::PROPERTIES)`.
+
+
+
+## `Package` public API
+
+
+
+
+### `Package::boot(): bool`
+
+Executes the "boot" phase, and the "build" phase, if it has not be executed separately via `Package::build()`.
+
+
+
+### `Package::build(): static`
+
+Executes the "build" phase. The inner container is safely accessible after that, and no more services can be added to it.
+
+
+
+### `Package::connect(Package $package): bool`
+
+Connect the given package sharing their services with the calling `Package` instance.
+
+
+
+
+### `Package::connectedPackages(): array`
+
+Returns an array of names of packages connected via `Package::connect()`.
+
+
+
+
+### `Package::container(): ContainerInterface`
+
+Access to the compiled PSR-11 container. Throws an exception if called before the "build" phase is completed.
+
+
+
+### `Package::hasContainer(): bool`
+
+Returns true if a container has already be generated for the Package, regardless current status. Note: this might be true even in case of failures.
+
+
+
+### `Package::hasFailed(): bool`
+
+Returns true if the current status is failed.
+
+
+
+### `Package::hasReachedStatus(int $status): bool`
+
+Returns true if the current given status is either the current Package status, or a status the package has previously been. Please note that it will always return false when in a "failed" status (`Package::hasFailed()` returns true).
+
+For the list of available statuses see `Package::statusIs()` below.
+
+
+
+
+### `Package::hookName(string $suffix = ''): string`
+
+Generates the hook name for package-specific hooks.
+
+
+
+
+### `Package::isPackageConnected(string $packageName): bool`
+
+Returns `true` when give a name of a package previously connected via `Package::connect()`.
+
+
+
+
+### `Package::moduleIs(string $moduleId, string $status): bool`
+
+Used to check the status for a given `Module::id()`.  The following statuses are available:
+
+| Status                                 | Description                                                                                                                                                                                                              |
+|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Package::MODULE_REGISTERED`           | A `ServiceModule` was added and returned a non-zero number of services.                                                                                                                                                  |
+| `Package::MODULE_REGISTERED_FACTORIES` | A `FactoryModule` was added and returned a non-zero number of factories.                                                                                                                                                 |
+| `Package::MODULE_EXTENDED`             | An `ExtendingModule` was added and returned a non-zero number of extension.                                                                                                                                              |
+| `Package::MODULE_ADDED`                | _Any_ of the three statuses above applied, or a module implements `ExecutableModule`                                                                                                                                     |
+| `Package::MODULE_NOT_ADDED`            | _None_ of the first three statuses applied for a modules that is non-executable. That might happen in two scenarios: a module only implemented base `Module` interface, or did not return any service/factory/extension. |
+| `Package::MODULE_EXECUTED`             | An `ExecutableModule::run()` method was called and returned `true`.                                                                                                                                                      |
+| `Package::MODULE_EXECUTION_FAILED`     | An `ExecutableModule::run()` method was called and returned `false`.                                                                                                                                                     |
+
+
+
+### `Package::moduleStatus(): array`
+
+Returns an associative array that maps module names to their current status.
+
+
+
+
+### `Package::name(): string`
+
+A shortcut to `Properties::baseName()`.
+
+
+
+
+### `Package::properties(): PropertiesInterface`
+
+Access to the wrapped [properties instance](./Properties.md).
+
+
+
+
+### `Package::statusIs(int $status): bool`
+
+Retrieve the current status of the application. The following statuses are available:
+
+| Status                         | Description                                                                       |
+|--------------------------------|-----------------------------------------------------------------------------------|
+| `Package::STATUS_IDLE`         | Before application is built or booted (`Package` instance just instantiated).     |
+| `Package::STATUS_INITIALIZING` | Before `Package::build()` started processing modules.                             |
+| `Package::STATUS_INITIALIZED`  | After `Package::build()` end processing modules.                                  |
+| `Package::STATUS_BOOTING`      | Before `Package::boot()` started processing executable modules' "run procedures". |
+| `Package::STATUS_BOOTED`       | After `Package::boot()` ended processing executable modules' "run procedures".    |
+| `Package::STATUS_DONE`         | The application has successfully completed both processes.                        |
+| `Package::STATUS_FAILED`       | The application did not build/boot properly.                                      |
