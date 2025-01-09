@@ -22,7 +22,7 @@ class BaseProperties implements Properties
     protected function __construct(
         string $baseName,
         string $basePath,
-        string $baseUrl = null,
+        ?string $baseUrl = null,
         array $properties = []
     ) {
 

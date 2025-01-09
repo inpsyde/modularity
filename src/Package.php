@@ -6,8 +6,8 @@ namespace Inpsyde\Modularity;
 
 use Inpsyde\Modularity\Container\ContainerConfigurator;
 use Inpsyde\Modularity\Container\PackageProxyContainer;
-use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\ExecutableModule;
+use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\Module;
 use Inpsyde\Modularity\Module\ServiceModule;
@@ -270,12 +270,9 @@ class Package
     /**
      * @param Package $package
      * @return bool
-     *
-     * phpcs:disable Inpsyde.CodeQuality.FunctionLength
      */
     public function connect(Package $package): bool
     {
-        // phpcs:enable Inpsyde.CodeQuality.FunctionLength
         try {
             if ($package === $this) {
                 return false;
@@ -813,6 +810,7 @@ class Package
 
         if (apply_filters('deprecated_argument_trigger_error', true)) {
             do_action('wp_trigger_error_run', $function, $message, \E_USER_DEPRECATED);
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
             trigger_error(esc_html($message), \E_USER_DEPRECATED);
         }
     }

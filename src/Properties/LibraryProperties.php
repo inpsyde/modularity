@@ -21,11 +21,11 @@ class LibraryProperties extends BaseProperties
      * @param string|null $baseUrl
      * @return LibraryProperties
      *
-     * phpcs:disable Generic.Metrics.CyclomaticComplexity
+     * phpcs:disable SlevomatCodingStandard.Complexity
      */
     public static function new(string $composerJsonFile, ?string $baseUrl = null): LibraryProperties
     {
-        // phpcs:enable Generic.Metrics.CyclomaticComplexity
+        // phpcs:enable SlevomatCodingStandard.Complexity
         if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
             throw new \Exception(
                 esc_html("File {$composerJsonFile} does not exist or is not readable.")
@@ -131,12 +131,9 @@ class LibraryProperties extends BaseProperties
      * @param array $composerData
      * @param string $key
      * @return string
-     *
-     * phpcs:disable Generic.Metrics.CyclomaticComplexity
      */
     private static function extractPhpVersion(array $composerData, string $key = 'require'): string
     {
-        // phpcs:enable Generic.Metrics.CyclomaticComplexity
         $nextKey = ($key === 'require') ? 'require-dev' : null;
         $base = $composerData[$key] ?? null;
         $requirement = is_array($base) ? ($base['php'] ?? '') : '';
