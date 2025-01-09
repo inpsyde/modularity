@@ -80,7 +80,7 @@ class BasePropertiesTest extends TestCase
     private function factoryBaseProperties(
         string $baseName,
         string $basePath,
-        string $baseUrl = null,
+        ?string $baseUrl = null,
         array $properties = []
     ): BaseProperties {
 
@@ -89,7 +89,7 @@ class BasePropertiesTest extends TestCase
             public function __construct(
                 string $baseName,
                 string $basePath,
-                string $baseUrl = null,
+                ?string $baseUrl = null,
                 array $properties = []
             ) {
 

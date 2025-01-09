@@ -8,6 +8,7 @@ use Inpsyde\Modularity\Container\ReadOnlyContainer as Container;
 use Inpsyde\Modularity\Container\ServiceExtensions;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class ReadOnlyContainerTest extends TestCase
 {
@@ -27,7 +28,7 @@ class ReadOnlyContainerTest extends TestCase
      */
     public function testGetUnknown(): void
     {
-        static::expectException(\Exception::class);
+        static::expectException(NotFoundExceptionInterface::class);
 
         $testee = $this->factoryContainer();
         $testee->get('unknown');
@@ -125,12 +126,9 @@ class ReadOnlyContainerTest extends TestCase
 
     /**
      * @test
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testFactoriesAndServices(): void
     {
-        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         $expectedServiceKey = 'service';
         $expectedFactoryKey = 'factory';
 

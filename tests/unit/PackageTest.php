@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Tests\Unit;
 
 use Brain\Monkey;
+use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Package;
-use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
@@ -453,12 +453,9 @@ class PackageTest extends TestCase
 
     /**
      * @test
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testBuildResolveServices(): void
     {
-        // phpcs:enable phpcs:disable Inpsyde.CodeQuality.NestingLevel
         $module = new class () implements ServiceModule, ExtendingModule, ExecutableModule
         {
             public function id(): string
@@ -488,7 +485,7 @@ class PackageTest extends TestCase
                     'service' => function (\ArrayObject $current): object {
                         return new class ($current)
                         {
-                            public \ArrayObject $object; // phpcs:ignore
+                            private \ArrayObject $object;
 
                             public function __construct(\ArrayObject $object)
                             {

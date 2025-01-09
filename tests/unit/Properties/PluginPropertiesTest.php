@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Tests\Unit\Properties;
 
-use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Properties\PluginProperties;
-use Inpsyde\Modularity\Tests\TestCase;
 use Brain\Monkey\Functions;
+use Inpsyde\Modularity\Properties\PluginProperties;
+use Inpsyde\Modularity\Properties\Properties;
+use Inpsyde\Modularity\Tests\TestCase;
 
 class PluginPropertiesTest extends TestCase
 {
