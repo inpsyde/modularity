@@ -27,7 +27,7 @@
     },
     "require-dev": {
         "brain/monkey": "^2.6.1",
-        "syde/phpcs": "1.0.0-rc.1",
+        "inpsyde/php-coding-standards": "^2.0.0",
         "roots/wordpress-no-content": "@dev",
         "mikey179/vfsstream": "^v1.6.11",
         "phpunit/phpunit": "^9.6.19",

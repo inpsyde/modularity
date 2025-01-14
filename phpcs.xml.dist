@@ -1,23 +1,46 @@
 <?xml version="1.0"?>
 <ruleset>
-
     <file>./src</file>
+    <file>./tests</file>
 
     <arg value="sp"/>
     <arg name="colors"/>
     <config name="testVersion" value="7.4-"/>
+    <config name="ignore_warnings_on_exit" value="1"/>
 
-    <rule ref="Syde-Extra">
-        <exclude name="SlevomatCodingStandard.Functions.RequireTrailingCommaInCall.MissingTrailingComma" />
-        <exclude name="SlevomatCodingStandard.Functions.RequireTrailingCommaInDeclaration.MissingTrailingComma" />
+    <rule ref="Inpsyde">
+        <exclude name="WordPress.PHP.DevelopmentFunctions.error_log_trigger_error" />
     </rule>
 
-    <rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
-    	<properties>
-    		<property name="rootNamespaces" type="array">
-    			<element key="src" value="Inpsyde\Modularity" />
-    			<element key="tests/phpunit/Unit" value="Inpsyde\Modularity\Tests\Unit" />
-    		</property>
-    	</properties>
+    <rule ref="Inpsyde.CodeQuality.Psr4">
+        <properties>
+            <property
+                name="psr4"
+                type="array"
+                value="
+                    Inpsyde\Modularity=>src,
+                    Inpsyde\Modularity\Tests=>tests/src,
+                    Inpsyde\Modularity\Tests\Unit=>tests/unit"
+            />
+        </properties>
+    </rule>
+
+    <rule ref="Inpsyde.CodeQuality.FunctionLength">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Inpsyde.CodeQuality.ForbiddenPublicProperty">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.DevelopmentFunctions">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.Security.EscapeOutput">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.PHP.Eval">
+        <exclude-pattern>*/tests/*</exclude-pattern>
     </rule>
 </ruleset>

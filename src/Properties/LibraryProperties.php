@@ -40,7 +40,7 @@ class LibraryProperties extends BaseProperties
      *
      * @return LibraryProperties
      *
-     * phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
+     * phpcs:disable Generic.Metrics.CyclomaticComplexity.TooHigh
      * phpcs:disable Syde.Functions.FunctionLength.TooLong
      */
     public static function new(string $composerJsonFile, ?string $baseUrl = null): LibraryProperties
