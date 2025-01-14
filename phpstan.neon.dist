@@ -1,0 +1,11 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+parameters:
+    level: 8
+    paths:
+        - src/
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - '#Trait Inpsyde\\Modularity\\Module\\ModuleClassNameIdTrait is used zero times and is not analysed.#'
+        # TODO: Check how we can point ABSPATH constant in phpstan to vendor/roots/wordpress-no-content/
+        - '#Path in require_once\(\) \".*\" is not a file or it does not exist.#'

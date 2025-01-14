@@ -26,7 +26,7 @@ class ReadOnlyContainer implements ContainerInterface
     /**
      * @param array<string, Service> $services
      * @param array<string, bool> $factoryIds
-     * @param ServiceExtensions|array $extensions
+     * @param ServiceExtensions|array<string, ExtendingService> $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
