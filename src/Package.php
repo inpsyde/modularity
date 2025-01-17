@@ -207,12 +207,12 @@ class Package
      */
     public static function new(Properties $properties, ContainerInterface ...$containers): Package
     {
-        return new self($properties, ...array_values($containers));
+        return new self($properties, ...$containers);
     }
 
     /**
      * @param Properties $properties
-     * @param ContainerInterface $containers
+     * @param ContainerInterface ...$containers
      */
     private function __construct(Properties $properties, ContainerInterface ...$containers)
     {
