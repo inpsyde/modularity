@@ -32,7 +32,9 @@
         "mikey179/vfsstream": "^v1.6.11",
         "phpunit/phpunit": "^9.6.19",
         "phpstan/phpstan": "2.1.1",
-        "szepeviktor/phpstan-wordpress": "^2"
+        "szepeviktor/phpstan-wordpress": "^2",
+        "swissspidy/phpstan-no-private": "^v1.0.0",
+        "phpstan/phpstan-deprecation-rules": "^2.0.1"
     },
     "extra": {
         "branch-alias": {
