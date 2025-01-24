@@ -220,8 +220,8 @@ class ReadOnlyContainerTest extends TestCase
         array $services = [],
         array $factoryIds = [],
         array $containers = []
-    ): Container
-    {
+    ): Container {
+
         return new Container($services, $factoryIds, new ServiceExtensions(), $containers);
     }
 }

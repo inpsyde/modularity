@@ -446,7 +446,7 @@ class ContainerConfiguratorTest extends TestCase
         $service = static function (): \ArrayAccess {
             return new \ArrayObject();
         };
-        $configurator->addService( 'test', $service );
+        $configurator->addService('test', $service);
 
         // We can't declare classes inside a class, but we can eval it.
         $php = <<<'PHP'
