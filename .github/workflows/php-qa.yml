@@ -24,8 +24,8 @@ on:
                 description: 'Choose jobs to run'
                 options:
                     - 'Run all'
+                    - 'Run PHPCS only'
                     - 'Run PHPStan only'
-                    - 'Run Psalm only'
                     - 'Run lint only'
 
 concurrency:
