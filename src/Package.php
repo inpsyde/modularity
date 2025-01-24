@@ -15,8 +15,8 @@ use Inpsyde\Modularity\Properties\Properties;
 use Psr\Container\ContainerInterface;
 
 /**
- * @psalm-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
- * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
+ * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
  *
  * phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
  */

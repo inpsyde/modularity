@@ -30,7 +30,7 @@ When installed for development, via Composer, the package also requires:
 
 * inpsyde/php-coding-standards
 * roots/wordpress
-* vimeo/psalm
+* phpstan/phpstan
 * phpunit/phpunit
 * brain/monkey
 * mikey179/vfsstream

@@ -203,7 +203,6 @@ class BaseProperties implements Properties
     public function isDebug(): bool
     {
         if ($this->isDebug === null) {
-            /** @psalm-suppress TypeDoesNotContainType */
             $this->isDebug = defined('WP_DEBUG') && WP_DEBUG;
         }
 

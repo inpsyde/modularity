@@ -7,7 +7,7 @@ namespace Inpsyde\Modularity\Container;
 use Psr\Container\ContainerInterface as Container;
 
 /**
- * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
  */
 class ServiceExtensions
 {
