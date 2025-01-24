@@ -67,37 +67,47 @@ abstract class TestCase extends FrameworkTestCase
     /**
      * @param string $id
      * @param class-string ...$interfaces
-     * @return Module|MockInterface
+     *
+     * @return Module&MockInterface
      */
     protected function stubModule(string $id = 'module', string ...$interfaces): Module
     {
-        $interfaces or $interfaces[] = Module::class;
+        if (!$interfaces) {
+            $interfaces[] = Module::class;
+        }
 
         $stub = \Mockery::mock(...$interfaces);
+        /** @phpstan-ignore-next-line */
         $stub->allows('id')->andReturn($id);
 
         if (in_array(ServiceModule::class, $interfaces, true)) {
+            /** @phpstan-ignore-next-line */
             $stub->allows('services')->byDefault()->andReturn([]);
         }
 
         if (in_array(FactoryModule::class, $interfaces, true)) {
+            /** @phpstan-ignore-next-line */
             $stub->allows('factories')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExtendingModule::class, $interfaces, true)) {
+            /** @phpstan-ignore-next-line */
             $stub->allows('extensions')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExecutableModule::class, $interfaces, true)) {
+            /** @phpstan-ignore-next-line */
             $stub->allows('run')->byDefault()->andReturn(false);
         }
 
+        /** @var MockInterface&Module */
         return $stub;
     }
 
     /**
      * @param string $suffix
      * @param bool $debug
+     *
      * @return Package
      */
     protected function stubSimplePackage(string $suffix, bool $debug = false): Package
@@ -111,6 +121,7 @@ abstract class TestCase extends FrameworkTestCase
 
     /**
      * @param string ...$ids
+     *
      * @return array<string, callable>
      */
     protected function stubServices(string ...$ids): array
@@ -127,6 +138,7 @@ abstract class TestCase extends FrameworkTestCase
 
     /**
      * @param string ...$ids
+     *
      * @return ContainerInterface
      *
      * phpcs:disable Inpsyde.CodeQuality.NestingLevel
@@ -134,8 +146,7 @@ abstract class TestCase extends FrameworkTestCase
     protected function stubContainer(string ...$ids): ContainerInterface
     {
         // phpcs:enable Inpsyde.CodeQuality.NestingLevel
-        return new class ($this->stubServices(...$ids)) implements ContainerInterface
-        {
+        return new class ($this->stubServices(...$ids)) implements ContainerInterface {
             /** @var array<string, callable> */
             private array $services; // phpcs:ignore
 
@@ -192,6 +203,7 @@ abstract class TestCase extends FrameworkTestCase
     /**
      * @param \Throwable $throwable
      * @param string $pattern
+     *
      * @return void
      */
     protected function assertThrowableMessageMatches(\Throwable $throwable, string $pattern): void

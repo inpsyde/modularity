@@ -423,6 +423,12 @@ class ContainerConfiguratorTest extends TestCase
     {
         // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         $logs = [];
+        /**
+         * @param object<\ArrayAccess> $object
+         * @param int ...$nums
+         *
+         * @return object<\ArrayAccess>
+         */
         $log = static function (object $object, int ...$nums) use (&$logs): object {
             foreach ($nums as $num) {
                 if (!in_array($num, $logs, true)) {
@@ -434,9 +440,13 @@ class ContainerConfiguratorTest extends TestCase
         };
 
         $configurator = new ContainerConfigurator();
-        $configurator->addService('test', static function (): \ArrayObject {
+        /**
+         * @return \ArrayAccess<string,string>
+         */
+        $service = static function (): \ArrayAccess {
             return new \ArrayObject();
-        });
+        };
+        $configurator->addService( 'test', $service );
 
         // We can't declare classes inside a class, but we can eval it.
         $php = <<<'PHP'
@@ -463,6 +473,7 @@ class ContainerConfiguratorTest extends TestCase
         $configurator->addExtension(
             '@instanceof<ArrayAccess>',
             static function (\ArrayAccess $object) use (&$log): \ArrayAccess {
+                /** @var \ArrayAccess<string, string> */
                 return $log($object, 2);
             }
         );
@@ -481,6 +492,7 @@ class ContainerConfiguratorTest extends TestCase
         $configurator->addExtension(
             '@instanceof<ArrayObject>',
             static function (\ArrayObject $object) use (&$log): \ArrayObject {
+                /** @var \ArrayObject<string, string> */
                 return $log($object, 1);
             }
         );

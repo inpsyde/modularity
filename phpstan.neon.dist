@@ -1,4 +1,6 @@
 includes:
+    - vendor/phpstan/phpstan-mockery/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
     - vendor/szepeviktor/phpstan-wordpress/extension.neon
     - vendor/phpstan/phpstan-deprecation-rules/rules.neon
     - vendor/swissspidy/phpstan-no-private/rules.neon
@@ -6,8 +8,17 @@ parameters:
     level: 8
     paths:
         - src/
+        - tests/
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        - '#Trait Inpsyde\\Modularity\\Module\\ModuleClassNameIdTrait is used zero times and is not analysed.#'
-        # TODO: Check how we can point ABSPATH constant in phpstan to vendor/roots/wordpress-no-content/
-        - '#Path in require_once\(\) \".*\" is not a file or it does not exist.#'
+        # It seems like PHPStan does not like us to test classes to have interfaces implemented, but we want
+        # to ensure that classes are not accidentally loose their interfaces.
+        - '#Call to static method PHPUnit\\Framework\\Assert::assertInstanceOf\(\) with .* will always evaluate to true#'
+        -
+            messages:
+                - '#Parameter \$object of anonymous function has invalid type [A-Z]#'
+                - '#Anonymous function should return [A-Z] but returns object#'
+                - '#Anonymous function has invalid return type [A-Z]#'
+                - '#Instantiated class [A-Z] not found#'
+                - '#Class [A-Z] not found.#'
+            path: tests/unit/Container/ContainerConfiguratorTest.php
