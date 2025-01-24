@@ -502,9 +502,9 @@ class PackageTest extends TestCase
                                 $this->object = $object;
                             }
 
-                            public function works(): string|null
+                            public function works(): string
                             {
-                                return $this->object->offsetGet('works?');
+                                return (string) $this->object->offsetGet('works?');
                             }
                         };
                     },
