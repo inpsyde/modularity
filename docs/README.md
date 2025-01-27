@@ -39,5 +39,5 @@ When installed for development, via Composer, the package also requires:
 
 ## Copyright and License
 
-This package is [free software](https://www.gnu.org/philosophy/free-sw.en.html) distributed under the terms of the GNU General Public License version 2 or (at your option) any later version. For the full license, see [LICENSE](./LICENSE).
+This package is [free software](https://www.gnu.org/philosophy/free-sw.en.html) distributed under the terms of the GNU General Public License version 2 or (at your option) any later version. For the full license, see [LICENSE](https://github.com/inpsyde/modularity/blob/HEAD/LICENSE).
 
