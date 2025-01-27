@@ -17,8 +17,8 @@ class PluginPropertiesTest extends TestCase
     public function testBasic(): void
     {
         $expectedDescription = 'the description';
-        $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://inpsyde.com/';
+        $expectedAuthor = 'Syde GmbH';
+        $expectedAuthorUri = 'https://syde.com/';
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';
@@ -189,8 +189,8 @@ class PluginPropertiesTest extends TestCase
         $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
         $expectedSanitizedBaseName = 'plugin-dir';
 
-        $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://inpsyde.com/';
+        $expectedAuthor = 'Syde GmbH';
+        $expectedAuthorUri = 'https://syde.com/';
 
         $pluginData = array_merge(
             [
