@@ -100,7 +100,7 @@ class PluginProperties extends BaseProperties
     }
 
     /**
-     * @return array
+     * @return string[]
      */
     public function requiresPlugins(): array
     {

@@ -74,7 +74,7 @@ class BasePropertiesTest extends TestCase
      * @param string $baseName
      * @param string $basePath
      * @param string|null $baseUrl
-     * @param array $properties
+     * @param array<string, string> $properties
      * @return BaseProperties
      */
     private function factoryBaseProperties(

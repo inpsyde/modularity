@@ -2,6 +2,7 @@
 <ruleset>
     <file>./src</file>
     <file>./tests</file>
+    <exclude-pattern>./tests/unit/stubs.php</exclude-pattern>
 
     <arg value="sp"/>
     <arg name="colors"/>

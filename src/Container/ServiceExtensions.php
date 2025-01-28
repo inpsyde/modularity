@@ -7,7 +7,7 @@ namespace Inpsyde\Modularity\Container;
 use Psr\Container\ContainerInterface as Container;
 
 /**
- * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
  */
 class ServiceExtensions
 {
@@ -20,6 +20,7 @@ class ServiceExtensions
 
     /**
      * @param string $type
+     *
      * @return string
      */
     final public static function typeId(string $type): string
@@ -30,11 +31,14 @@ class ServiceExtensions
     /**
      * @param string $extensionId
      * @param ExtendingService $extender
+     *
      * @return static
      */
     public function add(string $extensionId, callable $extender): ServiceExtensions
     {
-        isset($this->extensions[$extensionId]) or $this->extensions[$extensionId] = [];
+        if (!isset($this->extensions[$extensionId])) {
+            $this->extensions[$extensionId] = [];
+        }
         $this->extensions[$extensionId][] = $extender;
 
         return $this;
@@ -42,6 +46,7 @@ class ServiceExtensions
 
     /**
      * @param string $extensionId
+     *
      * @return bool
      */
     public function has(string $extensionId): bool
@@ -53,6 +58,7 @@ class ServiceExtensions
      * @param mixed $service
      * @param string $id
      * @param Container $container
+     *
      * @return mixed
      */
     final public function resolve($service, string $id, Container $container)
@@ -68,6 +74,7 @@ class ServiceExtensions
      * @param string $id
      * @param mixed $service
      * @param Container $container
+     *
      * @return mixed
      */
     protected function resolveById(string $id, $service, Container $container)
@@ -83,7 +90,8 @@ class ServiceExtensions
      * @param string $className
      * @param object $service
      * @param Container $container
-     * @param array $extendedClasses
+     * @param string[] $extendedClasses
+     *
      * @return mixed
      *
      * phpcs:disable Generic.Metrics.CyclomaticComplexity
@@ -110,8 +118,7 @@ class ServiceExtensions
         }
 
         // 2nd group of extensions: targeting parent classes
-        $parents = class_parents($service, false);
-        ($parents === false) and $parents = [];
+        $parents = class_parents($service, false) ?: [];
         foreach ($parents as $parentName) {
             $byParent = $this->extensions[self::typeId($parentName)] ?? null;
             if (($byParent !== null) && ($byParent !== [])) {
@@ -120,8 +127,7 @@ class ServiceExtensions
         }
 
         // 3rd group of extensions: targeting implemented interfaces
-        $interfaces = class_implements($service, false);
-        ($interfaces === false) and $interfaces = [];
+        $interfaces = class_implements($service, false) ?: [];
         foreach ($interfaces as $interfaceName) {
             $byInterface = $this->extensions[self::typeId($interfaceName)] ?? null;
             if (($byInterface !== null) && ($byInterface !== [])) {
@@ -163,6 +169,7 @@ class ServiceExtensions
      * @param object $service
      * @param Container $container
      * @param list<ExtendingService> $extenders
+     *
      * @return list{mixed, int}
      */
     private function extendByType(

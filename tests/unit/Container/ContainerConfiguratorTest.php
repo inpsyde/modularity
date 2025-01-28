@@ -374,18 +374,18 @@ class ContainerConfiguratorTest extends TestCase
         static::assertSame(0, $container->get('int'));
     }
 
+    private function loadStubs(): void
+    {
+        require_once __DIR__ . '/../stubs.php';
+    }
+
     /**
      * @test
      * @runInSeparateProcess
      */
     public function testExtensionByTypeNoInfiniteRecursion(): void
     {
-        // We can't declare classes inside a class, but we can eval it.
-        $php = <<<'PHP'
-        class A {}
-        class B extends A {}
-        PHP;
-        eval($php);
+        $this->loadStubs();
 
         $called = [];
 
@@ -422,8 +422,17 @@ class ContainerConfiguratorTest extends TestCase
     public function testExtensionByTypeNested(): void
     {
         // phpcs:enable Inpsyde.CodeQuality.NestingLevel
+
         $logs = [];
-        $log = static function (object $object, int ...$nums) use (&$logs): object {
+        /**
+         * @template T
+         *
+         * @param object&T $object
+         * @param int ...$nums
+         *
+         * @return object&T
+         */
+        $log = static function ($object, int ...$nums) use (&$logs) {
             foreach ($nums as $num) {
                 if (!in_array($num, $logs, true)) {
                     $logs[] = $num;
@@ -434,19 +443,15 @@ class ContainerConfiguratorTest extends TestCase
         };
 
         $configurator = new ContainerConfigurator();
-        $configurator->addService('test', static function (): \ArrayObject {
+        /**
+         * @return \ArrayAccess<string,string>
+         */
+        $service = static function (): \ArrayAccess {
             return new \ArrayObject();
-        });
+        };
+        $configurator->addService('test', $service);
 
-        // We can't declare classes inside a class, but we can eval it.
-        $php = <<<'PHP'
-        class A {}
-        class B extends A {}
-        class C {}
-        class D {};
-        class E extends D {};
-        PHP;
-        eval($php);
+        $this->loadStubs();
 
         $configurator->addExtension(
             '@instanceof<D>',
@@ -462,7 +467,8 @@ class ContainerConfiguratorTest extends TestCase
         );
         $configurator->addExtension(
             '@instanceof<ArrayAccess>',
-            static function (\ArrayAccess $object) use (&$log): \ArrayAccess {
+            static function (\ArrayAccess $object) use (&$log): object {
+                /** @var \ArrayAccess<string, string> */
                 return $log($object, 2);
             }
         );
@@ -481,6 +487,7 @@ class ContainerConfiguratorTest extends TestCase
         $configurator->addExtension(
             '@instanceof<ArrayObject>',
             static function (\ArrayObject $object) use (&$log): \ArrayObject {
+                /** @var \ArrayObject<string, string> */
                 return $log($object, 1);
             }
         );
