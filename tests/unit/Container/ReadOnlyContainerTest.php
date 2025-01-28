@@ -205,7 +205,8 @@ class ReadOnlyContainerTest extends TestCase
     public function testServiceExtensionsBackwardCompatibilityBreaksOnWrongType(): void
     {
         $this->expectException(\TypeError::class);
-        $container = new Container([], [], ServiceExtensions::class, []);
+        // @phpstan-ignore argument.type (pass invalid type on purpose to trigger exception)
+        new Container([], [], ServiceExtensions::class, []);
     }
 
     /**

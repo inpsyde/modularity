@@ -68,39 +68,29 @@ abstract class TestCase extends FrameworkTestCase
      * @param string $id
      * @param class-string ...$interfaces
      *
-     * @return Module&MockInterface
+     * @return Module|MockInterface
      */
-    protected function stubModule(string $id = 'module', string ...$interfaces): Module
+    protected function stubModule(string $id = 'module', string ...$interfaces)
     {
-        if (!$interfaces) {
-            $interfaces[] = Module::class;
-        }
-
-        $stub = \Mockery::mock(...$interfaces);
-        /** @phpstan-ignore-next-line */
+        $stub = \Mockery::mock(Module::class, ...$interfaces);
         $stub->allows('id')->andReturn($id);
 
         if (in_array(ServiceModule::class, $interfaces, true)) {
-            /** @phpstan-ignore-next-line */
             $stub->allows('services')->byDefault()->andReturn([]);
         }
 
         if (in_array(FactoryModule::class, $interfaces, true)) {
-            /** @phpstan-ignore-next-line */
             $stub->allows('factories')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExtendingModule::class, $interfaces, true)) {
-            /** @phpstan-ignore-next-line */
             $stub->allows('extensions')->byDefault()->andReturn([]);
         }
 
         if (in_array(ExecutableModule::class, $interfaces, true)) {
-            /** @phpstan-ignore-next-line */
             $stub->allows('run')->byDefault()->andReturn(false);
         }
 
-        /** @var MockInterface&Module */
         return $stub;
     }
 

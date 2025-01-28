@@ -7,19 +7,19 @@ namespace Inpsyde\Modularity\Properties;
 /**
  * @phpstan-type ComposerAuthor array{
  *      name: string,
- *      email?:string,
- *      homepage?:string,
- *      role?:string
+ *      email?: string,
+ *      homepage?: string,
+ *      role?: string,
  * }
  * @phpstan-type ComposerData array{
  *      name: string,
- *      version?:string,
+ *      version?: string,
  *      require?: array<string, string>,
- *      require-dev?:array<string, string>,
- *      description?:string,
- *      keywords?:string[],
- *      authors?:ComposerAuthor[],
- *      extra?:array{modularity?:array<string,string>}
+ *      require-dev?: array<string, string>,
+ *      description?: string,
+ *      keywords?: string[],
+ *      authors?: ComposerAuthor[],
+ *      extra?: array{modularity?: array<string, string>},
  * }
  */
 class LibraryProperties extends BaseProperties
@@ -124,9 +124,9 @@ class LibraryProperties extends BaseProperties
     }
 
     /**
-     * @param array{name?:string} $composerJsonData
+     * @param ComposerData $composerJsonData
      *
-     * @return list{string, string}
+     * @return array{string, string}
      */
     protected static function buildNames(array $composerJsonData): array
     {
@@ -152,19 +152,18 @@ class LibraryProperties extends BaseProperties
      * `5.6 || >= 7.1` returns `5.6`
      * `>= 7.1 < 8`    returns `7.1`
      *
-     * @param array{require?:array<string,string>, require-dev?:array<string,string>} $composerData
+     * @param ComposerData $composerData
      * @param string $key
      *
      * @return string
      *
      * phpcs:disable Generic.Metrics.CyclomaticComplexity
-     * phpcs:disable Syde.Files.LineLengthTooLong
      */
     protected static function extractPhpVersion(
         array $composerData,
         string $key = 'require'
     ): string {
-
+        // phpcs:enable Generic.Metrics.CyclomaticComplexity
         $nextKey = ($key === 'require')
             ? 'require-dev'
             : null;

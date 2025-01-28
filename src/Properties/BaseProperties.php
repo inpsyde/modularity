@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Properties;
 
-/**
- * phpcs:disable PHPCompatibility.FunctionDeclarations.RemovedImplicitlyNullableParam.Deprecated
- */
 class BaseProperties implements Properties
 {
     protected ?bool $isDebug = null;
@@ -25,7 +22,7 @@ class BaseProperties implements Properties
     protected function __construct(
         string $baseName,
         string $basePath,
-        string $baseUrl = null,
+        ?string $baseUrl = null,
         array $properties = []
     ) {
 

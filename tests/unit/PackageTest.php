@@ -56,8 +56,7 @@ class PackageTest extends TestCase
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTED));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_DONE));
         static::assertFalse($package->hasReachedStatus(6));
-        // check back compat
-        // @phpstan-ignore classConstant.deprecated
+        // @phpstan-ignore classConstant.deprecated (check backward compatibility with deprecated constant)
         static::assertTrue($package->hasReachedStatus(Package::STATUS_MODULES_ADDED));
 
         static::assertSame($expectedName, $package->name());
@@ -1468,8 +1467,8 @@ class PackageTest extends TestCase
                     $previous = $throwable->getPrevious();
                     static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'build package');
-                    /** @var \Throwable $previous */
                     $previous = $previous->getPrevious();
+                    static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'add module');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
@@ -1516,8 +1515,8 @@ class PackageTest extends TestCase
             ->whenHappen(
                 function (\Throwable $throwable) use ($exception, $package): void {
                     $this->assertThrowableMessageMatches($throwable, 'boot application');
-                    /** @var \Throwable $previous */
                     $previous = $throwable->getPrevious();
+                    static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'two');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
