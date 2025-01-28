@@ -1465,8 +1465,8 @@ class PackageTest extends TestCase
             ->whenHappen(
                 function (\Throwable $throwable) use ($exception, $package): void {
                     $this->assertThrowableMessageMatches($throwable, 'boot application');
-                    /** @var \Throwable $previous */
                     $previous = $throwable->getPrevious();
+                    static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'build package');
                     /** @var \Throwable $previous */
                     $previous = $previous->getPrevious();
