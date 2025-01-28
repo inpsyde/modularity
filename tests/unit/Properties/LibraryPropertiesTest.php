@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Inpsyde\Modularity\Tests\Unit\Properties;
 
-use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Properties\LibraryProperties;
+use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Tests\TestCase;
 use org\bovigo\vfs\vfsStream;
 
@@ -16,7 +16,7 @@ class LibraryPropertiesTest extends TestCase
      */
     public function testForLibraryInvalidFile(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(\Throwable::class);
 
         LibraryProperties::new('non-existing.file')->basePath();
     }

@@ -416,12 +416,9 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      * @runInSeparateProcess
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testExtensionByTypeNested(): void
     {
-        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         $logs = [];
         $log = static function (object $object, int ...$nums) use (&$logs): object {
             foreach ($nums as $num) {

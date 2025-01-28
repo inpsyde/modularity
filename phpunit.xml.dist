@@ -11,6 +11,10 @@
     backupGlobals="false"
     stopOnFailure="false">
 
+    <php>
+        <ini name="error_reporting" value="E_ALL"/>
+    </php>
+
     <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">./src</directory>
