@@ -50,7 +50,7 @@ jobs:
 
             -   name: Setup dependencies for PSR-11 target version
                 run: |
-                    composer remove inpsyde/php-coding-standards inpsyde/wp-stubs-versions --dev --no-update
+                    composer remove inpsyde/php-coding-standards --dev --no-update
                     composer require "psr/container:${{ matrix.container-versions }}" --no-update
                     composer config --no-plugins allow-plugins.roots/wordpress-core-installer false
 
