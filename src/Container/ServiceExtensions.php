@@ -118,10 +118,7 @@ class ServiceExtensions
         }
 
         // 2nd group of extensions: targeting parent classes
-        $parents = class_parents($service, false);
-        if ($parents === false) {
-            $parents = [];
-        }
+        $parents = class_parents($service, false) ?: [];
         foreach ($parents as $parentName) {
             $byParent = $this->extensions[self::typeId($parentName)] ?? null;
             if (($byParent !== null) && ($byParent !== [])) {
@@ -130,10 +127,7 @@ class ServiceExtensions
         }
 
         // 3rd group of extensions: targeting implemented interfaces
-        $interfaces = class_implements($service, false);
-        if ($interfaces === false) {
-            $interfaces = [];
-        }
+        $interfaces = class_implements($service, false) ?: [];
         foreach ($interfaces as $interfaceName) {
             $byInterface = $this->extensions[self::typeId($interfaceName)] ?? null;
             if (($byInterface !== null) && ($byInterface !== [])) {
