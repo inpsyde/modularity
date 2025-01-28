@@ -104,6 +104,9 @@ class ServiceExtensions
         array $extendedClasses = []
     ) {
 
+        // phpcs:enable Generic.Metrics.CyclomaticComplexity.TooHigh
+        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration.NoReturnType
+
         $extendedClasses[] = $className;
 
         /** @var array<class-string, list<ExtendingService>> $allCallbacks */
