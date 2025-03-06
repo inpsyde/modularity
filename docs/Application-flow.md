@@ -86,17 +86,3 @@ The steps listed above for the two stages represent the "happy paths". If any ex
 2. The **`Package::ACTION_FAILED_BOOT`** action hook is fired, passing the raised `Throwable` as an argument.
 3. If the `Package`'s `Properties` instance is in "debug mode" (`Properties::isDebug()` returns `true`), the exception bubbles up, and the flow stops here.
 4. `Package::boot()` returns false.
-
-
-
-## About modules passed to `Package::boot()`
-
-Passing modules to add to `Package::boot()` has been deprecated since Modularity `v1.7.0`.
-
-For backward compatibility, when that happens, a deprecation notice is triggered (similarly to WordPress' `_deprecated_argument`) but modules are still added.
-
-It must be noted, that when first calling `Package::build()` and after that `Package::boot()` passing modules as argument, we will add those modules _after_ the status is already at `Package::STATUS_INITIALIZED` (because of the `Package::build()` call) and, as mentioned above, that should not be possible.
-
-The `Package` class still deals with this scenario aiming for 100% backward compatibility, but there's an edge case. If anything that listens to the `Package::ACTION_INITIALIZED` hook accesses the container (which is an accepted and documented possibility) the compiled container will be created, which means we can't add modules to it anymore. In this specific case, calling something like `$package->build()->boot($someModule)` will end-up in an exception.
-
-While this is a breakage of the backward compatibility promise, it is also true that `Package::build()` was introduced in `v1.7.0` when passing modules to `Package::boot()` was deprecated. Developers who have introduced `Package::build()` should also have removed any module passed to `Package::boot()`.

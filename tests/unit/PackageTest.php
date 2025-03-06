@@ -401,54 +401,30 @@ class PackageTest extends TestCase
 
     /**
      * @test
-     * @runInSeparateProcess
-     */
-    public function testBootPassingModulesEmitDeprecation(): void
-    {
-        $module1 = $this->stubModule('module_1', ServiceModule::class);
-        $module1->allows('services')->andReturn($this->stubServices('service_1'));
-
-        $package = Package::new($this->stubProperties('test', true));
-
-        $this->convertDeprecationsToExceptions();
-        try {
-            $count = 0;
-            $package->boot($module1);
-        } catch (\Throwable $throwable) {
-            $count++;
-            $this->assertThrowableMessageMatches($throwable, 'boot().+?deprecated.+?1\.7');
-        } finally {
-            static::assertSame(1, $count);
-        }
-    }
-
-    /**
-     * @test
-     * @runInSeparateProcess
-     */
-    public function testBootPassingModulesAddModules(): void
-    {
-        $module1 = $this->stubModule('module_1', ServiceModule::class);
-        $module1->allows('services')->andReturn($this->stubServices('service_1'));
-
-        $package = Package::new($this->stubProperties('test', true));
-
-        $this->ignoreDeprecations();
-        $package->boot($module1);
-
-        static::assertSame('service_1', $package->container()->get('service_1')['id']);
-    }
-
-    /**
-     * @test
      */
     public function testAddModuleFailsAfterBuild(): void
     {
-        $package = Package::new($this->stubProperties('test', true))->build();
+        $module1 = $this->stubModule('module_1', ServiceModule::class);
+        $module1->expects('services')->andReturn($this->stubServices('service_1'));
 
-        $this->expectExceptionMessageMatches("/add module/i");
+        $module2 = $this->stubModule('module_2', ServiceModule::class);
+        $module2->expects('services')->andReturn($this->stubServices('service_2'));
 
-        $package->addModule($this->stubModule());
+        $module3 = $this->stubModule('module_3', ServiceModule::class);
+        $module3->allows('services')->andReturn($this->stubServices('service_3'));
+
+        $package = Package::new($this->stubProperties('test', true))
+            ->addModule($module1)
+            ->addModule($module2)
+            ->build();
+
+        $container = $package->container();
+
+        static::assertSame('service_1', $container->get('service_1')['id']);
+        static::assertSame('service_2', $container->get('service_2')['id']);
+
+        $this->expectExceptionMessageMatches("/can't add module module_3/i");
+        $package->addModule($module3);
     }
 
     /**
@@ -524,64 +500,6 @@ class PackageTest extends TestCase
             ->works();
 
         static::assertSame('Works!', $actual);
-    }
-
-    /**
-     * @test
-     */
-    public function testBuildPassingModulesToBoot(): void
-    {
-        $module1 = $this->stubModule('module_1', ServiceModule::class);
-        $module1->expects('services')->andReturn($this->stubServices('service_1'));
-
-        $module2 = $this->stubModule('module_2', ServiceModule::class);
-        $module2->expects('services')->andReturn($this->stubServices('service_2'));
-
-        $module3 = $this->stubModule('module_3', ServiceModule::class);
-        $module3->expects('services')->andReturn($this->stubServices('service_3'));
-
-        $package = Package::new($this->stubProperties('test', true))
-            ->addModule($module1)
-            ->addModule($module2)
-            ->build();
-
-        $this->ignoreDeprecations();
-        $package->boot($module2, $module3);
-
-        $container = $package->container();
-
-        static::assertSame('service_1', $container->get('service_1')['id']);
-        static::assertSame('service_2', $container->get('service_2')['id']);
-        static::assertSame('service_3', $container->get('service_3')['id']);
-    }
-
-    /**
-     * @test
-     */
-    public function testBootFailsIfPassingNotAddedModulesAfterContainer(): void
-    {
-        $module1 = $this->stubModule('module_1', ServiceModule::class);
-        $module1->expects('services')->andReturn($this->stubServices('service_1'));
-
-        $module2 = $this->stubModule('module_2', ServiceModule::class);
-        $module2->expects('services')->andReturn($this->stubServices('service_2'));
-
-        $module3 = $this->stubModule('module_3', ServiceModule::class);
-        $module3->allows('services')->andReturn($this->stubServices('service_3'));
-
-        $package = Package::new($this->stubProperties('test', true))
-            ->addModule($module1)
-            ->addModule($module2)
-            ->build();
-
-        $container = $package->container();
-
-        static::assertSame('service_1', $container->get('service_1')['id']);
-        static::assertSame('service_2', $container->get('service_2')['id']);
-
-        $this->expectExceptionMessageMatches("/can't add module module_3/i");
-        $this->ignoreDeprecations();
-        $package->boot($module2, $module3);
     }
 
     /**
@@ -779,7 +697,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
             ->once()
-            ->whenHappen([$package, 'boot']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->boot();
+                }
+            );
 
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
@@ -799,7 +721,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
             ->once()
-            ->whenHappen([$package, 'boot']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->boot();
+                }
+            );
 
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
@@ -820,7 +746,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
             ->once()
-            ->whenHappen([$package, 'boot']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->boot();
+                }
+            );
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
@@ -841,7 +771,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
-            ->whenHappen([$package, 'boot']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->boot();
+                }
+            );
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
@@ -862,7 +796,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))
             ->once()
-            ->whenHappen([$package, 'build']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->build();
+                }
+            );
 
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->never();
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))->never();
@@ -883,7 +821,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INITIALIZED))
             ->once()
-            ->whenHappen([$package, 'build']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->build();
+                }
+            );
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
@@ -904,7 +846,11 @@ class PackageTest extends TestCase
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_BOOTED))
             ->once()
-            ->whenHappen([$package, 'build']);
+            ->whenHappen(
+                static function () use ($package): void {
+                    $package->build();
+                }
+            );
 
         Monkey\Actions\expectDone($package->hookName(Package::ACTION_INIT))->once();
         Monkey\Actions\expectDone(Package::ACTION_MODULARITY_INIT)->once();
