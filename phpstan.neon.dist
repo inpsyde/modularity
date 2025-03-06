@@ -3,9 +3,12 @@ includes:
     - vendor/phpstan/phpstan-mockery/extension.neon
     - vendor/phpstan/phpstan-phpunit/extension.neon
     - vendor/swissspidy/phpstan-no-private/rules.neon
-    - vendor/szepeviktor/phpstan-wordpress/extension.neon
 parameters:
     level: 8
+    dynamicConstantNames:
+        - WP_DEBUG
+    scanFiles:
+        - vendor/inpsyde/wp-stubs-versions/latest.php
     paths:
         - src/
         - tests/
