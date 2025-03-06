@@ -1,0 +1,19 @@
+includes:
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - vendor/phpstan/phpstan-mockery/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/swissspidy/phpstan-no-private/rules.neon
+parameters:
+    level: 8
+    dynamicConstantNames:
+        - WP_DEBUG
+    scanFiles:
+        - vendor/inpsyde/wp-stubs-versions/latest.php
+    paths:
+        - src/
+        - tests/
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        -
+            message: '#Call to static method PHPUnit\\Framework\\Assert::assertInstanceOf\(\) .* will always evaluate to true.#'
+            path: tests/*

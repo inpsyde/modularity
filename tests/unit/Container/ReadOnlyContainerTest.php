@@ -9,6 +9,10 @@ use Inpsyde\Modularity\Container\ServiceExtensions;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 
+/**
+ * @phpstan-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
+ * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ */
 class ReadOnlyContainerTest extends TestCase
 {
     /**
@@ -92,8 +96,7 @@ class ReadOnlyContainerTest extends TestCase
         $expectedKey = 'service';
         $expectedValue = new \stdClass();
 
-        $childContainer = new class ($expectedKey, $expectedValue) implements ContainerInterface
-        {
+        $childContainer = new class ($expectedKey, $expectedValue) implements ContainerInterface {
             /** @var array<string, \stdClass> */
             private array $data = [];
 
@@ -133,31 +136,28 @@ class ReadOnlyContainerTest extends TestCase
         // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         $expectedServiceKey = 'service';
         $expectedFactoryKey = 'factory';
-
         $services = [
             $expectedServiceKey => function (): object {
-                return new class
-                {
-                    protected int $counter = 0;
+                return new class {
+                    protected int $serviceCounter = 0;
 
                     public function count(): int
                     {
-                        $this->counter++;
+                        $this->serviceCounter++;
 
-                        return $this->counter;
+                        return $this->serviceCounter;
                     }
                 };
             },
             $expectedFactoryKey => function (): object {
-                return new class
-                {
-                    protected int $counter = 0;
+                return new class {
+                    protected int $factoryCounter = 0;
 
                     public function count(): int
                     {
-                        $this->counter++;
+                        $this->factoryCounter++;
 
-                        return $this->counter;
+                        return $this->factoryCounter;
                     }
                 };
             },
@@ -185,6 +185,7 @@ class ReadOnlyContainerTest extends TestCase
         };
 
         $extension = static function (object $thing): object {
+            /** @var object{count:integer}&\stdClass $thing */
             $thing->count++;
 
             return $thing;
@@ -204,14 +205,15 @@ class ReadOnlyContainerTest extends TestCase
     public function testServiceExtensionsBackwardCompatibilityBreaksOnWrongType(): void
     {
         $this->expectException(\TypeError::class);
-
+        // @phpstan-ignore argument.type (pass invalid type on purpose to trigger exception)
         new Container([], [], ServiceExtensions::class, []);
     }
 
     /**
-     * @param array $services
-     * @param array $factoryIds
-     * @param array $containers
+     * @param array<string, Service> $services
+     * @param array<string, bool> $factoryIds
+     * @param ContainerInterface[] $containers
+     *
      * @return Container
      */
     private function factoryContainer(

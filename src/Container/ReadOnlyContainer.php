@@ -8,8 +8,8 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
 /**
- * @psalm-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
- * @psalm-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
+ * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
  */
 class ReadOnlyContainer implements ContainerInterface
 {
@@ -26,7 +26,7 @@ class ReadOnlyContainer implements ContainerInterface
     /**
      * @param array<string, Service> $services
      * @param array<string, bool> $factoryIds
-     * @param ServiceExtensions|array $extensions
+     * @param ServiceExtensions|array<string, ExtendingService> $extensions
      * @param ContainerInterface[] $containers
      */
     public function __construct(
