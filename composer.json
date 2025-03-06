@@ -34,9 +34,9 @@
         "phpstan/phpstan": "^2.1.1",
         "phpstan/phpstan-mockery": "^2.0.0",
         "phpstan/phpstan-phpunit": "^2.0.4",
-        "szepeviktor/phpstan-wordpress": "^2",
         "swissspidy/phpstan-no-private": "^v1.0.0",
-        "phpstan/phpstan-deprecation-rules": "^2.0.1"
+        "phpstan/phpstan-deprecation-rules": "^2.0.1",
+        "inpsyde/wp-stubs-versions": "dev-latest"
     },
     "extra": {
         "branch-alias": {
