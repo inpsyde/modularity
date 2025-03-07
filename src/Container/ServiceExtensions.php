@@ -94,8 +94,8 @@ class ServiceExtensions
      *
      * @return mixed
      *
-     * phpcs:disable Generic.Metrics.CyclomaticComplexity
-     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
+     * phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
+     * phpcs:disable Syde.Functions.ReturnTypeDeclaration.NoReturnType
      */
     protected function resolveByType(
         string $className,
@@ -103,8 +103,8 @@ class ServiceExtensions
         Container $container,
         array $extendedClasses = []
     ) {
-        // phpcs:enable Generic.Metrics.CyclomaticComplexity
-        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
+        // phpcs:enable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
+        // phpcs:enable Syde.Functions.ReturnTypeDeclaration.NoReturnType
 
         $extendedClasses[] = $className;
 

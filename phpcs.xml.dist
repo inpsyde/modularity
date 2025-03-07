@@ -1,35 +1,47 @@
 <?xml version="1.0"?>
-<ruleset>
+<ruleset
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PHPCSStandards/PHP_CodeSniffer/master/phpcs.xsd"
+    name="Modularity"
+>
+    <!-- Report warnings, but return zero exit code. -->
+    <config name="ignore_warnings_on_exit" value="1" />
+
+    <!-- Check for cross-version support for PHP 7.4 and higher. -->
+    <config name="testVersion" value="7.4-" />
+
+    <config name="php_version" value="70400" />
+
     <file>./src</file>
     <file>./tests</file>
     <exclude-pattern>./tests/unit/stubs.php</exclude-pattern>
 
-    <arg value="sp"/>
-    <arg name="colors"/>
-    <config name="testVersion" value="7.4-"/>
-    <config name="ignore_warnings_on_exit" value="1"/>
+    <!-- Use colors, and show sniff error codes and progress. -->
+    <arg name="colors" />
+    <arg value="sp" />
 
-    <rule ref="Inpsyde">
-        <exclude name="WordPress.PHP.DevelopmentFunctions.error_log_trigger_error" />
+    <rule ref="Syde-Extra">
+        <exclude name="SlevomatCodingStandard.Functions.RequireTrailingCommaInCall.MissingTrailingComma" />
     </rule>
 
-    <rule ref="Inpsyde.CodeQuality.Psr4">
+    <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+        <exclude-pattern>/tests/boot.php</exclude-pattern>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
         <properties>
-            <property
-                name="psr4"
-                type="array"
-                value="
-                    Inpsyde\Modularity=>src,
-                    Inpsyde\Modularity\Tests=>tests/src,
-                    Inpsyde\Modularity\Tests\Unit=>tests/unit"
-            />
+            <property name="rootNamespaces" type="array">
+                <element key="src" value="Inpsyde\Modularity" />
+                <element key="tests/src" value="Inpsyde\Modularity\Tests" />
+                <element key="tests/unit" value="Inpsyde\Modularity\Tests\Unit" />
+            </property>
         </properties>
     </rule>
 
-    <rule ref="Inpsyde.CodeQuality.FunctionLength">
+    <rule ref="Squiz.PHP.Eval">
         <exclude-pattern>*/tests/*</exclude-pattern>
     </rule>
-    <rule ref="Inpsyde.CodeQuality.ForbiddenPublicProperty">
+    <rule ref="Syde.Functions.FunctionLength.TooLong">
         <exclude-pattern>*/tests/*</exclude-pattern>
     </rule>
     <rule ref="WordPress.PHP.DevelopmentFunctions">
@@ -39,9 +51,6 @@
         <exclude-pattern>*/tests/*</exclude-pattern>
     </rule>
     <rule ref="WordPress.Security.EscapeOutput">
-        <exclude-pattern>*/tests/*</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.PHP.Eval">
         <exclude-pattern>*/tests/*</exclude-pattern>
     </rule>
 </ruleset>

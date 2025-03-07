@@ -130,15 +130,12 @@ abstract class TestCase extends FrameworkTestCase
      * @param string ...$ids
      *
      * @return ContainerInterface
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     protected function stubContainer(string ...$ids): ContainerInterface
     {
-        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         return new class ($this->stubServices(...$ids)) implements ContainerInterface {
             /** @var array<string, callable> */
-            private array $services; // phpcs:ignore
+            private array $services;
 
             /** @param array<string, callable> $services */
             public function __construct(array $services)

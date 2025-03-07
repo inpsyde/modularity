@@ -40,19 +40,13 @@ class LibraryProperties extends BaseProperties
      *
      * @return LibraryProperties
      *
-     * phpcs:disable Generic.Metrics.CyclomaticComplexity
+     * phpcs:disable SlevomatCodingStandard.Complexity
      */
     public static function new(string $composerJsonFile, ?string $baseUrl = null): LibraryProperties
     {
-        if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
-            throw new \Exception(
-                esc_html("File {$composerJsonFile} does not exist or is not readable."),
-            );
-        }
+        // phpcs:enable SlevomatCodingStandard.Complexity
 
-        $content = (string) file_get_contents($composerJsonFile);
-        /** @var ComposerData $composerJsonData */
-        $composerJsonData = json_decode($content, true);
+        $composerJsonData = self::readComposerJsonData($composerJsonFile);
 
         $properties = Properties::DEFAULT_PROPERTIES;
         $properties[self::PROP_DESCRIPTION] = $composerJsonData['description'] ?? '';
@@ -156,14 +150,12 @@ class LibraryProperties extends BaseProperties
      * @param string $key
      *
      * @return string
-     *
-     * phpcs:disable Generic.Metrics.CyclomaticComplexity
      */
     protected static function extractPhpVersion(
         array $composerData,
         string $key = 'require'
     ): string {
-        // phpcs:enable Generic.Metrics.CyclomaticComplexity
+
         $nextKey = ($key === 'require')
             ? 'require-dev'
             : null;
@@ -232,5 +224,33 @@ class LibraryProperties extends BaseProperties
         }
 
         return '';
+    }
+
+    /**
+     * @param string $composerJsonFile
+     *
+     * @return ComposerData
+     * @throws \Exception
+     */
+    private static function readComposerJsonData(string $composerJsonFile): array
+    {
+        if (!\is_file($composerJsonFile) || !\is_readable($composerJsonFile)) {
+            throw new \Exception(
+                esc_html("File {$composerJsonFile} does not exist or is not readable."),
+            );
+        }
+
+        $content = (string) file_get_contents($composerJsonFile);
+
+        /** @var ComposerData $composerJsonData */
+        $composerJsonData = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception(
+                esc_html("Error reading file {$composerJsonFile}: " . json_last_error_msg()),
+            );
+        }
+
+        return $composerJsonData;
     }
 }

@@ -8,7 +8,7 @@ use Inpsyde\Modularity\Container\ServiceExtensions;
 use Inpsyde\Modularity\Tests\TestCase;
 
 /**
- * @phpstan-type TestObject object{count: integer}&\stdClass
+ * @phpstan-type TestObject object{count: int}&\stdClass
  */
 
 class ServiceExtensionsTest extends TestCase

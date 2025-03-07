@@ -416,13 +416,9 @@ class ContainerConfiguratorTest extends TestCase
     /**
      * @test
      * @runInSeparateProcess
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testExtensionByTypeNested(): void
     {
-        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
-
         $logs = [];
         /**
          * @template T

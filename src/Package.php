@@ -270,12 +270,9 @@ class Package
     /**
      * @param Package $package
      * @return bool
-     *
-     * phpcs:disable Inpsyde.CodeQuality.FunctionLength
      */
     public function connect(Package $package): bool
     {
-        // phpcs:enable Inpsyde.CodeQuality.FunctionLength
         try {
             if ($package === $this) {
                 return false;
@@ -815,6 +812,7 @@ class Package
 
         if (apply_filters('deprecated_argument_trigger_error', true)) {
             do_action('wp_trigger_error_run', $function, $message, \E_USER_DEPRECATED);
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
             trigger_error(esc_html($message), \E_USER_DEPRECATED);
         }
     }

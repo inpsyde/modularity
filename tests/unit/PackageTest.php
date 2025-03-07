@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Tests\Unit;
 
 use Brain\Monkey;
+use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Module\ExtendingModule;
 use Inpsyde\Modularity\Module\FactoryModule;
 use Inpsyde\Modularity\Module\ServiceModule;
 use Inpsyde\Modularity\Package;
-use Inpsyde\Modularity\Module\ExecutableModule;
 use Inpsyde\Modularity\Properties\Properties;
 use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
@@ -453,12 +453,9 @@ class PackageTest extends TestCase
 
     /**
      * @test
-     *
-     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
      */
     public function testBuildResolveServices(): void
     {
-        // phpcs:enable phpcs:disable Inpsyde.CodeQuality.NestingLevel
         $module = new class () implements ServiceModule, ExtendingModule, ExecutableModule
         {
             public function id(): string
@@ -491,7 +488,7 @@ class PackageTest extends TestCase
                             /**
                              * @var \ArrayObject<string, string>
                              */
-                            public \ArrayObject $object; // phpcs:ignore
+                            private \ArrayObject $object;
 
                             /**
                              * @param \ArrayObject<string, string> $object
@@ -1201,6 +1198,8 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
+        \Mockery::mock('alias:' . \WP_Error::class);
+
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
@@ -1218,6 +1217,8 @@ class PackageTest extends TestCase
     {
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
+
+        \Mockery::mock('alias:' . \WP_Error::class);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
@@ -1238,6 +1239,8 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
+        \Mockery::mock('alias:' . \WP_Error::class);
+
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
@@ -1255,6 +1258,8 @@ class PackageTest extends TestCase
     {
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
+
+        \Mockery::mock('alias:' . \WP_Error::class);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
