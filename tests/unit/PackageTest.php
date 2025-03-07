@@ -1198,6 +1198,8 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
+        \Mockery::mock('alias:' . \WP_Error::class);
+
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
@@ -1215,6 +1217,8 @@ class PackageTest extends TestCase
     {
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
+
+        \Mockery::mock('alias:' . \WP_Error::class);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
@@ -1235,6 +1239,8 @@ class PackageTest extends TestCase
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2');
 
+        \Mockery::mock('alias:' . \WP_Error::class);
+
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()
             ->with($package1->name(), \Mockery::type(\WP_Error::class));
@@ -1252,6 +1258,8 @@ class PackageTest extends TestCase
     {
         $package1 = $this->stubSimplePackage('1');
         $package2 = $this->stubSimplePackage('2', true);
+
+        \Mockery::mock('alias:' . \WP_Error::class);
 
         Monkey\Actions\expectDone($package2->hookName(Package::ACTION_FAILED_CONNECT))
             ->once()

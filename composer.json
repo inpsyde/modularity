@@ -34,7 +34,6 @@
         "phpstan/phpstan-mockery": "^2.0.0",
         "phpstan/phpstan-phpunit": "^2.0.4",
         "phpunit/phpunit": "^9.6.19",
-        "roots/wordpress-no-content": "@dev",
         "swissspidy/phpstan-no-private": "^v1.0.0",
         "syde/phpcs": "^1.0.0"
     },

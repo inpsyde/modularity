@@ -22,10 +22,4 @@ if (!defined('PHPUNIT_COMPOSER_INSTALL')) {
     require_once $autoload;
 }
 
-if (!defined('ABSPATH')) {
-    define('ABSPATH', "{$vendorDir}/roots/wordpress-no-content/");
-}
-
-require_once "{$vendorDir}/roots/wordpress-no-content/wp-includes/class-wp-error.php";
-
 unset($testsDir, $libDir, $vendorDir, $autoload);
