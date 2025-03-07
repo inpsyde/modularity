@@ -62,3 +62,4 @@ jobs:
                       composer: '--ignore-platform-req=php'
         with:
             PHP_VERSION: ${{ matrix.php }}
+            COMPOSER_ARGS: ${{ matrix.composer || '' }}
