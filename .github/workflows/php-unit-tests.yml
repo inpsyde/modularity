@@ -29,29 +29,29 @@ jobs:
 
         strategy:
             matrix:
-                php-versions: [ '7.4', '8.0', '8.1', '8.2', '8.3' ]
+                php-version: [ '8.1', '8.2', '8.3' ]
                 dependency-versions: [ 'lowest', 'highest' ]
-                container-versions: [ '^1.1.0', '^2' ]
+                container-version: [ '^1.1.0', '^2' ]
 
         steps:
             -   name: Checkout
                 uses: actions/checkout@v4
 
             -   name: Use coverage?
-                if: ${{ (matrix.php-versions == '8.2') && (matrix.dependency-versions == 'highest') && (matrix.container-versions == '^2') }}
+                if: ${{ (matrix.php-version == '8.2') && (matrix.dependency-versions == 'highest') && (matrix.container-version == '^2') }}
                 run: echo "USE_COVERAGE=yes" >> $GITHUB_ENV
 
             -   name: Setup PHP
                 uses: shivammathur/setup-php@v2
                 with:
-                    php-version: ${{ matrix.php-versions }}
+                    php-version: ${{ matrix.php-version }}
                     ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
                     coverage: ${{ ((env.USE_COVERAGE == 'yes') && 'xdebug') || 'none' }}
 
             -   name: Setup dependencies for PSR-11 target version
                 run: |
                     composer remove inpsyde/php-coding-standards --dev --no-update
-                    composer require "psr/container:${{ matrix.container-versions }}" --no-update
+                    composer require "psr/container:${{ matrix.container-version }}" --no-update
                     composer config --no-plugins allow-plugins.roots/wordpress-core-installer false
 
             -   name: Install Composer dependencies
