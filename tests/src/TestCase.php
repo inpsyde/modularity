@@ -67,13 +67,12 @@ abstract class TestCase extends FrameworkTestCase
     /**
      * @param string $id
      * @param class-string ...$interfaces
+     *
      * @return Module|MockInterface
      */
-    protected function stubModule(string $id = 'module', string ...$interfaces): Module
+    protected function stubModule(string $id = 'module', string ...$interfaces)
     {
-        $interfaces or $interfaces[] = Module::class;
-
-        $stub = \Mockery::mock(...$interfaces);
+        $stub = \Mockery::mock(Module::class, ...$interfaces);
         $stub->allows('id')->andReturn($id);
 
         if (in_array(ServiceModule::class, $interfaces, true)) {
@@ -98,6 +97,7 @@ abstract class TestCase extends FrameworkTestCase
     /**
      * @param string $suffix
      * @param bool $debug
+     *
      * @return Package
      */
     protected function stubSimplePackage(string $suffix, bool $debug = false): Package
@@ -111,6 +111,7 @@ abstract class TestCase extends FrameworkTestCase
 
     /**
      * @param string ...$ids
+     *
      * @return array<string, callable>
      */
     protected function stubServices(string ...$ids): array
@@ -127,12 +128,12 @@ abstract class TestCase extends FrameworkTestCase
 
     /**
      * @param string ...$ids
+     *
      * @return ContainerInterface
      */
     protected function stubContainer(string ...$ids): ContainerInterface
     {
-        return new class ($this->stubServices(...$ids)) implements ContainerInterface
-        {
+        return new class ($this->stubServices(...$ids)) implements ContainerInterface {
             /** @var array<string, callable> */
             private array $services;
 
@@ -189,6 +190,7 @@ abstract class TestCase extends FrameworkTestCase
     /**
      * @param \Throwable $throwable
      * @param string $pattern
+     *
      * @return void
      */
     protected function assertThrowableMessageMatches(\Throwable $throwable, string $pattern): void

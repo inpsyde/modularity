@@ -56,7 +56,7 @@ class PackageTest extends TestCase
         static::assertTrue($package->hasReachedStatus(Package::STATUS_BOOTED));
         static::assertTrue($package->hasReachedStatus(Package::STATUS_DONE));
         static::assertFalse($package->hasReachedStatus(6));
-        // check back compat
+        // @phpstan-ignore classConstant.deprecated (check backward compatibility with deprecated constant)
         static::assertTrue($package->hasReachedStatus(Package::STATUS_MODULES_ADDED));
 
         static::assertSame($expectedName, $package->name());
@@ -485,8 +485,14 @@ class PackageTest extends TestCase
                     'service' => function (\ArrayObject $current): object {
                         return new class ($current)
                         {
+                            /**
+                             * @var \ArrayObject<string, string>
+                             */
                             private \ArrayObject $object;
 
+                            /**
+                             * @param \ArrayObject<string, string> $object
+                             */
                             public function __construct(\ArrayObject $object)
                             {
                                 $this->object = $object;
@@ -494,7 +500,7 @@ class PackageTest extends TestCase
 
                             public function works(): string
                             {
-                                return $this->object->offsetGet('works?');
+                                return (string) $this->object->offsetGet('works?');
                             }
                         };
                     },
@@ -1456,8 +1462,10 @@ class PackageTest extends TestCase
                 function (\Throwable $throwable) use ($exception, $package): void {
                     $this->assertThrowableMessageMatches($throwable, 'boot application');
                     $previous = $throwable->getPrevious();
+                    static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'build package');
                     $previous = $previous->getPrevious();
+                    static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'add module');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));
@@ -1505,6 +1513,7 @@ class PackageTest extends TestCase
                 function (\Throwable $throwable) use ($exception, $package): void {
                     $this->assertThrowableMessageMatches($throwable, 'boot application');
                     $previous = $throwable->getPrevious();
+                    static::assertTrue($previous instanceof \Throwable);
                     $this->assertThrowableMessageMatches($previous, 'two');
                     static::assertSame($exception, $previous->getPrevious());
                     static::assertTrue($package->statusIs(Package::STATUS_FAILED));

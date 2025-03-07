@@ -25,7 +25,7 @@ When installed for development via Composer, the package also requires:
 
 * inpsyde/php-coding-standards
 * roots/wordpress
-* vimeo/psalm
+* phpstan/phpstan
 * phpunit/phpunit
 * brain/monkey
 * mikey179/vfsstream
@@ -38,6 +38,7 @@ When installed for development via Composer, the package also requires:
 4. [Properties](docs/Properties.md)
 5. [Application Flow](docs/Application-flow.md)
 
-## License
+## Copyright and License
 
-This repository is a free software, and is released under the terms of the GNU General Public License version 2 or (at your option) any later version. See [LICENSE](./LICENSE) for complete license.
+This package is [free software](https://www.gnu.org/philosophy/free-sw.en.html) distributed under the terms of the GNU General Public License version 2 or (at your option) any later version. For the full license, see [LICENSE](./LICENSE).
+

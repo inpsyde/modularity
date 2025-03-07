@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Inpsyde\Modularity\Module;
 
 /**
- * @psalm-import-type Service from ServiceModule
+ * @phpstan-import-type Service from ServiceModule
  */
 interface FactoryModule extends Module
 {

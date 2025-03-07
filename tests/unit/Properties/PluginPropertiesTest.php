@@ -17,8 +17,8 @@ class PluginPropertiesTest extends TestCase
     public function testBasic(): void
     {
         $expectedDescription = 'the description';
-        $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://inpsyde.com/';
+        $expectedAuthor = 'Syde GmbH';
+        $expectedAuthorUri = 'https://syde.com/';
         $expectedDomainPath = 'languages/';
         $expectedName = "Properties Test";
         $expectedTextDomain = 'properties-test';
@@ -80,7 +80,7 @@ class PluginPropertiesTest extends TestCase
      * @dataProvider provideRequiresPluginsData
      *
      * @param string $requiresPlugins
-     * @param array $expected
+     * @param string[] $expected
      */
     public function testRequiresPlugins(string $requiresPlugins, array $expected): void
     {
@@ -180,7 +180,7 @@ class PluginPropertiesTest extends TestCase
      * @test
      * @dataProvider provideCustomHeaders
      *
-     * @param array $customHeaders
+     * @param array<string, string> $customHeaders
      */
     public function testCustomPluginHeaders(array $customHeaders): void
     {
@@ -189,8 +189,8 @@ class PluginPropertiesTest extends TestCase
         $expectedBasePath = '/app/wp-content/plugins/plugin-dir/';
         $expectedSanitizedBaseName = 'plugin-dir';
 
-        $expectedAuthor = 'Inpsyde GmbH';
-        $expectedAuthorUri = 'https://inpsyde.com/';
+        $expectedAuthor = 'Syde GmbH';
+        $expectedAuthorUri = 'https://syde.com/';
 
         $pluginData = array_merge(
             [
@@ -255,7 +255,7 @@ class PluginPropertiesTest extends TestCase
      * @runInSeparateProcess
      * @dataProvider provideIsMuPluginData
      *
-     * @param string $pluginPath
+     * @param string $pluginMainFile
      * @param string $muPluginDir
      * @param bool $expected
      */

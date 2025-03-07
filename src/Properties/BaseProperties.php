@@ -40,11 +40,14 @@ class BaseProperties implements Properties
 
     /**
      * @param string $name
+     *
      * @return lowercase-string
      */
     protected function sanitizeBaseName(string $name): string
     {
-        substr_count($name, '/') and $name = dirname($name);
+        if (substr_count($name, '/')) {
+            $name = dirname($name);
+        }
 
         return strtolower(pathinfo($name, PATHINFO_FILENAME));
     }
@@ -144,7 +147,9 @@ class BaseProperties implements Properties
     {
         $value = $this->get(self::PROP_REQUIRES_WP);
 
-        return (($value !== '') && is_string($value)) ? $value : null;
+        return (($value !== '') && is_string($value))
+            ? $value
+            : null;
     }
 
     /**
@@ -154,11 +159,13 @@ class BaseProperties implements Properties
     {
         $value = $this->get(self::PROP_REQUIRES_PHP);
 
-        return (($value !== '') && is_string($value)) ? $value : null;
+        return (($value !== '') && is_string($value))
+            ? $value
+            : null;
     }
 
     /**
-     * @return array
+     * @return string[]
      */
     public function tags(): array
     {
@@ -168,6 +175,7 @@ class BaseProperties implements Properties
     /**
      * @param string $key
      * @param mixed $default
+     *
      * @return mixed
      */
     public function get(string $key, $default = null)
@@ -177,6 +185,7 @@ class BaseProperties implements Properties
 
     /**
      * @param string $key
+     *
      * @return bool
      */
     public function has(string $key): bool
@@ -191,7 +200,6 @@ class BaseProperties implements Properties
     public function isDebug(): bool
     {
         if ($this->isDebug === null) {
-            /** @psalm-suppress TypeDoesNotContainType */
             $this->isDebug = defined('WP_DEBUG') && WP_DEBUG;
         }
 

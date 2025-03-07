@@ -14,6 +14,7 @@
 
     <file>./src</file>
     <file>./tests</file>
+    <exclude-pattern>./tests/unit/stubs.php</exclude-pattern>
 
     <!-- Use colors, and show sniff error codes and progress. -->
     <arg name="colors" />
