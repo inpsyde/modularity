@@ -49,7 +49,7 @@ class BaseProperties implements Properties
             $name = dirname($name);
         }
 
-        return strtolower(pathinfo($name, PATHINFO_FILENAME));
+        return strtolower(pathinfo($name, PATHINFO_BASENAME));
     }
 
     /**
