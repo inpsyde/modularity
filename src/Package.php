@@ -370,10 +370,9 @@ class Package
     }
 
     /**
-     * @param Module ...$defaultModules Deprecated, use `addModule()` to add default modules.
      * @return bool
      */
-    public function boot(Module ...$defaultModules): bool
+    public function boot(): bool
     {
         try {
             // When package is done, nothing should happen to it calling boot again, but we call
@@ -382,9 +381,9 @@ class Package
                 return false;
             }
 
-            // Call build() if not called yet, and ensure any new module passed here is added
-            // as well, throwing if the container was already built.
-            $this->doBuild(...$defaultModules);
+            if (!$this->built && $this->statusIs(self::STATUS_IDLE)) {
+                $this->build();
+            }
 
             // Make sure we call boot() on a non-failed instance, and also make a sanity check
             // on the status flow, e.g. prevent calling boot() from an action hook.
@@ -415,88 +414,6 @@ class Package
         $this->progress(self::STATUS_DONE);
 
         return true;
-    }
-
-    /**
-     * @param Module ...$defaultModules
-     * @return void
-     */
-    private function doBuild(Module ...$defaultModules): void
-    {
-        if ($defaultModules) {
-            $this->deprecatedArgument(
-                sprintf(
-                    'Passing default modules to %1$s::boot() is deprecated since version 1.7.0.'
-                    . ' Please add modules via %1$s::addModule().',
-                    __CLASS__
-                ),
-                __METHOD__,
-                '1.7.0'
-            );
-        }
-
-        // We expect `boot()` to be called either:
-        //   1. Directly after `addModule()`/`connect()`, without any `build()` call in between, so
-        //     status is IDLE and `$this->built` is `false`.
-        //   2. After `build()` is called, so status is INITIALIZED and `$this->built` is `true`.
-        // Any other usage is not allowed (e.g. calling `boot()` from an hook callback) and in that
-        // case we return here, giving back control to `boot()` which will throw.
-        $validFlows = (!$this->built && $this->statusIs(self::STATUS_IDLE))
-            || ($this->built && $this->statusIs(self::STATUS_INITIALIZED));
-
-        if (!$validFlows) {
-            // If none of the two supported flows happened, we just return handling control back
-            // to `boot()`, that will throw.
-            return;
-        }
-
-        if (!$this->built) {
-            // First valid flow: `boot()` was called directly after `addModule()`/`connect()`
-            // without any call to `build()`. We can call `build()` and return, handing control
-            // back to `boot()`. Before returning, if we had default modules passed to `boot()` we
-            // already have fired a deprecation, so here we just add them dealing with back-compat.
-            foreach ($defaultModules as $defaultModule) {
-                $this->addModule($defaultModule);
-            }
-            $this->build();
-
-            return;
-        }
-
-        // Second valid flow: we have called `boot()` after `build()`. If we did it correctly,
-        // without default modules passed to `boot()`, we can just return handing control back
-        // to `boot()`.
-        if (!$defaultModules) {
-            return;
-        }
-
-        // If here, we have done something like: `$package->build()->boot($module1, $module2)`.
-        // Passing modules to `boot()` was deprecated when `build()` was introduced, so whoever
-        // added `build()` should have removed modules passed to `boot()`.
-        // But we want to keep 100% backward compatibility so we still support this behavior
-        // until the next major is released. To do that, we simulate IDLE status to prevent
-        // `addModule()` from throwing when adding default modules.
-        // But we can do that only if we don't have a compiled container yet.
-        // If anything hooking ACTION_INIT called `container()` we have a compiled container
-        // already, and we can't add modules, so we not going to simulate INIT status, which mean
-        // the `$this->addModule()` call below will throw.
-        $backup = $this->status;
-        try {
-            if (!$this->hasContainer()) {
-                $this->status = self::STATUS_IDLE;
-            }
-            foreach ($defaultModules as $defaultModule) {
-                // If a module was already added via `addModule()` we can skip it, reducing the
-                // chances of throwing an exception if not needed.
-                if (!$this->moduleIs($defaultModule->id(), self::MODULE_ADDED)) {
-                    $this->addModule($defaultModule);
-                }
-            }
-        } finally {
-            if (!$this->hasFailed()) {
-                $this->status = $backup;
-            }
-        }
     }
 
     /**
