@@ -21,13 +21,13 @@
         }
     ],
     "require": {
-        "php": ">=7.4 <8.4",
+        "php": ">=7.4",
         "ext-json": "*",
         "psr/container": "^1.1.0 || ^2"
     },
     "require-dev": {
         "brain/monkey": "^2.6.1",
-        "inpsyde/wp-stubs-versions": "dev-latest",
+        "inpsyde/wp-stubs-versions": "6.7",
         "mikey179/vfsstream": "^v1.6.11",
         "phpstan/phpstan": "^2.1.1",
         "phpstan/phpstan-deprecation-rules": "^2.0.1",

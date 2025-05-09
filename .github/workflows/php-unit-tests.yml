@@ -29,7 +29,7 @@ jobs:
 
         strategy:
             matrix:
-                php: [ '7.4', '8.0', '8.1', '8.2', '8.3' ]
+                php: [ '7.4', '8.0', '8.1', '8.2', '8.3']
                 container-version: [ '^1.1.0', '^2' ]
                 dependency-versions: [ 'lowest', 'highest' ]
                 include:
@@ -55,7 +55,7 @@ jobs:
 
             -   name: Setup dependencies for PSR-11 target version
                 run: |
-                    composer remove inpsyde/php-coding-standards --dev --no-update
+                    composer remove syde/phpcs --dev --no-update
                     composer require "psr/container:${{ matrix.container-version }}" --no-update
                     composer config --no-plugins allow-plugins.roots/wordpress-core-installer false
 
@@ -76,3 +76,9 @@ jobs:
                     files: ./coverage.xml
                     flags: unittests
                     verbose: true
+    # PHP 8.4 causes many failures with "lowest" dependency version due incompatibility.
+    # So, we're running it in an isolated step.
+    test-phpunit-84:
+        uses: inpsyde/reusable-workflows/.github/workflows/tests-unit-php.yml@main
+        with:
+            PHP_VERSION: "8.4"

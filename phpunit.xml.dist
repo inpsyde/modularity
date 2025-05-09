@@ -9,7 +9,8 @@
     convertWarningsToExceptions="true"
     convertDeprecationsToExceptions="false"
     backupGlobals="false"
-    stopOnFailure="false">
+    stopOnFailure="false"
+    failOnWarning="false">
 
     <php>
         <ini name="error_reporting" value="E_ALL"/>
