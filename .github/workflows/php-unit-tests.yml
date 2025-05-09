@@ -39,6 +39,7 @@ jobs:
                       composer: '--ignore-platform-req=php'
                     - php: '8.4'
                       dependency-versions: ['highest']
+                      container-version: [ '^2' ]
 
         steps:
             -   name: Checkout
@@ -57,7 +58,7 @@ jobs:
 
             -   name: Setup dependencies for PSR-11 target version
                 run: |
-                    composer remove inpsyde/php-coding-standards --dev --no-update
+                    composer remove syde/phpcs --dev --no-update
                     composer require "psr/container:${{ matrix.container-version }}" --no-update
                     composer config --no-plugins allow-plugins.roots/wordpress-core-installer false
 
