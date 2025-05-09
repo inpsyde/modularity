@@ -8,7 +8,7 @@ parameters:
     dynamicConstantNames:
         - WP_DEBUG
     scanFiles:
-        - vendor/inpsyde/wp-stubs-versions/latest.php
+        - vendor/inpsyde/wp-stubs-versions/6.7.php
     paths:
         - src/
         - tests/

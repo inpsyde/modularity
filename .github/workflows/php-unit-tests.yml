@@ -76,6 +76,8 @@ jobs:
                     files: ./coverage.xml
                     flags: unittests
                     verbose: true
+    # PHP 8.4 causes many failures with "lowest" dependency version due incompatibility.
+    # So, we're running it in an isolated step.
     test-phpunit-84:
         uses: inpsyde/reusable-workflows/.github/workflows/tests-unit-php.yml@main
         with:
