@@ -37,6 +37,8 @@ jobs:
                       composer: '--ignore-platform-req=php'
                     - php: '8.0'
                       composer: '--ignore-platform-req=php'
+                    - php: '8.4'
+                      dependency-version: ['highest']
 
         steps:
             -   name: Checkout

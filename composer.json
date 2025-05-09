@@ -27,7 +27,6 @@
     },
     "require-dev": {
         "brain/monkey": "^2.6.1",
-        "mockery/mockery": "^1.6.12",
         "inpsyde/wp-stubs-versions": "dev-latest",
         "mikey179/vfsstream": "^v1.6.11",
         "phpstan/phpstan": "^2.1.1",
