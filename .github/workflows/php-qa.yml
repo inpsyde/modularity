@@ -51,7 +51,6 @@ jobs:
 
     static-code-analysis:
         if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run PHPStan only')) }}
-        continue-on-error: ${{ matrix.experimental || false }}
         uses: inpsyde/reusable-workflows/.github/workflows/static-analysis-php.yml@main
         strategy:
             matrix:
@@ -59,7 +58,6 @@ jobs:
                 include:
                     - php: '7.4'
                       composer: '--ignore-platform-req=php'
-                      experimental: true
                     - php: '8.0'
                       composer: '--ignore-platform-req=php'
         with:
