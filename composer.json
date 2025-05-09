@@ -29,7 +29,7 @@
         "brain/monkey": "^2.6.1",
         "inpsyde/wp-stubs-versions": "dev-latest",
         "mikey179/vfsstream": "^v1.6.11",
-        "phpstan/phpstan": "2.1.7",
+        "phpstan/phpstan": "^2.1.1",
         "phpstan/phpstan-deprecation-rules": "^2.0.1",
         "phpstan/phpstan-mockery": "^2.0.0",
         "phpstan/phpstan-phpunit": "^2.0.4",
