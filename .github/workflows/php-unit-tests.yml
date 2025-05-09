@@ -29,7 +29,7 @@ jobs:
 
         strategy:
             matrix:
-                php: [ '7.4', '8.0', '8.1', '8.2', '8.3', '8.4' ]
+                php: [ '7.4', '8.0', '8.1', '8.2', '8.3']
                 container-version: [ '^1.1.0', '^2' ]
                 dependency-versions: [ 'lowest', 'highest' ]
                 include:
@@ -37,9 +37,6 @@ jobs:
                       composer: '--ignore-platform-req=php'
                     - php: '8.0'
                       composer: '--ignore-platform-req=php'
-                    - php: '8.4'
-                      dependency-versions: ['highest']
-                      container-version: [ '^2' ]
 
         steps:
             -   name: Checkout
@@ -79,3 +76,7 @@ jobs:
                     files: ./coverage.xml
                     flags: unittests
                     verbose: true
+    test-phpunit-84:
+        uses: inpsyde/reusable-workflows/.github/workflows/tests-unit-php.yml@main
+        with:
+            PHP_VERSION: "8.4"
