@@ -436,7 +436,7 @@ class Package
         }
 
         if (!$this->built) {
-               $this->build();
+                $this->build();
         }
     }
 

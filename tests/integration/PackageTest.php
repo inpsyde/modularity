@@ -36,7 +36,7 @@ class PackageTest extends IntegrationTestCase
     {
         $package = Package::new($this->wpPluginProperties());
 
-        add_action('plugins_loaded', function () use ($package): void {
+        add_action('plugins_loaded', static function () use ($package): void {
             $package->boot();
         });
 

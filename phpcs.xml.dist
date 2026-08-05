@@ -34,6 +34,7 @@
                 <element key="src" value="Inpsyde\Modularity" />
                 <element key="tests/src" value="Inpsyde\Modularity\Tests" />
                 <element key="tests/unit" value="Inpsyde\Modularity\Tests\Unit" />
+                <element key="tests/integration" value="Inpsyde\Modularity\Tests\Integration" />
             </property>
         </properties>
     </rule>

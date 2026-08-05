@@ -1,4 +1,5 @@
 <?php
+
 /**
 * Plugin Name: Fixtures WP Plugin
 * Plugin URI:  https://github.com/inpsyde/modularity
@@ -11,3 +12,5 @@
 * Text Domain: fixtures-wp-plugin
 * Domain Path: /languages
 */
+
+declare(strict_types=1);
