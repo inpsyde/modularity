@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Module;
+namespace Syde\Modularity\Module;
 
 trait ModuleClassNameIdTrait
 {

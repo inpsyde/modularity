@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Container;
+namespace Syde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\Container\ContainerConfigurator;
-use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
+use Syde\Modularity\Container\ContainerConfigurator;
+use Syde\Modularity\Tests\TestCase;
 
 class ContainerConfiguratorTest extends TestCase
 {

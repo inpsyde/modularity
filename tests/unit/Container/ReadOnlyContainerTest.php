@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Container;
+namespace Syde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\Container\ReadOnlyContainer as Container;
-use Inpsyde\Modularity\Container\ServiceExtensions;
-use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Syde\Modularity\Container\ReadOnlyContainer as Container;
+use Syde\Modularity\Container\ServiceExtensions;
+use Syde\Modularity\Tests\TestCase;
 
 /**
- * @phpstan-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
- * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type Service from \Syde\Modularity\Module\ServiceModule
+ * @phpstan-import-type ExtendingService from \Syde\Modularity\Module\ExtendingModule
  */
 class ReadOnlyContainerTest extends TestCase
 {

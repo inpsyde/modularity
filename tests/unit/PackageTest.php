@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit;
+namespace Syde\Modularity\Tests\Unit;
 
 use Brain\Monkey;
-use Inpsyde\Modularity\Module\ExecutableModule;
-use Inpsyde\Modularity\Module\ExtendingModule;
-use Inpsyde\Modularity\Module\FactoryModule;
-use Inpsyde\Modularity\Module\ServiceModule;
-use Inpsyde\Modularity\Package;
-use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Tests\TestCase;
 use Psr\Container\ContainerInterface;
+use Syde\Modularity\Module\ExecutableModule;
+use Syde\Modularity\Module\ExtendingModule;
+use Syde\Modularity\Module\FactoryModule;
+use Syde\Modularity\Module\ServiceModule;
+use Syde\Modularity\Package;
+use Syde\Modularity\Properties\Properties;
+use Syde\Modularity\Tests\TestCase;
 
 class PackageTest extends TestCase
 {

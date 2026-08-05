@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Container;
+namespace Syde\Modularity\Container;
 
-use Inpsyde\Modularity\Package;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Syde\Modularity\Package;
 
 class PackageProxyContainer implements ContainerInterface
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Container;
+namespace Syde\Modularity\Tests\Unit\Container;
 
-use Inpsyde\Modularity\Container\ServiceExtensions;
-use Inpsyde\Modularity\Tests\TestCase;
+use Syde\Modularity\Container\ServiceExtensions;
+use Syde\Modularity\Tests\TestCase;
 
 /**
  * @phpstan-type TestObject object{count: int}&\stdClass

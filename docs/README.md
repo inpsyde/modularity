@@ -4,7 +4,7 @@ nav_order: 0
 permalink: /
 ---
 
-# Inpsyde Modularity
+# Syde Modularity
 
 
 

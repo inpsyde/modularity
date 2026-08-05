@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Properties;
+namespace Syde\Modularity\Tests\Unit\Properties;
 
-use Inpsyde\Modularity\Properties\LibraryProperties;
-use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Tests\TestCase;
 use org\bovigo\vfs\vfsStream;
+use Syde\Modularity\Properties\LibraryProperties;
+use Syde\Modularity\Properties\Properties;
+use Syde\Modularity\Tests\TestCase;
 
 class LibraryPropertiesTest extends TestCase
 {

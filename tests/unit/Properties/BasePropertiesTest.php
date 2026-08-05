@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Properties;
+namespace Syde\Modularity\Tests\Unit\Properties;
 
-use Inpsyde\Modularity\Properties\BaseProperties;
-use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Tests\TestCase;
+use Syde\Modularity\Properties\BaseProperties;
+use Syde\Modularity\Properties\Properties;
+use Syde\Modularity\Tests\TestCase;
 
 class BasePropertiesTest extends TestCase
 {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Container;
+namespace Syde\Modularity\Container;
 
 use Psr\Container\ContainerInterface as Container;
 
 /**
- * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type ExtendingService from \Syde\Modularity\Module\ExtendingModule
  */
 class ServiceExtensions
 {

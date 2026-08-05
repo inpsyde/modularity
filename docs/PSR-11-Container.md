@@ -10,6 +10,6 @@ You can simply register an own PSR-Container via Package like following:
 $leagueContainer = new League\Container\Container();
 $diContainer = new Di\Container();
 
-Inpsyde\Modularity\Package::new($properties, $leagueContainer, $diContainer)
+Syde\Modularity\Package::new($properties, $leagueContainer, $diContainer)
     ->boot();
 ```

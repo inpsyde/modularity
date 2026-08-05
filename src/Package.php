@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity;
+namespace Syde\Modularity;
 
-use Inpsyde\Modularity\Container\ContainerConfigurator;
-use Inpsyde\Modularity\Container\PackageProxyContainer;
-use Inpsyde\Modularity\Module\ExecutableModule;
-use Inpsyde\Modularity\Module\ExtendingModule;
-use Inpsyde\Modularity\Module\FactoryModule;
-use Inpsyde\Modularity\Module\Module;
-use Inpsyde\Modularity\Module\ServiceModule;
-use Inpsyde\Modularity\Properties\Properties;
 use Psr\Container\ContainerInterface;
+use Syde\Modularity\Container\ContainerConfigurator;
+use Syde\Modularity\Container\PackageProxyContainer;
+use Syde\Modularity\Module\ExecutableModule;
+use Syde\Modularity\Module\ExtendingModule;
+use Syde\Modularity\Module\FactoryModule;
+use Syde\Modularity\Module\Module;
+use Syde\Modularity\Module\ServiceModule;
+use Syde\Modularity\Properties\Properties;
 
 /**
- * @phpstan-import-type Service from \Inpsyde\Modularity\Module\ServiceModule
- * @phpstan-import-type ExtendingService from \Inpsyde\Modularity\Module\ExtendingModule
+ * @phpstan-import-type Service from \Syde\Modularity\Module\ServiceModule
+ * @phpstan-import-type ExtendingService from \Syde\Modularity\Module\ExtendingModule
  */
 class Package
 {

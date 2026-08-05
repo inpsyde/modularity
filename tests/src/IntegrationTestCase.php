@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests;
+namespace Syde\Modularity\Tests;
 
-use Inpsyde\Modularity\Properties\LibraryProperties;
-use Inpsyde\Modularity\Properties\PluginProperties;
-use Inpsyde\Modularity\Properties\ThemeProperties;
+use Syde\Modularity\Properties\LibraryProperties;
+use Syde\Modularity\Properties\PluginProperties;
+use Syde\Modularity\Properties\ThemeProperties;
 
 class IntegrationTestCase extends \PHPUnit\Framework\TestCase
 {

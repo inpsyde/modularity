@@ -31,10 +31,10 @@
     <rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
         <properties>
             <property name="rootNamespaces" type="array">
-                <element key="src" value="Inpsyde\Modularity" />
-                <element key="tests/src" value="Inpsyde\Modularity\Tests" />
-                <element key="tests/unit" value="Inpsyde\Modularity\Tests\Unit" />
-                <element key="tests/integration" value="Inpsyde\Modularity\Tests\Integration" />
+                <element key="src" value="Syde\Modularity" />
+                <element key="tests/src" value="Syde\Modularity\Tests" />
+                <element key="tests/unit" value="Syde\Modularity\Tests\Unit" />
+                <element key="tests/integration" value="Syde\Modularity\Tests\Integration" />
             </property>
         </properties>
     </rule>

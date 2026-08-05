@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests;
+namespace Syde\Modularity\Tests;
 
 use Brain\Monkey;
-use Inpsyde\Modularity\Module\ExecutableModule;
-use Inpsyde\Modularity\Module\ExtendingModule;
-use Inpsyde\Modularity\Module\FactoryModule;
-use Inpsyde\Modularity\Module\Module;
-use Inpsyde\Modularity\Module\ServiceModule;
-use Inpsyde\Modularity\Package;
-use Inpsyde\Modularity\Properties\Properties;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Error\Deprecated;
 use PHPUnit\Framework\TestCase as FrameworkTestCase;
 use Psr\Container\ContainerInterface;
+use Syde\Modularity\Module\ExecutableModule;
+use Syde\Modularity\Module\ExtendingModule;
+use Syde\Modularity\Module\FactoryModule;
+use Syde\Modularity\Module\Module;
+use Syde\Modularity\Module\ServiceModule;
+use Syde\Modularity\Package;
+use Syde\Modularity\Properties\Properties;
 
 abstract class TestCase extends FrameworkTestCase
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Module;
+namespace Syde\Modularity\Tests\Unit\Module;
 
-use Inpsyde\Modularity;
-use Inpsyde\Modularity\Tests\TestCase;
+use Syde\Modularity;
+use Syde\Modularity\Tests\TestCase;
 
 class ModuleClassNameIdTraitTest extends TestCase
 {

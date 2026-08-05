@@ -1,4 +1,4 @@
-title: Inpsyde Modularity
+title: Syde Modularity
 description: >-
   inpsyde/modularity is a modular PSR-11 implementation for WordPress Plugins, Themes or Libraries.
 
@@ -6,7 +6,7 @@ baseurl: /modularity # Your repo name with a leading slash.
 
 # Aux links for the upper right navigation
 aux_links:
-  "Inpsyde Modularity on GitHub":
+  "Syde Modularity on GitHub":
     - https://github.com/inpsyde/modularity
 
 # Footer "Edit this page on GitHub" link text

@@ -1,4 +1,4 @@
-# Inpsyde Modularity
+# Syde Modularity
 
 [![Version](https://img.shields.io/packagist/v/inpsyde/modularity.svg)](https://packagist.org/packages/inpsyde/modularity)
 [![Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/inpsyde/modularity)
@@ -19,7 +19,7 @@ composer require inpsyde/modularity
 
 ## Minimum Requirements and Dependencies
 
-* PHP 7.4+
+* PHP 8.2+
 
 When installed for development via Composer, the package also requires:
 

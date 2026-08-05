@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Integration;
+namespace Syde\Modularity\Tests\Integration;
 
-use Inpsyde\Modularity\Package;
-use Inpsyde\Modularity\Tests\IntegrationTestCase;
+use Syde\Modularity\Package;
+use Syde\Modularity\Tests\IntegrationTestCase;
 
 class PackageTest extends IntegrationTestCase
 {

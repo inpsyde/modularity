@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Tests\Unit\Properties;
+namespace Syde\Modularity\Tests\Unit\Properties;
 
 use Brain\Monkey\Functions;
-use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Properties\ThemeProperties;
-use Inpsyde\Modularity\Tests\TestCase;
+use Syde\Modularity\Properties\Properties;
+use Syde\Modularity\Properties\ThemeProperties;
+use Syde\Modularity\Tests\TestCase;
 
 class ThemePropertiesTest extends TestCase
 {

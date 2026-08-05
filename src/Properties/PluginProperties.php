@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\Modularity\Properties;
+namespace Syde\Modularity\Properties;
 
 class PluginProperties extends BaseProperties
 {

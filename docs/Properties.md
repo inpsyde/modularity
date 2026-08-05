@@ -10,10 +10,10 @@ To access Properties in your application via Container you can use the class con
 
 declare(strict_types=1);
 
-use Inpsyde\Modularity\Package;
-use Inpsyde\Modularity\Properties\Properties;
-use Inpsyde\Modularity\Module\ExecutableModule;
-use Inpsyde\Modularity\Module\ModuleClassNameIdTrait;
+use Syde\Modularity\Package;
+use Syde\Modularity\Properties\Properties;
+use Syde\Modularity\Module\ExecutableModule;
+use Syde\Modularity\Module\ModuleClassNameIdTrait;
 use Psr\Container\ContainerInterface;
 
 class ModuleThree implements ExecutableModule
@@ -64,7 +64,7 @@ Inside your Plugin you can use the following code to automatically generate Prop
 
 ```php
 <?php
-use Inpsyde\Modularity\Properties;
+use Syde\Modularity\Properties;
 
 $properties = Properties\PluginProperties::new('/path/to/plugin-main-file.php');
 ```
@@ -86,7 +86,7 @@ To generate Properties for your Theme you need to provide the Theme directory or
 
 ```php
 <?php
-use Inpsyde\Modularity\Properties;
+use Syde\Modularity\Properties;
 
 $properties = Properties\ThemeProperties::new('/path/to/theme/directory/');
 ```
@@ -107,7 +107,7 @@ Additionally, ThemeProperties will have the following public API:
 For libraries, you can use the LibraryProperties which give you context based on your composer.json. You can bootstrap your standalone-library like following:
 
 ```php
-use Inpsyde\Modularity\Properties;
+use Syde\Modularity\Properties;
 
 $properties = Properties\LibraryProperties::new('path/to/composer.json');
 ```
@@ -121,7 +121,7 @@ is possible to include it when creating the instance:
 
 ```php
 $url = 'https://example.com/wp-content/vendor/my/library';
-$properties = Inpsyde\Modularity\Properties\LibraryProperties::new('path/to/composer.json', $url);
+$properties = Syde\Modularity\Properties\LibraryProperties::new('path/to/composer.json', $url);
 ```
 
 Alternatively, is the URL is known at a later time, when an instance of `LibraryProperties` is
@@ -129,7 +129,7 @@ already present, it is possible to use the `withBaseUrl()` method:
 
 ```php
 $url = 'https://example.com/wp-content/vendor/my/library';
-/** @var Inpsyde\Modularity\Properties\LibraryProperties $properties */
+/** @var Syde\Modularity\Properties\LibraryProperties $properties */
 $properties->withBaseUrl($url);
 ```
 

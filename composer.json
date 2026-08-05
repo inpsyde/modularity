@@ -65,14 +65,17 @@
     },
     "autoload": {
         "psr-4": {
-            "Inpsyde\\Modularity\\": "src/"
-        }
+            "Syde\\Modularity\\": "src/"
+        },
+        "files": [
+            "inc/class-alias.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "Inpsyde\\Modularity\\Tests\\": "tests/src/",
-            "Inpsyde\\Modularity\\Tests\\Unit\\": "tests/unit/",
-            "Inpsyde\\Modularity\\Tests\\Integration\\": "tests/integration/"
+            "Syde\\Modularity\\Tests\\": "tests/src/",
+            "Syde\\Modularity\\Tests\\Unit\\": "tests/unit/",
+            "Syde\\Modularity\\Tests\\Integration\\": "tests/integration/"
         }
     },
     "minimum-stability": "dev",
