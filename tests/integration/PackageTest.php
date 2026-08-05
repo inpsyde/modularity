@@ -50,11 +50,11 @@ class PackageTest extends IntegrationTestCase
         $package = Package::new($this->wpPluginProperties());
 
         $package->build();
-        static::assertTrue(did_action($package->hookName(Package::ACTION_INIT)));
-        static::assertTrue(did_action($package->hookName(Package::ACTION_MODULARITY_INIT)));
-        static::assertTrue(did_action($package->hookName(Package::ACTION_INITIALIZED)));
+        static::assertNotEquals(0, did_action($package->hookName(Package::ACTION_INIT)));
+        static::assertNotEquals(0, did_action($package->hookName(Package::ACTION_MODULARITY_INIT)));
+        static::assertNotEquals(0, did_action($package->hookName(Package::ACTION_INITIALIZED)));
 
         $package->boot();
-        static::assertTrue(did_action($package->hookName(Package::ACTION_BOOTED)));
+        static::assertNotEquals(0, did_action($package->hookName(Package::ACTION_BOOTED)));
     }
 }
