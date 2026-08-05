@@ -45,7 +45,7 @@ class ReadOnlyContainerTest extends TestCase
      * @param mixed $expected
      * @param callable $service
      */
-    public function testHasGetService($expected, callable $service): void
+    public function testHasGetService(mixed $expected, callable $service): void
     {
         $expectedId = 'service';
         $services = [$expectedId => $service];

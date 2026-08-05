@@ -24,7 +24,6 @@ class Package
      * All the hooks fired in this class use this prefix.
      */
     private const HOOK_PREFIX = 'inpsyde.modularity.';
-
     /**
      * Identifier to access Properties in Container.
      *
@@ -39,7 +38,6 @@ class Package
      * </code>
      */
     public const PROPERTIES = 'properties';
-
     /**
      * Custom action to be used to add modules and connect other packages.
      * It might also be used to access package properties.
@@ -56,7 +54,6 @@ class Package
      * </code>
      */
     public const ACTION_INIT = 'init';
-
     /**
      * Very similar to `ACTION_INIT`, but it is static, so not dependent on package name.
      * It passes package name as first argument.
@@ -72,44 +69,36 @@ class Package
      *  </code>
      */
     public const ACTION_MODULARITY_INIT = self::HOOK_PREFIX . self::ACTION_INIT;
-
     /**
      * Action fired when it is safe to access container.
      * Add more modules is not anymore possible at this stage.
      */
     public const ACTION_INITIALIZED = 'initialized';
-
     /**
      * Action fired when plugin finished its bootstrapping process, all its hooks are added.
      * Add more modules is not anymore possible at this stage.
      */
     public const ACTION_BOOTED = 'ready';
-
     /**
      * Action fired when anything went wrong during the "build" procedure.
      */
     public const ACTION_FAILED_BUILD = 'failed-build';
-
     /**
      * Action fired when anything went wrong during the "boot" procedure.
      */
     public const ACTION_FAILED_BOOT = 'failed-boot';
-
     /**
      * Action fired when adding a module failed.
      */
     public const ACTION_FAILED_ADD_MODULE = 'failed-add-module';
-
     /**
      * Action fired when a package connection failed.
      */
     public const ACTION_FAILED_CONNECT = 'failed-connection';
-
     /**
      * Action fired when a package is connected successfully.
      */
     public const ACTION_PACKAGE_CONNECTED = 'package-connected';
-
     /**
      * Module states can be used to get information about your module.
      *
@@ -129,7 +118,6 @@ class Package
     public const MODULE_EXECUTED = 'executed';
     public const MODULE_EXECUTION_FAILED = 'executed-failed';
     public const MODULES_ALL = '*';
-
     /**
      * Custom states for the class.
      *
@@ -150,22 +138,19 @@ class Package
     public const STATUS_BOOTED = 7;
     public const STATUS_DONE = 8;
     public const STATUS_FAILED = -8;
-
     // Deprecated flags
-    /** @deprecated  */
+    /** @deprecated */
     public const STATUS_MODULES_ADDED = self::STATUS_BOOTING;
-    /** @deprecated  */
+    /** @deprecated */
     public const ACTION_READY = self::ACTION_BOOTED;
-    /** @deprecated  */
+    /** @deprecated */
     public const ACTION_FAILED_CONNECTION = self::ACTION_FAILED_CONNECT;
-
     // Map of status to package-specific and global hook, both optional (i..e, null).
     private const STATUSES_ACTIONS_MAP = [
         self::STATUS_INITIALIZING => [self::ACTION_INIT, self::ACTION_MODULARITY_INIT],
         self::STATUS_INITIALIZED => [self::ACTION_INITIALIZED, null],
         self::STATUS_BOOTED => [self::ACTION_BOOTED, null],
     ];
-
     private const SUCCESS_STATUSES = [
         self::STATUS_IDLE => self::STATUS_IDLE,
         self::STATUS_INITIALIZING => self::STATUS_INITIALIZING,
@@ -174,7 +159,6 @@ class Package
         self::STATUS_BOOTED => self::STATUS_BOOTED,
         self::STATUS_DONE => self::STATUS_DONE,
     ];
-
     private const OPERATORS = [
         '<' => '<',
         '<=' => '<=',
@@ -186,21 +170,30 @@ class Package
 
     /** @var Package::STATUS_* */
     private int $status = self::STATUS_IDLE;
+
     /** @var array<string, list<string>> */
     private array $moduleStatus = [self::MODULES_ALL => []];
+
     /** @var array<string, bool> */
     private array $connectedPackages = [];
+
     /** @var list<ExecutableModule> */
     private array $executables = [];
+
     private Properties $properties;
+
     private ContainerConfigurator $containerConfigurator;
+
     private bool $built = false;
+
     private bool $hasContainer = false;
+
     private ?\Throwable $lastError = null;
 
     /**
      * @param Properties $properties
      * @param ContainerInterface ...$containers
+     *
      * @return Package
      */
     public static function new(Properties $properties, ContainerInterface ...$containers): Package
@@ -227,6 +220,7 @@ class Package
 
     /**
      * @param Module $module
+     *
      * @return static
      */
     public function addModule(Module $module): Package
@@ -258,7 +252,9 @@ class Package
             }
 
             $added = $registeredServices || $registeredFactories || $extended || $isExecutable;
-            $status = $added ? self::MODULE_ADDED : self::MODULE_NOT_ADDED;
+            $status = $added
+                ? self::MODULE_ADDED
+                : self::MODULE_NOT_ADDED;
             $this->moduleProgress($module->id(), $status);
         } catch (\Throwable $throwable) {
             $this->handleFailure($throwable, self::ACTION_FAILED_ADD_MODULE);
@@ -269,6 +265,7 @@ class Package
 
     /**
      * @param Package $package
+     *
      * @return bool
      */
     public function connect(Package $package): bool
@@ -288,7 +285,9 @@ class Package
             // Don't connect, if already booted or boot failed
             $failed = $this->hasFailed();
             if ($failed || $this->hasReachedStatus(self::STATUS_INITIALIZED)) {
-                $reason = $failed ? 'is errored' : 'has a built container already';
+                $reason = $failed
+                    ? 'is errored'
+                    : 'has a built container already';
                 $this->handleConnectionFailure($packageName, "current package {$reason}", true);
             }
 
@@ -436,13 +435,14 @@ class Package
         }
 
         if (!$this->built) {
-                $this->build();
+            $this->build();
         }
     }
 
     /**
      * @param Module $module
      * @param string $status
+     *
      * @return bool
      */
     private function addModuleServices(Module $module, string $status): bool
@@ -453,15 +453,21 @@ class Package
         $addCallback = null;
         switch ($status) {
             case self::MODULE_REGISTERED:
-                $services = $module instanceof ServiceModule ? $module->services() : null;
+                $services = $module instanceof ServiceModule
+                    ? $module->services()
+                    : null;
                 $addCallback = [$this->containerConfigurator, 'addService'];
                 break;
             case self::MODULE_REGISTERED_FACTORIES:
-                $services = $module instanceof FactoryModule ? $module->factories() : null;
+                $services = $module instanceof FactoryModule
+                    ? $module->factories()
+                    : null;
                 $addCallback = [$this->containerConfigurator, 'addFactory'];
                 break;
             case self::MODULE_EXTENDED:
-                $services = $module instanceof ExtendingModule ? $module->extensions() : null;
+                $services = $module instanceof ExtendingModule
+                    ? $module->extensions()
+                    : null;
                 $addCallback = [$this->containerConfigurator, 'addExtension'];
                 break;
         }
@@ -490,7 +496,9 @@ class Package
             $success = $executable->run($this->container());
             $this->moduleProgress(
                 $executable->id(),
-                $success ? self::MODULE_EXECUTED : self::MODULE_EXECUTION_FAILED,
+                $success
+                    ? self::MODULE_EXECUTED
+                    : self::MODULE_EXECUTION_FAILED,
             );
         }
     }
@@ -499,6 +507,7 @@ class Package
      * @param string $moduleId
      * @param string $status
      * @param list<string>|null $serviceIds
+     *
      * @return void
      */
     private function moduleProgress(
@@ -540,6 +549,7 @@ class Package
 
     /**
      * @param string $packageName
+     *
      * @return bool
      */
     public function isPackageConnected(string $packageName): bool
@@ -568,6 +578,7 @@ class Package
      * `inpsyde.modularity.my-plugin` anyway, so the file name is not relevant.
      *
      * @param string $suffix
+     *
      * @return string
      *
      * @see Package::name()
@@ -620,6 +631,7 @@ class Package
 
     /**
      * @param int $status
+     *
      * @return bool
      */
     public function statusIs(int $status): bool
@@ -637,6 +649,7 @@ class Package
 
     /**
      * @param int $status
+     *
      * @return bool
      */
     public function hasReachedStatus(int $status): bool
@@ -651,6 +664,7 @@ class Package
     /**
      * @param int $status
      * @param value-of<Package::OPERATORS> $operator
+     *
      * @return bool
      */
     private function checkStatus(int $status, string $operator = '=='): bool
@@ -680,6 +694,7 @@ class Package
      * @param string $packageName
      * @param string $reason
      * @param bool $throw
+     *
      * @return bool
      */
     private function handleConnectionFailure(string $packageName, string $reason, bool $throw): bool
@@ -707,6 +722,7 @@ class Package
     /**
      * @param \Throwable $throwable
      * @param Package::ACTION_FAILED_* $action
+     *
      * @return void
      */
     private function handleFailure(\Throwable $throwable, string $action): void

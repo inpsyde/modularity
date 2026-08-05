@@ -44,4 +44,17 @@ class PackageTest extends IntegrationTestCase
 
         static::assertTrue($package->statusIs(Package::STATUS_DONE));
     }
+
+    public function testBuildAndBootActionsTriggered(): void
+    {
+        $package = Package::new($this->wpPluginProperties());
+
+        $package->build();
+        static::assertTrue(did_action($package->hookName(Package::ACTION_INIT)));
+        static::assertTrue(did_action($package->hookName(Package::ACTION_MODULARITY_INIT)));
+        static::assertTrue(did_action($package->hookName(Package::ACTION_INITIALIZED)));
+
+        $package->boot();
+        static::assertTrue(did_action($package->hookName(Package::ACTION_BOOTED)));
+    }
 }

@@ -61,7 +61,7 @@ class ServiceExtensions
      *
      * @return mixed
      */
-    final public function resolve($service, string $id, Container $container)
+    final public function resolve(mixed $service, string $id, Container $container): mixed
     {
         $service = $this->resolveById($id, $service, $container);
 
@@ -77,7 +77,7 @@ class ServiceExtensions
      *
      * @return mixed
      */
-    protected function resolveById(string $id, $service, Container $container)
+    protected function resolveById(string $id, mixed $service, Container $container): mixed
     {
         foreach ($this->extensions[$id] ?? [] as $extender) {
             $service = $extender($service, $container);

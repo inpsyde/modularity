@@ -69,8 +69,9 @@ abstract class TestCase extends FrameworkTestCase
      * @param class-string ...$interfaces
      *
      * @return Module|MockInterface
+     * phpcs:disable Syde.Files.LineLength.TooLong
      */
-    protected function stubModule(string $id = 'module', string ...$interfaces)
+    protected function stubModule(string $id = 'module', string ...$interfaces): Module|MockInterface
     {
         $stub = \Mockery::mock(Module::class, ...$interfaces);
         $stub->allows('id')->andReturn($id);

@@ -37,7 +37,7 @@ interface Properties
      * @param mixed $default
      * @return mixed
      */
-    public function get(string $key, $default = null);
+    public function get(string $key, mixed $default = null);
 
     /**
      * @param string $key

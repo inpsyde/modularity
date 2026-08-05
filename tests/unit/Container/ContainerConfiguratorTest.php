@@ -38,8 +38,7 @@ class ContainerConfiguratorTest extends TestCase
 
         $testee->addService(
             $expectedKey,
-            /** @return mixed */
-            static function () use ($expectedValue) {
+            static function () use ($expectedValue): object {
                 return $expectedValue;
             }
         );
@@ -62,8 +61,7 @@ class ContainerConfiguratorTest extends TestCase
 
         $testee->addFactory(
             $expectedKey,
-            /** @return mixed */
-            static function () use ($expectedValue) {
+            static function () use ($expectedValue): object {
                 return $expectedValue;
             }
         );
@@ -249,22 +247,14 @@ class ContainerConfiguratorTest extends TestCase
 
         $testee->addService(
             $expectedKey,
-            /**
-             * @param mixed $previous
-             * @return mixed
-             */
-            static function () use ($expectedOriginalValue) {
+            static function () use ($expectedOriginalValue): object {
                 return $expectedOriginalValue;
             }
         );
 
         $testee->addExtension(
             $expectedKey,
-            /**
-             * @param mixed $previous
-             * @return mixed
-             */
-            static function ($previous) use ($expectedOriginalValue, $expectedExtendedValue) {
+            static function (object $previous) use ($expectedOriginalValue, $expectedExtendedValue): object {
                 static::assertSame($expectedOriginalValue, $previous);
 
                 return $expectedExtendedValue;
@@ -428,7 +418,7 @@ class ContainerConfiguratorTest extends TestCase
          *
          * @return object&T
          */
-        $log = static function ($object, int ...$nums) use (&$logs) {
+        $log = static function (object $object, int ...$nums) use (&$logs): object {
             foreach ($nums as $num) {
                 if (!in_array($num, $logs, true)) {
                     $logs[] = $num;
@@ -452,12 +442,14 @@ class ContainerConfiguratorTest extends TestCase
         $configurator->addExtension(
             '@instanceof<D>',
             static function (\D $object) use (&$log): \E {
+                /** @var \E */
                 return $log(new \E(), 6, 9);
             }
         );
         $configurator->addExtension(
             '@instanceof<A>',
             static function (\A $object) use (&$log): \A {
+                /** @var \A */
                 return $log($object, -1); // we never expect this to run
             }
         );
@@ -471,6 +463,7 @@ class ContainerConfiguratorTest extends TestCase
         $configurator->addExtension(
             "@instanceof<B>",
             static function (\B $object) use (&$log): \C {
+                /** @var \C */
                 return $log(new \C(), 4);
             }
         );
@@ -490,24 +483,28 @@ class ContainerConfiguratorTest extends TestCase
         $configurator->addExtension(
             '@instanceof<C>',
             static function (\C $object) use (&$log): \D {
+                /** @var \D */
                 return $log(new \D(), 5);
             }
         );
         $configurator->addExtension(
             '@instanceof<ArrayAccess>',
             static function (\ArrayAccess $object) use (&$log): \B {
+                /** @var \B */
                 return $log(new \B(), 3);
             }
         );
         $configurator->addExtension(
             "@instanceof<E>",
             static function (\E $object) use (&$log): \E {
+                /** @var \E */
                 return $log($object, 8);
             }
         );
         $configurator->addExtension(
             "@instanceof<D>",
             static function (\D $object) use (&$log): \D {
+                /** @var \D */
                 return $log($object, 7, 10);
             }
         );
