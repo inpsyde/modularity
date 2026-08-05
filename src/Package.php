@@ -370,21 +370,23 @@ class Package
     }
 
     /**
-     * @param Module ...$defaultModules Deprecated, use `addModule()` to add default modules.
      * @return bool
      */
     public function boot(): bool
     {
         try {
-            // Call build() if not called yet, and ensure any new module passed here is added
-            // as well, throwing if the container was already built.
-            if (!$this->built) {
-                $this->build();
+            // When package is done, nothing should happen to it calling boot again, but we call
+            // false to signal something is off.
+            if ($this->statusIs(self::STATUS_DONE)) {
+                return false;
             }
 
-            // Don't allow booting the application multiple times.
-            $this->assertStatus(self::STATUS_BOOTING, 'boot application', '<');
-            $this->assertStatus(self::STATUS_FAILED, 'boot application', '!=');
+            // Call build() if not called yet.
+            $this->doBuild();
+
+            // Make sure we call boot() on a non-failed instance, and also make a sanity check
+            // on the status flow, e.g. prevent calling boot() from an action hook.
+            $this->assertStatus(self::STATUS_INITIALIZED, 'boot application');
 
             // This will change status to STATUS_BOOTING "locking" subsequent call to `boot()`, but
             // no hook is fired here, because at this point we can not do anything more or less than
@@ -393,12 +395,10 @@ class Package
 
             $this->doExecute();
 
-            $this->progress(self::STATUS_READY);
-
-            do_action(
-                $this->hookName(self::ACTION_READY),
-                $this
-            );
+            // This will change status to STATUS_BOOTED and then fire an action that make it
+            // possible to hook on a package that has finished its bootstrapping process, so all its
+            // "executable" modules have been executed.
+            $this->progress(self::STATUS_BOOTED);
         } catch (\Throwable $throwable) {
             $this->handleFailure($throwable, self::ACTION_FAILED_BOOT);
 
@@ -413,6 +413,31 @@ class Package
         $this->progress(self::STATUS_DONE);
 
         return true;
+    }
+
+    /**
+     * @return void
+     */
+    private function doBuild(): void
+    {
+        // We expect `boot()` to be called either:
+        //   1. Directly after `addModule()`/`connect()`, without any `build()` call in between, so
+        //     status is IDLE and `$this->built` is `false`.
+        //   2. After `build()` is called, so status is INITIALIZED and `$this->built` is `true`.
+        // Any other usage is not allowed (e.g. calling `boot()` from an hook callback) and in that
+        // case we return here, giving back control to `boot()` which will throw.
+        $validFlows = (!$this->built && $this->statusIs(self::STATUS_IDLE))
+            || ($this->built && $this->statusIs(self::STATUS_INITIALIZED));
+
+        if (!$validFlows) {
+            // If none of the two supported flows happened, we just return handling control back
+            // to `boot()`, that will throw.
+            return;
+        }
+
+        if (!$this->built) {
+               $this->build();
+        }
     }
 
     /**
@@ -710,26 +735,6 @@ class Package
                 0,
                 $this->lastError // phpcs:ignore WordPress.Security.EscapeOutput
             );
-        }
-    }
-
-    /**
-     * Similar to WP's `_deprecated_argument()`, but executes regardless of WP_DEBUG and without
-     * translated message (so without attempting loading translation files).
-     *
-     * @param string $message
-     * @param string $function
-     * @param string $version
-     * @return void
-     */
-    private function deprecatedArgument(string $message, string $function, string $version): void
-    {
-        do_action('deprecated_argument_run', $function, $message, $version);
-
-        if (apply_filters('deprecated_argument_trigger_error', true)) {
-            do_action('wp_trigger_error_run', $function, $message, \E_USER_DEPRECATED);
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-            trigger_error(esc_html($message), \E_USER_DEPRECATED);
         }
     }
 }

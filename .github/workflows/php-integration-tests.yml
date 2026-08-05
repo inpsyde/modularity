@@ -1,0 +1,36 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**workflows/php-integration-tests.yml'
+      - '**.php'
+      - '**phpunit-integration.xml.dist'
+      - '**composer.json'
+  pull_request:
+    paths:
+      - '**workflows/php-integration-tests.yml'
+      - '**.php'
+      - '**phpunit-integration.xml.dist'
+      - '**composer.json'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests-integration-php:
+    if: ${{ !contains(github.event.head_commit.message, 'skip tests') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        wp-version: [ '6.8', '6.9', '7.0' ]
+    uses: inpsyde/reusable-workflows/.github/workflows/tests-unit-php.yml@main
+    secrets:
+      COMPOSER_AUTH_JSON: ${{ secrets.PACKAGIST_AUTH_JSON }}
+      ENV_VARS: >-
+        [{"name":"WP_CORE_VERSION", "value":"${{ matrix.wp-version }}"}]
+    with:
+      PHP_VERSION: '8.2'
+      PHPUNIT_ARGS: '--testsuite=integration --no-coverage -c phpunit-integration.xml.dist'

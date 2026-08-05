@@ -29,7 +29,7 @@
     </coverage>
 
     <testsuites>
-        <testsuite name="Unit">
+        <testsuite name="unit">
             <directory suffix="Test.php">./tests/unit/</directory>
         </testsuite>
     </testsuites>

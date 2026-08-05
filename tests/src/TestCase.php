@@ -165,8 +165,6 @@ abstract class TestCase extends FrameworkTestCase
      */
     protected function ignoreDeprecations(): void
     {
-        \Brain\Monkey\Actions\expectDone('wp_trigger_error_run')->atLeast()->once();
-
         $this->currentErrorReporting = error_reporting();
         error_reporting($this->currentErrorReporting & ~\E_DEPRECATED & ~\E_USER_DEPRECATED);
     }

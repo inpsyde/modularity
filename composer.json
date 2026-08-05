@@ -14,6 +14,13 @@
     "repositories": [
         {
             "type": "composer",
+            "url": "https://repo.packagist.com/inpsyde/"
+        },
+        {
+            "packagist.org": false
+        },
+        {
+            "type": "composer",
             "url": "https://raw.githubusercontent.com/inpsyde/wp-stubs/main",
             "only": [
                 "inpsyde/wp-stubs-versions"
@@ -21,7 +28,7 @@
         }
     ],
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.2",
         "ext-json": "*",
         "psr/container": "^1.1.0 || ^2"
     },
@@ -35,9 +42,23 @@
         "phpstan/phpstan-phpunit": "^2.0.4",
         "phpunit/phpunit": "^9.6.19",
         "swissspidy/phpstan-no-private": "^v1.0.0",
-        "syde/phpcs": "^1.0.0"
+        "syde/phpcs": "^1.0.0",
+        "roots/wordpress": ">=7.0",
+        "syde/wp-phpunit-integration": "^0.4"
     },
     "extra": {
+        "wordpress-install-dir": "vendor/wordpress/wordpress",
+        "installer-paths": {
+            "vendor/wordpress/wordpress/wp-content/themes/{$name}": [
+                "type:wordpress-theme"
+            ],
+            "vendor/wordpress/wordpress/wp-content/plugins/{$name}": [
+                "type:wordpress-plugin"
+            ],
+            "vendor/wordpress/wordpress/wp-content/mu-plugins/{$name}": [
+                "type:wordpress-muplugin"
+            ]
+        },
         "branch-alias": {
             "dev-master": "1.x-dev"
         }
@@ -50,7 +71,8 @@
     "autoload-dev": {
         "psr-4": {
             "Inpsyde\\Modularity\\Tests\\": "tests/src/",
-            "Inpsyde\\Modularity\\Tests\\Unit\\": "tests/unit/"
+            "Inpsyde\\Modularity\\Tests\\Unit\\": "tests/unit/",
+            "Inpsyde\\Modularity\\Tests\\Integration\\": "tests/integration/"
         }
     },
     "minimum-stability": "dev",
@@ -58,19 +80,28 @@
     "scripts": {
         "phpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
         "phpstan": "@php ./vendor/bin/phpstan analyse --memory-limit=1G",
-        "tests": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
-        "tests:coverage": "@php ./vendor/phpunit/phpunit/phpunit",
+        "tests:integration": "@php ./vendor/phpunit/phpunit/phpunit --testsuite=integration --no-coverage -c phpunit-integration.xml.dist",
+        "tests:unit:cov": "@php ./vendor/phpunit/phpunit/phpunit --testsuite=unit",
+        "tests:unit": "@php ./vendor/phpunit/phpunit/phpunit --testsuite=unit --no-coverage",
+        "tests": [
+            "@tests:integration",
+            "@tests:unit"
+        ],
+        "tests:cov": [
+            "@tests:integration",
+            "@tests:unit:cov"
+        ],
         "qa": [
             "@phpcs",
-            "@phpstan",
-            "@tests"
+            "@phpstan"
         ]
     },
     "config": {
         "allow-plugins": {
             "composer/*": true,
             "inpsyde/*": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "roots/wordpress-core-installer": true
         },
         "sort-packages": true
     }
