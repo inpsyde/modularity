@@ -14,14 +14,14 @@ class PackageTest extends IntegrationTestCase
         $package = Package::new($this->phpLibraryProperties());
         $package->boot();
 
-        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
     }
 
     public function testBootTheme(): void
     {
         $package = Package::new($this->themeProperties());
         $package->boot();
-        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
     }
 
     public function testBootPlugins(): void
@@ -29,7 +29,7 @@ class PackageTest extends IntegrationTestCase
         $package = Package::new($this->wpPluginProperties());
         $package->boot();
 
-        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
     }
 
     public function testBootOnPluginsLoaded(): void
@@ -42,6 +42,6 @@ class PackageTest extends IntegrationTestCase
 
         do_action('plugins_loaded');
 
-        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+        static::assertTrue($package->statusIs(Package::STATUS_DONE));
     }
 }
