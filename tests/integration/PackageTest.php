@@ -14,6 +14,34 @@ class PackageTest extends IntegrationTestCase
         $package = Package::new($this->phpLibraryProperties());
         $package->boot();
 
-        static::assertFalse($package->hasFailed());
+        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+    }
+
+    public function testBootTheme(): void
+    {
+        $package = Package::new($this->themeProperties());
+        $package->boot();
+        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+    }
+
+    public function testBootPlugins(): void
+    {
+        $package = Package::new($this->wpPluginProperties());
+        $package->boot();
+
+        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
+    }
+
+    public function testBootOnPluginsLoaded(): void
+    {
+        $package = Package::new($this->wpPluginProperties());
+
+        add_action('plugins_loaded', function () use ($package): void {
+            $package->boot();
+        });
+
+        do_action('plugins_loaded');
+
+        static::assertTrue($package->statusIs(Package::STATUS_BOOTED));
     }
 }

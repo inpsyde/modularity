@@ -42,12 +42,16 @@ jobs:
         with:
             PHP_VERSION: ${{ matrix.php }}
             LINT_ARGS: '-e php --colors --show-deprecated ./src'
+        secrets:
+          COMPOSER_AUTH_JSON: ${{ secrets.PACKAGIST_AUTH_JSON }}
 
     coding-standards-analysis:
         if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run PHPCS only')) }}
         uses: inpsyde/reusable-workflows/.github/workflows/coding-standards-php.yml@main
         with:
             PHP_VERSION: '8.3'
+        secrets:
+          COMPOSER_AUTH_JSON: ${{ secrets.PACKAGIST_AUTH_JSON }}
 
     static-code-analysis:
         if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run PHPStan only')) }}
@@ -55,11 +59,7 @@ jobs:
         strategy:
             matrix:
                 php: [ '8.2', '8.3', '8.4' ]
-                include:
-                    - php: '7.4'
-                      composer: '--ignore-platform-req=php'
-                    - php: '8.0'
-                      composer: '--ignore-platform-req=php'
         with:
             PHP_VERSION: ${{ matrix.php }}
-            COMPOSER_ARGS: ${{ matrix.composer || '' }}
+        secrets:
+          COMPOSER_AUTH_JSON: ${{ secrets.PACKAGIST_AUTH_JSON }}
